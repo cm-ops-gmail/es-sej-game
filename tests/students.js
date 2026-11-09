@@ -26,12 +26,12 @@ const CROWD = 27;
 
   /* Lesson 1.1: Word Flash, then a quiz, then speaking. */
   const tv = await open(1280, 720, `${BASE}/?class=1.1&test=1`, 'tv');
-  await tv.waitForSelector('#cl-start');
+  await tv.waitForSelector('.cl-lobby');
   const waitTv = (fn, arg) => tv.waitForFunction(fn, arg, { timeout: 15000 });
   const code = await tv.evaluate(() => SEJ.classDebug.state.code);
 
   /* The teacher's QR stays beside the game until they connect, and covers nothing. */
-  await tv.click('#cl-start');
+  await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'start' }));
   await tv.waitForTimeout(200);
   await tv.evaluate(() => { SEJ.$$('.cl-splash').forEach((x) => x.remove()); SEJ.classDebug.dispatch({ type: 'goto', stage: 1 }); SEJ.$$('.cl-splash').forEach((x) => x.remove()); });
   await tv.waitForTimeout(600);
@@ -45,6 +45,8 @@ const CROWD = 27;
   await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'restart' }));
 
   const teacher = await open(390, 780, `${BASE}/?remote=${code}&test=1`, 'teacher');
+  await teacher.waitForSelector('.pin-card', { timeout: 15000 });
+  for (const d of '1010') await teacher.locator(`.pin-key[data-key="${d}"]`).click();
   await teacher.waitForSelector('#rm-students-toggle', { timeout: 15000 });
   await teacher.waitForTimeout(600);
   await teacher.screenshot({ path: `${SHOTS}/teacher-setup.png`, fullPage: true });
@@ -115,6 +117,9 @@ const CROWD = 27;
   await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'start' }));
   await waitTv(() => SEJ.classDebug.state.screen === 'stage');
   await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'goto', stage: 1 }));
+  await tv.waitForFunction(() => document.querySelectorAll('.cl-option').length >= 2, null, { timeout: 15000 });
+  check('TV shows options while students answer on phones', true);
+  check('TV options cannot be tapped during Student Play', !(await tv.$('button.cl-option')));
   const quiz = await tv.evaluate(() => { const d = SEJ.classDebug; const st = d.getPlan().stages[1]; return { kind: st.kind, it: st.items[0] }; });
   check('lesson 1.1 battle is a quiz', quiz.kind === 'quiz', quiz.kind);
   await phones[0].p.waitForSelector('.st-option', { timeout: 15000 });
@@ -189,8 +194,8 @@ const CROWD = 27;
   /* Order and speaking screens, using a lesson with those rounds. */
   const tv2 = await open(1280, 720, `${BASE}/?class=1.2&test=1`, 'tv2');
   await tv2.waitForTimeout(100);
-  await tv2.waitForSelector('#cl-students');
-  await tv2.click('#cl-students');
+  await tv2.waitForSelector('.cl-lobby');
+  await tv2.evaluate(() => SEJ.classDebug.dispatch({ type: 'students' }));
   await tv2.waitForSelector('#cl-joined', { timeout: 15000 });
   const join2 = await tv2.evaluate(() => SEJ.classDebug.state.join);
   const s2 = await open(390, 780, `${BASE}/?join=${join2}&test=1`, 'order');
@@ -200,7 +205,12 @@ const CROWD = 27;
   await s2.waitForSelector('[data-team="1"]', { timeout: 15000 });
   await s2.click('[data-team="1"]');
   await tv2.waitForFunction(() => Object.keys(SEJ.classDebug.state.players).length === 1, null, { timeout: 15000 });
-  await tv2.evaluate(() => { const d = SEJ.classDebug; d.dispatch({ type: 'start' }); d.dispatch({ type: 'goto', stage: 1 }); });
+  await tv2.evaluate(() => SEJ.classDebug.dispatch({ type: 'start' }));
+  await s2.waitForSelector('.st-option', { timeout: 15000 });
+  const flashOnPhone = await s2.locator('.st-option').allTextContents();
+  const flashOnTv = await tv2.locator('.cl-option-text').allTextContents();
+  check('Word Flash: TV shows the same options as the phone', flashOnTv.length >= 2 && flashOnPhone.join() === flashOnTv.join(), `${flashOnPhone} / ${flashOnTv}`);
+  await tv2.evaluate(() => SEJ.classDebug.dispatch({ type: 'goto', stage: 1 }));
   const it2 = await tv2.evaluate(() => { const st = SEJ.classDebug.getPlan().stages[1]; return { kind: st.kind, it: st.items[0] }; });
   check('lesson 1.2 battle is order', it2.kind === 'order', it2.kind);
   await s2.waitForSelector('.st-tile', { timeout: 15000 });

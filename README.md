@@ -47,7 +47,7 @@ Select 🛠️ on the map, or go to `index.html#/teacher`.
 Every lesson has one Class Battle for the live class. It plays on the class TV and the teacher runs it from a phone.
 
 1. Open `?class=1.3` on the TV, or select **Class Battle** on the lesson page.
-2. Scan the QR code with your phone, or open `?remote=` plus the code shown on the TV.
+2. Scan the QR code with your phone, or open `?remote=` plus the code shown on the TV, then enter the teacher PIN. The server checks the PIN. It's `1010` unless `TEACHER_PIN` is set in Vercel.
 3. Choose whole class or 2 to 5 teams, then start.
 
 The rounds come from the lesson's own content, so Teacher Mode edits appear here too:
@@ -113,11 +113,11 @@ Adding `?test=1` to the address speeds games up and turns off the voice and micr
 
 ## Browser support
 
-- **Voice:** uses the device's built-in English voice, so it sounds different from device to device.
+- **Voice:** common lines play recorded clips from `assets/voice`, listed in `js/voice-index.js`, so they sound the same everywhere. Anything else, such as a sentence with a child's name or newly edited text, uses the device's built-in English voice.
 - **Microphone:** needs Chrome or Edge, and a site on `https://` to work reliably. Elsewhere,
   children still get the "I said it!" button. What the microphone hears only changes the praise and never blocks progress.
 - **Vibration:** Android phones only. iPhones and computers ignore it.
 
 ## Credits
 
-Superhero art and the logo come from the SEJ lesson decks. Fonts: Lilita One, Fredoka and Baloo Da 2 (SIL Open Font License).
+Superhero art and the logo come from the SEJ lesson decks. Fonts: Lilita One, Fredoka and Baloo Da 2 (SIL Open Font License). Voice clips: made with the Kokoro model (Apache 2.0).

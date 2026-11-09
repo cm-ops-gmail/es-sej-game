@@ -1,3 +1,8 @@
 {
-  "regions": ["sin1"]
+  "regions": ["sin1"],
+  "headers": [
+    { "source": "/assets/voice/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/assets/fonts/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/assets/heroes/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] }
+  ]
 }

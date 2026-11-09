@@ -209,6 +209,13 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if ($('.map-page')) draw(); });
     addEventListener('resize', draw);
     cleanupRoute = () => removeEventListener('resize', draw);
+    /* Only the part of the map on screen keeps moving. */
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((list) => list.forEach((e) => e.target.classList.toggle('offscreen', !e.isIntersecting)), { rootMargin: '120px' });
+      SEJ.$$('.unit, .map-hero').forEach((el) => io.observe(el));
+      const previous = cleanupRoute;
+      cleanupRoute = () => { io.disconnect(); previous(); };
+    }
     const n = $('.node.next');
     if (n && store.totalStars() > 0) n.scrollIntoView({ block: 'center' });
   }
@@ -285,6 +292,7 @@
     const slot = slots.find((s) => s.key === key);
     if (!slot) return go(`#/lesson/${code}`);
     SEJ.music.sync();
+    SEJ.voice.prepare(JSON.stringify(slot.game).match(/"[^"]{2,120}"/g).map((x) => x.slice(1, -1)));
     if (activeHost) activeHost.destroy();
     activeHost = SEJ.playGame(root(), l, key, slot.game, {
       onExit: () => go(`#/lesson/${code}`),

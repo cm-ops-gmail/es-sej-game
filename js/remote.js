@@ -6,10 +6,11 @@
   const API = 'api/room';
   const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
-  const post = (body) => fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
-    .then((r) => { if (!r.ok) throw new Error(`relay ${r.status}`); return r.json(); });
-  const get = (code, side) => fetch(`${API}?code=${code}&side=${side}`, { cache: 'no-store' })
-    .then((r) => { if (!r.ok) throw new Error(`relay ${r.status}`); return r.json(); });
+  const timeout = () => (window.AbortSignal && AbortSignal.timeout ? AbortSignal.timeout(14000) : undefined);
+  const post = (body) => fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: timeout() })
+    .then((r) => { if (r.status === 401) { const e = new Error('pin'); e.pin = true; throw e; } if (!r.ok) throw new Error(`relay ${r.status}`); return r.json(); });
+  const get = (code, side, since, pin) => fetch(`${API}?code=${code}&side=${side}${since === undefined ? '' : `&since=${since}`}`, { cache: 'no-store', headers: pin ? { 'x-teacher-pin': pin } : {}, signal: timeout() })
+    .then((r) => { if (r.status === 401) { const e = new Error('pin'); e.pin = true; throw e; } if (!r.ok) throw new Error(`relay ${r.status}`); return r.json(); });
 
   SEJ.relay = {
     available: /^https?:$/.test(location.protocol),
@@ -23,45 +24,62 @@
       const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`join:${code}`));
       return Array.from(new Uint8Array(hash).slice(0, 6), (b) => CODE_CHARS[b % CODE_CHARS.length]).join('');
     },
+    /* Only the server knows the PIN. Returns ok, or how many tries are left, or how long to wait. */
+    async checkPin(code, pin) {
+      const r = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code, side: 'pin', pin }), signal: timeout() });
+      const res = await r.json().catch(() => ({}));
+      return { ok: r.ok && !!res.ok, left: res.left, wait: res.wait };
+    },
 
     /* TV side: sends its state and collects commands from the phone. */
     tv({ code, getState, getFeed, onCmds, onPlayers, wantsPlayers, onStatus }) {
-      let alive = true, timer = 0, pushTimer = 0, pushing = false, dirty = true, lastCmd = 0, lastPush = 0;
+      let alive = true, timer = 0, playerTimer = 0, pushTimer = 0, beat = 0, pushing = false, dirty = true, stamp = 0;
       const push = async () => {
-        if (!alive || pushing) return;
-        pushing = true; dirty = false; lastPush = Date.now();
+        if (!alive) return;
+        if (pushing) { dirty = true; return; }
+        pushing = true; dirty = false;
         try { await post({ code, side: 'tv', state: getState(), feed: getFeed() }); onStatus(true); } catch (e) { dirty = true; onStatus(false); }
         pushing = false;
-        if (dirty && alive) { clearTimeout(pushTimer); pushTimer = setTimeout(push, 800); }
+        if (dirty && alive) { clearTimeout(pushTimer); pushTimer = setTimeout(push, 120); }
       };
+      /* Waits on the server until the phone sends something, so taps arrive quickly. */
       const loop = async () => {
         if (!alive) return;
+        let delay = 40;
         try {
-          const res = await get(code, 'tv');
+          const res = await get(code, 'tv', stamp);
           onStatus(true);
-          if (res.cmds && onCmds(res.cmds)) lastCmd = Date.now();
-          if (wantsPlayers()) {
+          if (res.cmds) {
+            stamp = res.cmds.t || 0;
+            onCmds(res.cmds);
+          }
+        } catch (e) { onStatus(false); delay = 1500; }
+        if (alive) timer = setTimeout(loop, delay);
+      };
+      const players = async () => {
+        if (!alive) return;
+        if (wantsPlayers()) {
+          try {
             const list = await get(code, 'players');
             if (list.players) onPlayers(list.players);
-            lastCmd = Date.now();
-          }
-        } catch (e) { onStatus(false); }
-        if (Date.now() - lastPush > 15000) push();
-        if (!alive) return;
-        const idle = Date.now() - lastCmd;
-        timer = setTimeout(loop, idle < 30000 ? 500 : idle < 600000 ? 1000 : 2500);
+          } catch (e) { /* the next round tries again */ }
+        }
+        if (alive) playerTimer = setTimeout(players, 1000);
       };
       loop();
+      players();
+      beat = setInterval(push, 15000);
+      push();
       return {
-        changed() { dirty = true; clearTimeout(pushTimer); pushTimer = setTimeout(push, 90); },
-        stop() { alive = false; clearTimeout(timer); clearTimeout(pushTimer); },
+        changed() { dirty = true; clearTimeout(pushTimer); pushTimer = setTimeout(push, 40); },
+        stop() { alive = false; clearTimeout(timer); clearTimeout(playerTimer); clearTimeout(pushTimer); clearInterval(beat); },
       };
     },
 
     /* Phone side: keeps sending each command until the TV confirms it. */
-    phone({ code, onState, onStatus }) {
+    phone({ code, pin, onState, onStatus, onPinRejected }) {
       const client = Array.from(crypto.getRandomValues(new Uint8Array(5)), (b) => b.toString(36)).join('').slice(0, 10);
-      let alive = true, timer = 0, seq = 0, pending = [], sending = false, tvAt = 0, skew = 0, lastJson = '';
+      let alive = true, timer = 0, retry = 0, seq = 0, pending = [], sending = false, tvAt = 0, skew = 0, lastJson = '';
       const receive = (res) => {
         skew = res.now - Date.now();
         tvAt = res.at || 0;
@@ -74,21 +92,26 @@
         }
         onStatus({ net: true, tv: !!tvAt && Date.now() + skew - tvAt < 45000 });
       };
+      const failed = (e) => {
+        if (e && e.pin) { alive = false; onPinRejected(); return; }
+        onStatus({ net: false, tv: false });
+      };
       const flush = async () => {
         if (sending || !pending.length || !alive) return;
         sending = true;
-        try { receive(await post({ code, side: 'phone', client, cmds: pending })); } catch (e) { onStatus({ net: false, tv: false }); }
+        try { receive(await post({ code, side: 'phone', pin, client, cmds: pending })); } catch (e) { failed(e); }
         sending = false;
+        clearTimeout(retry);
+        if (pending.length && alive) retry = setTimeout(flush, 500);
       };
       const loop = async () => {
         if (!alive) return;
-        if (!document.hidden) {
-          if (pending.length) await flush();
-          else {
-            try { receive(await get(code, 'phone')); } catch (e) { onStatus({ net: false, tv: false }); }
-          }
+        let delay = 40;
+        if (document.hidden) delay = 1500;
+        else {
+          try { receive(await get(code, 'phone', tvAt, pin)); } catch (e) { failed(e); delay = 1500; }
         }
-        if (alive) timer = setTimeout(loop, pending.length ? 450 : 1300);
+        if (alive) timer = setTimeout(loop, delay);
       };
       loop();
       return {
@@ -97,9 +120,51 @@
           onState(null, pending);
           flush();
         },
-        stop() { alive = false; clearTimeout(timer); },
+        stop() { alive = false; clearTimeout(timer); clearTimeout(retry); },
       };
     },
+  };
+
+  /* ---------- teacher PIN ---------- */
+  SEJ.pinPad = function ({ code, title, note, onOk, onCancel }) {
+    let entry = '', busy = false;
+    const dots = h('div', { class: 'pin-dots', 'aria-hidden': 'true' }, [0, 1, 2, 3].map(() => h('i')));
+    const msg = h('p', { class: 'pin-msg', role: 'status', text: note || 'Enter the teacher PIN to control the game.' });
+    const box = h('div', { class: 'pin-card' });
+    const showDots = () => Array.from(dots.children).forEach((d, i) => d.classList.toggle('on', i < entry.length));
+    const submit = async () => {
+      busy = true;
+      msg.textContent = 'Checking…';
+      let res;
+      try { res = await SEJ.relay.checkPin(code, entry); } catch (e) { res = { ok: false, offline: true }; }
+      busy = false;
+      if (res.ok) { sfx.correct(1); SEJ.buzz(30); onOk(entry); return; }
+      entry = '';
+      showDots();
+      sfx.wrong();
+      SEJ.buzz([40, 40, 40]);
+      SEJ.fx.play(dots, 'shake');
+      msg.textContent = res.offline ? 'No internet. Check it and try again.' : res.wait ? `Too many tries. Wait ${res.wait} seconds.` : `Wrong PIN.${res.left ? ` ${res.left} tries left.` : ''}`;
+    };
+    const press = (key) => {
+      if (busy) return;
+      sfx.tap();
+      if (key === 'back') entry = entry.slice(0, -1);
+      else if (entry.length < 4) entry += key;
+      showDots();
+      if (entry.length === 4) submit();
+    };
+    box.append(
+      h('div', { class: 'pin-lock', 'aria-hidden': 'true', text: '🔒' }),
+      h('h1', { class: 'pin-title', text: title || 'Teacher PIN' }),
+      msg,
+      h('div', { role: 'status', 'aria-live': 'polite', class: 'visually-hidden' }),
+      dots,
+      h('div', { class: 'pin-keys' }, ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'].map((k) => (k
+        ? h('button', { class: `pin-key ${k === 'back' ? 'pin-back' : ''}`, 'data-key': k, 'aria-label': k === 'back' ? 'Delete' : k, onclick: () => press(k) }, k === 'back' ? '⌫' : k)
+        : h('span')))),
+      onCancel && h('button', { class: 'pin-cancel', onclick: onCancel }, 'Cancel'));
+    return box;
   };
 
   /* Keeps the screen on while the class is running. */
@@ -360,23 +425,45 @@
     const code = SEJ.relay.cleanCode(rawCode);
     if (code.length !== 6) { codeEntry(root); return () => {}; }
     if (!SEJ.relay.available) { codeEntry(root, 'The phone remote only works on the live website.'); return () => {}; }
-    const dot = h('span', { class: 'rm-status off', role: 'status' }, 'Connecting…');
-    const holder = h('div', { class: 'rm-holder' });
-    root.replaceChildren(h('div', { class: 'remote-page' }, h('div', { class: 'rm-bar' }, h('span', { text: `Code ${code}` }), dot), holder));
-    const panel = SEJ.controlPanel(holder, (cmd) => link.send(cmd));
-    let said = false;
-    const link = SEJ.relay.phone({
-      code,
-      onState(state, pending) {
-        panel.update(state, pending);
-        if (state && !said) { said = true; link.send({ type: 'hello' }); }
-      },
-      onStatus({ net, tv }) {
-        dot.className = `rm-status ${net && tv ? 'on' : 'off'}`;
-        dot.textContent = !net ? 'No internet. Retrying…' : tv ? 'Connected' : 'Waiting for the TV…';
-      },
-    });
-    const wake = SEJ.keepAwake();
-    return () => { link.stop(); wake(); };
+    const KEY = `sej-teacher-${code}`;
+    let link = null, wake = null, gone = false;
+    const askPin = (note) => {
+      if (link) { link.stop(); link = null; }
+      root.replaceChildren(h('div', { class: 'remote-page pin-page' }, SEJ.pinPad({
+        code, note,
+        onOk: (pin) => {
+          try { sessionStorage.setItem(KEY, pin); } catch (e) { /* asks again next time */ }
+          start(pin);
+        },
+      })));
+    };
+    const start = (pin) => {
+      if (gone) return;
+      const dot = h('span', { class: 'rm-status off', role: 'status' }, 'Connecting…');
+      const holder = h('div', { class: 'rm-holder' });
+      root.replaceChildren(h('div', { class: 'remote-page' }, h('div', { class: 'rm-bar' }, h('span', { text: `Code ${code}` }), dot), holder));
+      const panel = SEJ.controlPanel(holder, (cmd) => link.send(cmd));
+      let said = false;
+      link = SEJ.relay.phone({
+        code, pin,
+        onState(state, pending) {
+          panel.update(state, pending);
+          if (state && !said) { said = true; link.send({ type: 'hello' }); }
+        },
+        onStatus({ net, tv }) {
+          dot.className = `rm-status ${net && tv ? 'on' : 'off'}`;
+          dot.textContent = !net ? 'No internet. Retrying…' : tv ? 'Connected' : 'Waiting for the TV…';
+        },
+        onPinRejected() {
+          try { sessionStorage.removeItem(KEY); } catch (e) { /* nothing saved */ }
+          askPin('Please enter the teacher PIN again.');
+        },
+      });
+      if (!wake) wake = SEJ.keepAwake();
+    };
+    let saved = '';
+    try { saved = sessionStorage.getItem(KEY) || ''; } catch (e) { /* not saved */ }
+    if (saved) start(saved); else askPin();
+    return () => { gone = true; if (link) link.stop(); if (wake) wake(); };
   };
 })();

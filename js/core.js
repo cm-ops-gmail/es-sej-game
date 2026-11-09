@@ -188,50 +188,95 @@
     sync() { if (state.music !== false && state.sound !== false) this.start(); else this.stop(); },
   };
 
-  /* ---------- voice ---------- */
+  /* ---------- voice ----------
+     Common lines play from recorded clips in assets/voice, so every device sounds the same.
+     Anything else, such as a sentence with a child's name, uses the device's own voice. */
   const synth = window.speechSynthesis;
-  let voice = null, pendingLine = '';
+  let deviceVoice = null, pendingLine = '';
+  const clips = new Set(window.SEJ_VOICE || []);
+  const player = typeof Audio === 'function' ? new Audio() : null;
+  if (player) player.preload = 'auto';
+  const voiceKey = (line) => line.toLowerCase().replace(/\s+/g, ' ').trim();
+  const clipId = (line) => {
+    let x = 0x811c9dc5;
+    const text = voiceKey(line);
+    for (let i = 0; i < text.length; i++) x = Math.imul(x ^ text.charCodeAt(i), 0x01000193);
+    return (x >>> 0).toString(16).padStart(8, '0');
+  };
+  const spokenLine = (text) => SEJ.clean(text).replace(/_{2,}/g, ' blank ').replace(/\s+/g, ' ').trim();
+  SEJ.voiceLine = { spokenLine, clipId };
   function chooseVoice() {
     if (!synth) return;
     const vs = synth.getVoices().filter((v) => /^en[-_]/i.test(v.lang));
     const score = (v) => (/google|samantha|natural|premium|enhanced/i.test(v.name) ? 3 : 0) + (/en[-_](in|gb)/i.test(v.lang) ? 1 : 0) + (/en[-_]us/i.test(v.lang) ? 1 : 0);
-    voice = vs.sort((a, b) => score(b) - score(a))[0] || null;
+    deviceVoice = vs.sort((a, b) => score(b) - score(a))[0] || null;
   }
   if (synth) {
     chooseVoice();
     if ('onvoiceschanged' in synth) synth.onvoiceschanged = chooseVoice;
   }
+  let sayCount = 0;
+  const speakOnDevice = (line, rate, pitch, done) => {
+    if (!synth) return done();
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(line);
+    if (deviceVoice) u.voice = deviceVoice;
+    u.lang = deviceVoice ? deviceVoice.lang : 'en-US';
+    u.rate = rate; u.pitch = pitch;
+    u.onend = done; u.onerror = done;
+    synth.speak(u);
+  };
   SEJ.voice = {
-    available: !!synth,
+    available: !!synth || (!!player && clips.size > 0),
     /* Resolves when speech ends, or after a time limit so games never wait on a stuck voice. */
     say(text, { rate = 0.92, pitch = 1.08, max = 5000 } = {}) {
       return new Promise((resolve) => {
-        const line = SEJ.clean(text).replace(/_{2,}/g, ' blank ');
-        if (!synth || !on() || !line || SEJ.testMode) return resolve();
+        const line = spokenLine(text);
+        if (!on() || !line || SEJ.testMode) return resolve();
         if (navigator.userActivation && !navigator.userActivation.hasBeenActive) {
           /* Browsers block speech before the first tap. Say this line right after that tap. */
           pendingLine = line;
           return resolve();
         }
+        const turn = ++sayCount;
         let finished = false;
-        const done = () => { if (!finished) { finished = true; SEJ.music.duck(false); resolve(); } };
-        synth.cancel();
-        const u = new SpeechSynthesisUtterance(line);
-        if (voice) u.voice = voice;
-        u.lang = voice ? voice.lang : 'en-US';
-        u.rate = rate; u.pitch = pitch;
-        u.onend = done; u.onerror = done;
+        const done = () => { if (!finished) { finished = true; if (turn === sayCount) SEJ.music.duck(false); resolve(); } };
+        SEJ.voice.quiet();
         SEJ.music.duck(true);
-        synth.speak(u);
-        setTimeout(() => { done(); }, max);
+        const id = clipId(line);
+        if (player && clips.has(id)) {
+          player.onended = done;
+          /* A missing or blocked clip falls back to the device voice. */
+          player.onerror = () => { if (turn === sayCount) speakOnDevice(line, rate, pitch, done); };
+          player.src = `assets/voice/${id}.mp3`;
+          const started = player.play();
+          if (started && started.catch) started.catch(() => { if (turn === sayCount && !finished) speakOnDevice(line, rate, pitch, done); });
+        } else speakOnDevice(line, rate, pitch, done);
+        setTimeout(done, Math.max(max, 6000));
       });
     },
-    stop() { pendingLine = ''; if (synth) synth.cancel(); SEJ.music.duck(false); },
+    quiet() {
+      if (player) { player.onended = null; player.onerror = null; player.pause(); }
+      if (synth) synth.cancel();
+    },
+    stop() { pendingLine = ''; sayCount++; SEJ.voice.quiet(); SEJ.music.duck(false); },
+    /* Fetches clips ahead of time so they start without a gap. */
+    prepare(texts) {
+      if (SEJ.testMode || SEJ.lite || (navigator.connection && navigator.connection.saveData)) return;
+      const ids = Array.from(new Set(texts.filter(Boolean).map((t) => clipId(spokenLine(t))))).filter((id) => clips.has(id)).slice(0, 14);
+      const fetchNext = () => {
+        const id = ids.shift();
+        if (!id) return;
+        fetch(`assets/voice/${id}.mp3`, { priority: 'low' }).then((r) => r.blob()).catch(() => {}).then(fetchNext);
+      };
+      (window.requestIdleCallback || setTimeout)(fetchNext);
+    },
     flushPending() {
       const line = pendingLine;
       pendingLine = '';
-      if (line) setTimeout(() => { if (!synth.speaking) SEJ.voice.say(line); }, 60);
+      if (line) setTimeout(() => { if (!SEJ.voice.speaking()) SEJ.voice.say(line); }, 60);
     },
+    speaking() { return !!(synth && synth.speaking) || (!!player && !player.paused && !player.ended); },
   };
 
   /* ---------- microphone ---------- */
@@ -266,8 +311,39 @@
   /* ---------- vibration ---------- */
   SEJ.buzz = (p) => { if (navigator.vibrate && on()) { try { navigator.vibrate(p); } catch (e) { /* unsupported */ } } };
 
+  /* ---------- smooth mode ----------
+     If a device can't keep up, the moving backgrounds and heavy shadows switch off and effects get smaller. */
+  const LITE_KEY = 'sej-lite-v1';
+  SEJ.lite = /[?&]lite=1/.test(location.search);
+  try { if (localStorage.getItem(LITE_KEY) === '1') SEJ.lite = true; } catch (e) { /* storage blocked */ }
+  const setLite = () => {
+    SEJ.lite = true;
+    document.documentElement.classList.add('lite');
+    try { localStorage.setItem(LITE_KEY, '1'); } catch (e) { /* storage blocked */ }
+  };
+  if (SEJ.lite) document.documentElement.classList.add('lite');
+  if (!SEJ.lite && !SEJ.testMode) {
+    /* Watches real frame times for the first minute. Short hiccups, such as loading, don't count. */
+    let last = 0, slow = 0, total = 0, windows = 0;
+    const watch = (t) => {
+      if (document.hidden) { last = 0; requestAnimationFrame(watch); return; }
+      if (last) {
+        const gap = t - last;
+        if (gap < 400) { total++; if (gap > 34) slow++; }
+        if (total >= 90) {
+          if (slow / total > 0.5) { setLite(); return; }
+          slow = 0; total = 0;
+          if (++windows > 25) return;
+        }
+      }
+      last = t;
+      requestAnimationFrame(watch);
+    };
+    setTimeout(() => requestAnimationFrame(watch), 2500);
+  }
+
   /* ---------- particles ---------- */
-  let canvas, g2, parts = [], raf = 0;
+  let canvas, g2, parts = [], raf = 0, scale = 1;
   const COLORS = ['#ffd60a', '#ff2e93', '#00d4ff', '#9ef01a', '#ff7a00', '#9a5cff', '#ffffff'];
   function ensureCanvas() {
     if (canvas) return;
@@ -275,37 +351,54 @@
     document.body.append(canvas);
     g2 = canvas.getContext('2d');
     const fit = () => {
-      const r = Math.min(devicePixelRatio || 1, 2);
-      canvas.width = innerWidth * r; canvas.height = innerHeight * r;
-      g2.setTransform(r, 0, 0, r, 0, 0);
+      scale = Math.min(devicePixelRatio || 1, SEJ.lite ? 1 : 1.5);
+      canvas.width = innerWidth * scale; canvas.height = innerHeight * scale;
     };
     addEventListener('resize', fit);
     fit();
   }
+  /* Drawing an emoji is slow, so each one is drawn once and then reused. */
+  const sprites = new Map();
+  function sprite(emoji, size) {
+    const s = Math.ceil(size / 6) * 6;
+    const key = `${emoji}${s}`;
+    let img = sprites.get(key);
+    if (!img) {
+      img = document.createElement('canvas');
+      img.width = img.height = s * 2;
+      const c = img.getContext('2d');
+      c.font = `${s}px serif`;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(emoji, s, s + s * 0.08);
+      sprites.set(key, img);
+    }
+    return img;
+  }
+  const maxParts = () => (SEJ.lite ? 120 : 320);
   function frame() {
-    g2.clearRect(0, 0, innerWidth, innerHeight);
+    g2.setTransform(1, 0, 0, 1, 0, 0);
+    g2.clearRect(0, 0, canvas.width, canvas.height);
     parts = parts.filter((p) => p.life > 0 && p.y < innerHeight + 40);
-    /* Keeps old laptops smooth when lots of celebrations overlap: the oldest pieces go first. */
-    if (parts.length > 600) parts = parts.slice(parts.length - 600);
+    /* The oldest pieces go first when lots of celebrations overlap. */
+    if (parts.length > maxParts()) parts = parts.slice(parts.length - maxParts());
     for (const p of parts) {
       p.vy += p.g; p.x += p.vx; p.y += p.vy; p.vx *= p.drag; p.spin += p.vs; p.life--;
-      g2.save();
+      const cos = Math.cos(p.spin) * scale, sin = Math.sin(p.spin) * scale;
+      g2.setTransform(cos, sin, -sin, cos, p.x * scale, p.y * scale);
       g2.globalAlpha = Math.min(1, p.life / 24);
-      g2.translate(p.x, p.y);
-      g2.rotate(p.spin);
       if (p.emoji) {
-        g2.font = p.size + 'px serif';
-        g2.textAlign = 'center';
-        g2.fillText(p.emoji, 0, p.size / 3);
+        const img = sprite(p.emoji, p.size);
+        g2.drawImage(img, -p.size, -p.size, p.size * 2, p.size * 2);
       } else {
         g2.fillStyle = p.c;
         if (p.round) { g2.beginPath(); g2.arc(0, 0, p.size / 2, 0, 7); g2.fill(); }
         else g2.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.62);
       }
-      g2.restore();
     }
+    g2.globalAlpha = 1;
     raf = parts.length ? requestAnimationFrame(frame) : 0;
-    if (!parts.length) g2.clearRect(0, 0, innerWidth, innerHeight);
+    if (!parts.length) { g2.setTransform(1, 0, 0, 1, 0, 0); g2.clearRect(0, 0, canvas.width, canvas.height); }
   }
   const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
   SEJ.fx = {
@@ -313,6 +406,7 @@
     burst(x, y, n = 16, emojis = null) {
       if (SEJ.reducedMotion()) return;
       ensureCanvas();
+      if (SEJ.lite) n = Math.ceil(n / 2);
       for (let i = 0; i < n; i++) {
         const a = Math.random() * Math.PI * 2, s = 2.5 + Math.random() * 6;
         parts.push({
@@ -332,6 +426,7 @@
     confetti(amount = 140) {
       if (SEJ.reducedMotion()) return;
       ensureCanvas();
+      amount = Math.min(amount, SEJ.lite ? 60 : 220);
       for (let i = 0; i < amount; i++) {
         parts.push({
           x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * 0.7, vx: (Math.random() - 0.5) * 2.4, vy: 1.8 + Math.random() * 2.8,
@@ -344,6 +439,7 @@
     /* Fireworks across the sky for big wins. */
     fireworks(times = 6, gap = 260) {
       if (SEJ.reducedMotion()) return;
+      if (SEJ.lite) times = Math.min(times, 2);
       for (let i = 0; i < times; i++) {
         setTimeout(() => this.burst(innerWidth * (0.12 + Math.random() * 0.76), innerHeight * (0.1 + Math.random() * 0.45), 34), i * gap * (SEJ.testMode ? 0.02 : 1));
       }

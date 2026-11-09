@@ -188,11 +188,11 @@
 
   function newState(code, lessonCode) {
     return {
-      v: 3, code, lesson: lessonCode, seed: Math.floor(Math.random() * 1e9), rev: 1, screen: 'lobby',
+      v: 4, code, lesson: lessonCode, seed: Math.floor(Math.random() * 1e9), rev: 1, screen: 'lobby',
       stage: 0, item: 0, revealed: false, line: 0, hidden: [], used: [], spinning: false, wheelDeg: 0,
       timer: { total: 0, left: 0, running: false }, mode: 'teams', teams: makeTeams(4), classScore: 0,
       picked: null, picking: false, roster: loadRoster(), qr: true, phone: false, sound: store.state.sound !== false, acks: {},
-      students: false, join: '', joinQr: true, players: {}, kicked: [], answers: {}, scored: [], built: [],
+      students: false, join: '', joinQr: true, players: {}, kicked: [], answers: {}, scored: [], built: [], wrongs: [],
     };
   }
 
@@ -211,7 +211,7 @@
   function createGame(s, getPlan) {
     const stage = () => getPlan().stages[s.stage];
     const resetTimer = () => { const t = stage() ? stage().timer : 0; s.timer = { total: t, left: t, running: false }; };
-    const clearItem = () => { s.revealed = false; s.line = 0; s.hidden = []; s.picked = null; s.answers = {}; s.built = []; resetTimer(); s.rev++; };
+    const clearItem = () => { s.revealed = false; s.line = 0; s.hidden = []; s.picked = null; s.answers = {}; s.built = []; s.wrongs = []; resetTimer(); s.rev++; };
     const enterStage = (i, fxs) => {
       s.stage = i; s.used = []; s.spinning = false;
       s.item = stage().pick ? -1 : 0;
@@ -411,6 +411,18 @@
           if (!s.revealed) { s.built = s.built.filter((x) => x !== Number(cmd.i)); fxs.push({ fx: 'place' }); }
           break;
         case 'clearBuilt': s.built = []; break;
+        case 'tap': {
+          /* Someone answers on the TV itself. Right reveals; wrong stays on screen, crossed out, so the class tries again. */
+          const st = stage();
+          if (s.screen !== 'stage' || s.revealed || s.students || !['flash', 'quiz', 'sort'].includes(st.kind)) break;
+          const right = rightOf(st, st.items[s.item]), value = String(cmd.value);
+          if (value === right) reveal(fxs);
+          else {
+            if (!s.wrongs.includes(value)) s.wrongs.push(value);
+            fxs.push({ fx: 'wrongTap' });
+          }
+          break;
+        }
         case 'cheer': fxs.push({ fx: 'cheer', kind: cmd.kind }); break;
         case 'sound':
           s.sound = !s.sound;
@@ -493,7 +505,7 @@
   const readSave = (lessonCode) => {
     try {
       const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-      if (saved && saved.state && saved.state.lesson === lessonCode && saved.state.v === 3 && Date.now() - saved.at < SAVE_HOURS * 3600000) return saved.state;
+      if (saved && saved.state && saved.state.lesson === lessonCode && saved.state.v === 4 && Date.now() - saved.at < SAVE_HOURS * 3600000) return saved.state;
     } catch (e) { /* start fresh */ }
     return null;
   };
@@ -620,9 +632,19 @@
       if (document.fullscreenElement) document.exitFullscreen();
       else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
     }
+    let tvUnlocked = !SEJ.relay.available || SEJ.testMode;
+    let drawerUnlocked = !SEJ.relay.available;
     function toggleDrawer(force) {
       const show = force !== undefined ? force : drawerHost.hidden;
       drawerHost.hidden = !show;
+      if (show && !drawerUnlocked) {
+        drawerHost.replaceChildren(SEJ.pinPad({
+          code: s.code, title: 'Teacher PIN', note: 'Enter the PIN to use the controls.',
+          onCancel: () => { drawerHost.replaceChildren(); drawerHost.hidden = true; },
+          onOk: () => { drawerUnlocked = true; tvUnlocked = true; drawerHost.replaceChildren(); toggleDrawer(true); },
+        }));
+        return;
+      }
       if (show && !panel) {
         drawerHost.append(h('button', { class: 'cl-drawer-close', onclick: () => toggleDrawer(false), 'aria-label': 'Close controls' }, '✕ Close controls'));
         panel = SEJ.controlPanel(drawerHost, (cmd) => dispatch(cmd));
@@ -710,7 +732,7 @@
     function fillQr(host) {
       host.replaceChildren(
         qrImage(remoteUrl()),
-        h('div', { class: 'cl-qr-text' }, h('small', { text: 'Teacher only: scan to control' }), h('b', { class: 'cl-qr-code', text: s.code }), h('small', { class: 'cl-qr-url', text: `${location.host}/?remote=${s.code}` })));
+        h('div', { class: 'cl-qr-text' }, h('small', { text: 'Teacher: scan and enter PIN' }), h('b', { class: 'cl-qr-code', text: s.code }), h('small', { class: 'cl-qr-url', text: `${location.host}/?remote=${s.code}` })));
     }
 
     function drawLobby() {
@@ -724,9 +746,7 @@
           h('p', { class: 'cl-lobby-lesson' }, SEJ.sticker(plan.lesson.emoji, 'cl-lobby-art'), ' ', plan.lesson.title),
           h('p', { class: 'cl-lobby-mission', text: plan.lesson.mission.en }),
           h('ol', { class: 'cl-rounds' }, rounds),
-          h('div', { class: 'cl-lobby-actions' },
-            !s.phone && h('button', { class: 'cta gummy g-green cta-big', id: 'cl-start', onclick: () => dispatch({ type: 'start' }) }, 'Start the Game 🚀'),
-            !s.phone && SEJ.relay.available && h('button', { class: 'cta gummy g-violet', id: 'cl-students', 'aria-pressed': s.students ? 'true' : 'false', onclick: () => dispatch({ type: 'students' }) }, s.students ? '🙋 Student phones: On' : '🙋 Let students play on phones'))),
+          h('p', { class: `cl-lobby-wait ${s.phone ? 'ready' : ''}`, role: 'status', text: s.phone ? '✅ Teacher connected. Starting soon!' : 'Waiting for the teacher…' })),
         SEJ.relay.available
           ? h('div', { class: 'cl-lobby-qr enter-pop', id: 'cl-lobby-qr' })
           : h('div', { class: 'cl-lobby-qr enter-pop' }, h('p', { class: 'cl-qr-note', text: 'The phone remote works on the live website. Here, move the mouse and use Controls, or your keyboard.' }))));
@@ -741,7 +761,7 @@
             h('p', { class: 'cl-joined', id: 'cl-joined' }));
         } else {
           box.replaceChildren(
-            h('p', { class: 'cl-qr-head', text: 'Teacher: scan to control from your phone' }),
+            h('p', { class: 'cl-qr-head', text: 'Teacher: scan, then enter your PIN' }),
             s.phone ? h('p', { class: 'cl-qr-done', text: '✅ Phone connected!' }) : qrImage(remoteUrl()),
             h('b', { class: 'cl-qr-code', text: s.code }),
             h('small', { class: 'cl-qr-url', text: `${location.host}/?remote=${s.code}` }));
@@ -760,12 +780,26 @@
     }
 
     const OPTION_COLORS = ['g-pink', 'g-blue', 'g-orange', 'g-green'];
+    /* The same answer buttons as the students' phones. They can be tapped on a touch screen. */
+    function optionButtons(options, right) {
+      const live = !s.revealed && !s.students;
+      return h('div', { class: `cl-options n${options.length}` }, options.map((o, i) => {
+        const isRight = o === right;
+        const wrong = s.wrongs.includes(o);
+        return h(live && !wrong ? 'button' : 'div', {
+          class: `cl-option gummy ${OPTION_COLORS[i % 4]} ${s.hidden.includes(o) ? 'gone' : ''} ${wrong ? 'crossed' : ''} ${s.revealed ? (isRight ? 'right answer-pop' : 'dim') : ''}`,
+          id: isRight && s.revealed ? 'cl-answer' : null,
+          onclick: live && !wrong ? () => dispatch({ type: 'tap', value: o }) : null,
+        }, h('span', { class: 'cl-letter', text: 'ABCD'[i] }), h('span', { class: 'cl-option-text', text: o }), s.revealed && isRight && h('span', { class: 'cl-tick', text: '✓' }), wrong && h('span', { class: 'cl-tick', text: '✕' }));
+      }));
+    }
     function drawFlash(st) {
       const it = st.items[s.item];
-      return h('div', { class: `cl-card cl-flash ${s.revealed ? 'is-open' : ''}` },
-        h('small', { class: 'cl-ask', text: s.revealed ? 'In English' : 'How do we say this in English?' }),
-        h('p', { class: 'cl-flash-bn', lang: 'bn', text: it.bn }),
-        s.revealed ? h('p', { class: 'cl-flash-en answer-pop', id: 'cl-answer', text: it.en }) : h('p', { class: 'cl-flash-q', text: '? ? ?' }));
+      return h('div', { class: 'cl-quiz' },
+        h('div', { class: 'cl-card cl-question cl-flash-q-card' },
+          h('small', { class: 'cl-ask', text: 'How do we say this in English?' }),
+          h('p', { class: 'cl-flash-bn', lang: 'bn', text: it.bn })),
+        optionButtons(it.options, it.en));
     }
     function drawQuiz(st) {
       const it = st.items[s.item];
@@ -773,30 +807,30 @@
         h('div', { class: 'cl-card cl-question' },
           s.revealed && it.emoji && SEJ.sticker(it.emoji, 'cl-q-art'),
           h('p', { text: it.q })),
-        h('div', { class: `cl-options n${it.options.length}` }, it.options.map((o, i) => {
-          const right = o === it.answer;
-          return h('div', {
-            class: `cl-option gummy ${OPTION_COLORS[i % 4]} ${s.hidden.includes(o) ? 'gone' : ''} ${s.revealed ? (right ? 'right answer-pop' : 'dim') : ''}`,
-            id: right ? 'cl-answer' : null,
-          }, h('span', { class: 'cl-letter', text: 'ABCD'[i] }), h('span', { class: 'cl-option-text', text: o }), s.revealed && right && h('span', { class: 'cl-tick', text: '✓' }));
-        })));
+        optionButtons(it.options, it.answer));
     }
     function drawSort(st) {
       const it = st.items[s.item];
       const placed = st.items.slice(0, s.item + (s.revealed ? 1 : 0));
+      const live = !s.revealed && !s.students;
+      const card = !s.revealed
+        ? h(live ? 'button' : 'div', { class: 'cl-card cl-sort-card', 'data-card': '1' }, it.emoji && SEJ.sticker(it.emoji, 'cl-q-art'), h('p', { text: it.text }))
+        : h('div', { class: 'cl-card cl-sort-card is-open' }, h('p', {}, it.text, ' ', h('b', { class: 'cl-to', text: `→ ${st.groups[it.group].n}` })));
+      if (live) SEJ.tapOrDrag(card, '.cl-bin', (target) => { if (target) dispatch({ type: 'tap', value: target.dataset.group }); });
       return h('div', { class: 'cl-sort' },
-        st.note && h('p', { class: 'cl-note', text: st.note }),
-        !s.revealed
-          ? h('div', { class: 'cl-card cl-sort-card' }, it.emoji && SEJ.sticker(it.emoji, 'cl-q-art'), h('p', { text: it.text }))
-          : h('div', { class: 'cl-card cl-sort-card is-open' }, h('p', {}, it.text, ' ', h('b', { class: 'cl-to', text: `→ ${st.groups[it.group].n}` }))),
-        h('div', { class: 'cl-bins' }, st.groups.map((g, gi) => h('div', { class: `cl-bin ${s.revealed && it.group === gi ? 'hot' : ''}`, id: s.revealed && it.group === gi ? 'cl-answer' : null },
+        h('p', { class: 'cl-note', text: st.note || (live ? 'Drag the card or tap the right group!' : 'Which group is it?') }),
+        card,
+        h('div', { class: 'cl-bins' }, st.groups.map((g, gi) => h('div', {
+          class: `cl-bin ${s.revealed && it.group === gi ? 'hot' : ''} ${s.wrongs.includes(g.n) ? 'crossed' : ''}`, id: s.revealed && it.group === gi ? 'cl-answer' : null, 'data-group': g.n,
+          role: live ? 'button' : null, tabindex: live ? '0' : null, onclick: live ? () => dispatch({ type: 'tap', value: g.n }) : null,
+        },
           h('h3', {}, SEJ.sticker(g.e || '📦', 'cl-bin-art'), ' ', g.n),
           h('div', { class: 'cl-bin-list' }, placed.filter((p) => p.group === gi).map((p) => h('span', { class: `cl-bin-chip ${p === it ? 'answer-pop' : ''}`, text: `${p.emoji || ''} ${p.text}`.trim() })))))));
     }
     function drawOrder(st) {
       const it = st.items[s.item];
       const head = h('div', { class: 'cl-card cl-order-card' },
-        h('small', { class: 'cl-ask', text: s.revealed ? 'Well done!' : it.joiner ? 'Drag the words to make the sentence!' : 'Drag the letters to spell the word!' }),
+        h('small', { class: 'cl-ask', text: s.revealed ? 'Well done!' : s.students ? 'Answer on your phone!' : it.joiner ? 'Drag the words to make the sentence!' : 'Drag the letters to spell the word!' }),
         it.hint && !/সাজাও/.test(it.hint) && h('p', { class: 'cl-order-hint', lang: 'bn', text: it.hint }),
         s.revealed && it.emoji && SEJ.sticker(it.emoji, 'cl-q-art'));
       const letters = it.joiner ? '' : 'letters';
@@ -806,6 +840,7 @@
       }
       const tile = (i, placed) => {
         const el = h('button', { class: `cl-tile ${placed ? 'placed' : ''}`, 'data-tile': i, text: it.tiles[i] });
+        if (s.students) { el.disabled = true; return el; }
         SEJ.tapOrDrag(el, placed ? '.cl-built,.cl-tray,.cl-tile.placed' : '.cl-built,.cl-tile.placed', (target) => {
           if (placed && target && target.classList.contains('cl-tray')) return dispatch({ type: 'unplace', i });
           if (placed && !target) return dispatch({ type: 'unplace', i });
@@ -816,7 +851,7 @@
       };
       const left = it.tiles.map((_, i) => i).filter((i) => !s.built.includes(i));
       return h('div', { class: 'cl-order' }, head,
-        h('div', { class: `cl-built ${letters}`, id: 'cl-built', 'aria-label': 'Your sentence' },
+        !s.students && h('div', { class: `cl-built ${letters}`, id: 'cl-built', 'aria-label': 'Your sentence' },
           s.built.length ? s.built.map((i) => tile(i, true)) : h('span', { class: 'cl-built-hint', text: 'Drop here' })),
         h('div', { class: `cl-tiles cl-tray ${letters}`, 'aria-label': 'Words to use' }, left.map((i) => tile(i, false))));
     }
@@ -889,13 +924,13 @@
         return h('div', { class: `cl-place p${rank} enter-pop`, style: { '--team': t.color, '--i': i } },
           rank === 1 && top > 0 && h('span', { class: 'cl-place-crown', text: '👑' }),
           t.hero ? SEJ.heroImg(t.hero, 'cl-place-hero') : SEJ.sticker('⭐', 'cl-place-star'),
-          h('div', { class: 'cl-place-block' }, h('strong', { text: t.name }), h('b', { text: t.score }), h('small', { text: `${['1st', '2nd', '3rd', '4th', '5th'][rank - 1]} place` })));
+          h('div', { class: 'cl-place-block' }, h('strong', { text: t.name }), h('b', { text: t.score }), top > 0 && h('small', { text: `${['1st', '2nd', '3rd', '4th', '5th'][rank - 1]} place` })));
       });
       stageArea.replaceChildren(h('div', { class: 'cl-podium' }, h('h1', { class: 'logo-word cl-win-title', text: title }), h('div', { class: 'cl-places' }, places), topPlayers()));
     }
 
     function signature() {
-      return JSON.stringify([s.screen, s.stage, s.item, s.revealed, s.line, s.built, s.hidden, s.used, s.spinning, s.seed, s.phone, s.students, s.join, s.screen === 'podium' ? Object.values(s.players).map((p) => p.score) : 0, s.screen === 'podium' ? s.teams : 0, s.screen === 'podium' ? s.mode + s.classScore : 0]);
+      return JSON.stringify([s.screen, s.stage, s.item, s.revealed, s.line, s.built, s.wrongs, s.hidden, s.used, s.spinning, s.seed, s.phone, s.students, s.join, s.screen === 'podium' ? Object.values(s.players).map((p) => p.score) : 0, s.screen === 'podium' ? s.teams : 0, s.screen === 'podium' ? s.mode + s.classScore : 0]);
     }
     function draw() {
       if (!alive) return;
@@ -917,6 +952,14 @@
 
     /* ---------- moments of celebration ---------- */
     function say(line) { if (s.sound) voice.say(line); }
+    /* Reads out what's on screen, except the answer. */
+    function readItem() {
+      if (s.screen !== 'stage') return;
+      const st = plan.stages[s.stage], it = s.item >= 0 ? st.items[s.item] : null;
+      if (!it) return;
+      const line = st.kind === 'quiz' ? it.q : st.kind === 'sort' ? it.text : st.kind === 'read' ? it.en : st.kind === 'role' ? it.q : '';
+      if (line) say(line);
+    }
     function splash(top, title, heroId) {
       $$('.cl-splash').forEach((x) => x.remove());
       const el = h('div', { class: 'cl-splash', role: 'status' }, heroId && SEJ.heroImg(heroId, 'cl-splash-hero'), h('small', { text: top }), h('strong', { class: 'logo-word', text: title }));
@@ -949,9 +992,11 @@
           sfx.whoosh(); sfx.fanfare();
           splash(`Round ${s.stage + 1}: ${st.round}`, st.name, plan.lesson.hero);
           say(st.round);
+          voice.prepare(st.items.flatMap((x) => [x.q, x.answer, x.en, x.sample, x.text]));
+          later(readItem, 1900);
           break;
         }
-        case 'next': sfx.whoosh(); voice.stop(); break;
+        case 'next': sfx.whoosh(); voice.stop(); readItem(); break;
         case 'line': sfx.pop(); say(plan.stages[s.stage].items[s.item].frame); break;
         case 'plan': plan = SEJ.classPlan(s.lesson, s.seed); lastSig = ''; break;
         case 'phone': sfx.correct(1); fx.pow('PHONE READY!'); break;
@@ -985,6 +1030,7 @@
           break;
         }
         case 'place': sfx.pop(); break;
+        case 'wrongTap': sfx.wrong(); SEJ.buzz(40); break;
         case 'wrongOrder': {
           sfx.wrong();
           const row = $('#cl-built');
@@ -1080,6 +1126,9 @@
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const v = teacherView(s, plan);
       const k = e.key;
+      if (k === 'f' || k === 'F') { toggleFullscreen(); return; }
+      if (k === 'm' || k === 'M') { toggleDrawer(); return; }
+      if (!tvUnlocked) return;
       if (k === ' ' || k === 'Enter') {
         if (e.target && e.target.tagName === 'BUTTON') return;
         e.preventDefault();
@@ -1090,8 +1139,6 @@
       else if (k === 't' || k === 'T') dispatch({ type: 'timer', op: s.timer.running ? 'pause' : 'start' });
       else if (k === 'r' || k === 'R') dispatch({ type: 'pick', what: s.roster.length ? 'student' : 'team' });
       else if (k === 'c' || k === 'C') dispatch({ type: 'qr' });
-      else if (k === 'f' || k === 'F') toggleFullscreen();
-      else if (k === 'm' || k === 'M') toggleDrawer();
     };
     addEventListener('keydown', onKey);
 

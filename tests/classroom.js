@@ -61,8 +61,8 @@ const check = (name, ok, extra = '') => {
     await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
     await tv.goto(`${BASE}/index.html?test=1#/class/${code}`);
     await tv.reload();
-    await tv.waitForSelector('#cl-start');
-    await tv.click('#cl-start');
+    await tv.waitForSelector('.cl-lobby');
+    await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'start' }));
     let guard = 0;
     while (guard++ < 120 && !(await tv.$('.cl-podium'))) {
       await tv.evaluate(() => {
@@ -83,12 +83,28 @@ const check = (name, ok, extra = '') => {
   await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
   await tv.goto(`${BASE}/?class=1.3&test=1`);
   await tv.reload();
-  await tv.waitForSelector('#cl-start');
+  await tv.waitForSelector('.cl-lobby');
   check('short link opens the lobby', /#\/class\/1\.3/.test(tv.url()), tv.url());
   await tv.screenshot({ path: `${SHOTS}/tv-lobby.png` });
   const code = await tv.evaluate(() => SEJ.classDebug.state.code);
   const qrUrl = `${BASE}/?remote=${code}&test=1`;
   await phone.goto(qrUrl);
+  /* The teacher PIN: no controls and no game data without it. */
+  await phone.waitForSelector('.pin-card', { timeout: 8000 });
+  check('phone asks for the PIN first', !(await phone.$('#rm-primary')));
+  const tvApi = tvCtx.request;
+  check('state refused without PIN', (await tvApi.get(`${BASE}/api/room?code=${code}&side=phone`)).status() === 401);
+  check('state refused with wrong PIN', (await tvApi.get(`${BASE}/api/room?code=${code}&side=phone`, { headers: { 'x-teacher-pin': '0000' } })).status() === 401);
+  check('commands refused without PIN', (await tvApi.post(`${BASE}/api/room`, { data: { code, side: 'phone', client: 'x', cmds: [{ seq: 1, type: 'start' }] } })).status() === 401);
+  const typePin = async (p, pin) => { for (const d of pin) await p.locator(`.pin-key[data-key="${d}"]`).click(); };
+  await typePin(phone, '1234');
+  await phone.waitForFunction(() => /Wrong PIN/.test(document.querySelector('.pin-msg').textContent), null, { timeout: 8000 });
+  check('wrong PIN keeps the phone out', !(await phone.$('#rm-primary')));
+  await tv.waitForTimeout(800);
+  check('TV ignores a phone without the PIN', await tv.evaluate(() => SEJ.classDebug.state.phone === false && SEJ.classDebug.state.screen === 'lobby'));
+  check('PIN is not in the page code', !(await (await tvApi.get(`${BASE}/js/remote.js`)).text()).includes('1010') && !(await (await tvApi.get(`${BASE}/js/classroom.js`)).text()).includes('1010'));
+  await phone.screenshot({ path: `${SHOTS}/phone-pin.png` });
+  await typePin(phone, '1010');
   await phone.waitForSelector('#rm-primary', { timeout: 8000 });
   check('phone link opens remote', /#\/remote\//.test(phone.url()), phone.url());
   await tv.waitForFunction(() => SEJ.classDebug.state.phone === true, null, { timeout: 8000 });
@@ -107,10 +123,13 @@ const check = (name, ok, extra = '') => {
   const answerOnPhone = await phone.textContent('.rm-answer b');
   const answerOnTv = await tv.evaluate(() => SEJ.classDebug.getPlan().stages[0].items[0].en);
   check('phone shows the teacher the answer', answerOnPhone === answerOnTv, `${answerOnPhone} / ${answerOnTv}`);
-  check('answer stays hidden on the TV', !(await tv.textContent('.cl-stage')).includes(answerOnTv));
+  /* The TV shows the same options as student phones, with nothing marked until the reveal. */
+  check('TV shows answer options in Word Flash', (await tv.locator('.cl-option').count()) >= 2);
+  check('answer is not marked before reveal', !(await tv.$('#cl-answer')));
   await primary();
   await waitTv(() => SEJ.classDebug.state.revealed === true);
-  check('reveal shows the answer on the TV', (await tv.textContent('.cl-stage')).includes(answerOnTv));
+  await tv.waitForTimeout(100);
+  check('reveal marks the answer on the TV', (await tv.textContent('#cl-answer')).includes(answerOnTv));
   await tv.screenshot({ path: `${SHOTS}/tv-flash-open.png` });
 
   /* Scores: teams show on TV; phone shows the number before the TV replies. */
@@ -214,8 +233,8 @@ const check = (name, ok, extra = '') => {
     await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
     await tv.goto(`${BASE}/index.html?test=1#/class/${lesson}`);
     await tv.reload();
-    await tv.waitForSelector('#cl-start');
-    await tv.click('#cl-start');
+    await tv.waitForSelector('.cl-lobby');
+    await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'start' }));
     await tv.waitForTimeout(100);
     await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'goto', stage: 1 }));
     await tv.waitForTimeout(100);
@@ -241,8 +260,8 @@ const check = (name, ok, extra = '') => {
   await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
   await tv.goto(`${BASE}/index.html?test=1#/class/1.2`);
   await tv.reload();
-  await tv.waitForSelector('#cl-start');
-  await tv.click('#cl-start');
+  await tv.waitForSelector('.cl-lobby');
+  await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'start' }));
   await tv.evaluate(() => { SEJ.classDebug.dispatch({ type: 'goto', stage: 1 }); SEJ.$$('.cl-splash').forEach((x) => x.remove()); });
   await tv.waitForSelector('.cl-tray .cl-tile');
   await tv.waitForTimeout(150);
@@ -279,14 +298,29 @@ const check = (name, ok, extra = '') => {
   await tv.waitForTimeout(120);
   await tv.screenshot({ path: `${SHOTS}/tv-drag-done.png` });
 
+  /* Tapping answers on the TV: wrong is crossed out, right reveals. */
+  await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
+  await tv.goto(`${BASE}/index.html?test=1#/class/1.1`);
+  await tv.reload();
+  await tv.waitForSelector('.cl-lobby');
+  await tv.evaluate(() => { const d = SEJ.classDebug; d.dispatch({ type: 'start' }); d.dispatch({ type: 'goto', stage: 1 }); SEJ.$$('.cl-splash').forEach((x) => x.remove()); });
+  await tv.waitForSelector('button.cl-option');
+  await tv.waitForTimeout(200);
+  const q = await tv.evaluate(() => { const it = SEJ.classDebug.getPlan().stages[1].items[0]; return { answer: it.answer, wrong: it.options.find((o) => o !== it.answer) }; });
+  await tv.locator('button.cl-option', { hasText: q.wrong }).first().click();
+  check('wrong tap is crossed out', await tv.evaluate(() => SEJ.classDebug.state.wrongs.length === 1 && !SEJ.classDebug.state.revealed));
+  await tv.locator('button.cl-option', { hasText: q.answer }).first().click();
+  check('right tap reveals', await tv.evaluate(() => SEJ.classDebug.state.revealed));
+
   /* Read and Say, for a lesson without enough Bangla on its slides. */
   await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
   await tv.goto(`${BASE}/index.html?test=1#/class/4.2`);
   await tv.reload();
-  await tv.waitForSelector('#cl-start');
-  await tv.click('#cl-start');
+  await tv.waitForSelector('.cl-lobby');
+  await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'start' }));
   await tv.waitForTimeout(100);
   check('Read and Say used without slide Bangla', (await tv.evaluate(() => SEJ.classDebug.getPlan().stages[0].kind)) === 'read');
+  check('voice has its clip list', await tv.evaluate(() => Array.isArray(window.SEJ_VOICE)));
   check('Read and Say shows no Bangla', !/[\u0980-\u09FF]/.test(await tv.textContent('.cl-stage')));
   await tv.evaluate(() => SEJ.$$('.cl-splash').forEach((x) => x.remove()));
   await tv.screenshot({ path: `${SHOTS}/tv-read.png` });
@@ -296,7 +330,10 @@ const check = (name, ok, extra = '') => {
   await tv.mouse.move(300, 300);
   await tv.mouse.move(320, 320);
   await tv.click('#cl-controls');
-  await tv.waitForSelector('.cl-drawer #rm-primary');
+  await tv.waitForSelector('.cl-drawer .pin-card');
+  check('TV controls ask for the PIN', !(await tv.$('.cl-drawer #rm-primary')));
+  await typePin(tv, '1010');
+  await tv.waitForSelector('.cl-drawer #rm-primary', { timeout: 8000 });
   await tv.screenshot({ path: `${SHOTS}/tv-drawer.png` });
   const scoreBefore = await tv.evaluate(() => SEJ.classDebug.state.teams[0].score);
   await tv.locator('.cl-drawer .rm-plus').first().click();
