@@ -1,0 +1,497 @@
+/* Core services: DOM helper, saved progress, sound, voice, microphone, effects and drag support. */
+(function () {
+  'use strict';
+  const SEJ = (window.SEJ = window.SEJ || {});
+
+  /* ---------- small helpers ---------- */
+  SEJ.$ = (s, r = document) => r.querySelector(s);
+  SEJ.$$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  SEJ.h = function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v === null || v === undefined || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+      else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
+      else el.setAttribute(k, v === true ? '' : v);
+    }
+    for (const kid of kids.flat(Infinity)) {
+      if (kid === null || kid === undefined || kid === false) continue;
+      el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    }
+    return el;
+  };
+  SEJ.shuffle = (list) => {
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  SEJ.pick = (list) => list[Math.floor(Math.random() * list.length)];
+  SEJ.clean = (text) => String(text).replace(/\p{Extended_Pictographic}|️|‍|[\u{1F1E6}-\u{1F1FF}]|[\u{1F3FB}-\u{1F3FF}]|[0-9]️?⃣/gu, '').trim();
+  SEJ.reducedMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  SEJ.testMode = /[?&]test=1/.test(location.search);
+
+  /* ---------- saved progress and teacher edits ---------- */
+  const KEY = 'sej-hero-quest-v1';
+  const blank = () => ({ name: '', hero: ['mathman', 'bhasha', 'knight', 'innovara'][Math.floor(Math.random() * 4)], sound: true, music: true, stars: {}, custom: {} });
+  let state = blank();
+  try {
+    state = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY) || '{}'));
+  } catch (e) { /* private window: progress lasts for this visit only */ }
+  SEJ.store = {
+    get state() { return state; },
+    save() {
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage blocked */ }
+    },
+    starsFor(code, slot) { return state.stars[code + ':' + slot] || 0; },
+    setStars(code, slot, n) {
+      const k = code + ':' + slot;
+      state.stars[k] = Math.max(state.stars[k] || 0, n);
+      this.save();
+    },
+    totalStars() { return Object.values(state.stars).reduce((a, b) => a + b, 0); },
+    reset() {
+      const { custom } = state;
+      state = Object.assign(blank(), { custom });
+      this.save();
+    },
+  };
+
+  /* The name the child types is used in every "My name is ..." sentence, so they say their own name. */
+  SEJ.cleanName = (raw) => String(raw || '').replace(/[^\p{L}\p{M}' -]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 14)
+    .replace(/(^|[ -])(\p{Ll})/gu, (m, a, b) => a + b.toUpperCase());
+  SEJ.setName = (raw) => { state.name = SEJ.cleanName(raw); SEJ.store.save(); return state.name; };
+  const SAMPLE_NAME = /\bRobin\b/g;
+  const swapName = (v, name) => (typeof v === 'string' ? v.replace(SAMPLE_NAME, name)
+    : Array.isArray(v) ? v.map((x) => swapName(x, name))
+    : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, swapName(x, name)])) : v);
+
+  /* Built-in lessons + js/custom-content.js + this browser's edits, exactly as stored (used by the builder). */
+  SEJ.lessonsRaw = function () {
+    const published = window.SEJ_CUSTOM || {};
+    return window.SEJ_LESSONS.map((l) => {
+      const o = state.custom[l.code] || published[l.code];
+      return o ? Object.assign({}, l, o) : l;
+    });
+  };
+  SEJ.lessonRaw = (code) => SEJ.lessonsRaw().find((l) => l.code === code);
+  /* The same lessons with the child's own name filled in (used for playing). */
+  SEJ.lessons = function () {
+    const raw = SEJ.lessonsRaw();
+    return state.name ? raw.map((l) => swapName(l, state.name)) : raw;
+  };
+  SEJ.lesson = (code) => SEJ.lessons().find((l) => l.code === code);
+
+  /* ---------- sound (everything is synthesised, so no audio files are needed) ---------- */
+  let ctx = null, master = null, musicGain = null, musicTimer = null;
+  function audio() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.9;
+      master.connect(ctx.destination);
+      musicGain = ctx.createGain();
+      musicGain.gain.value = 0.5;
+      musicGain.connect(master);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, start, dur, { type = 'triangle', vol = 0.22, to = null, dest = null } = {}) {
+    const c = audio();
+    if (!c) return;
+    const t = c.currentTime + start, o = c.createOscillator(), g = c.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(dest || master);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+  }
+  function noise(start, dur, { vol = 0.12, freq = 2500, q = 0.7 } = {}) {
+    const c = audio();
+    if (!c) return;
+    const len = Math.max(1, Math.floor(c.sampleRate * dur));
+    const buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), t = c.currentTime + start;
+    src.buffer = buf;
+    f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(master);
+    src.start(t);
+  }
+  const SCALE = [523, 587, 659, 784, 880, 1047, 1175, 1319, 1568];
+  const on = () => state.sound !== false;
+  SEJ.sfx = {
+    tap() { if (on()) tone(620, 0, 0.07, { vol: 0.12, to: 760 }); },
+    tick(step = 0) { if (on()) tone(SCALE[Math.min(step, SCALE.length - 1)], 0, 0.14, { vol: 0.18 }); },
+    correct(combo = 0) {
+      if (!on()) return;
+      const b = Math.min(combo, 4);
+      [0, 2, 4].forEach((n, i) => tone(SCALE[n + b], i * 0.075, 0.2, { vol: 0.22 }));
+      tone(SCALE[4 + b] * 2, 0.22, 0.28, { type: 'sine', vol: 0.12 });
+    },
+    wrong() { if (on()) { tone(220, 0, 0.16, { type: 'sine', vol: 0.2, to: 165 }); tone(190, 0.13, 0.2, { type: 'sine', vol: 0.16, to: 130 }); } },
+    pop() { if (on()) { tone(900, 0, 0.09, { type: 'square', vol: 0.09, to: 240 }); noise(0, 0.07, { vol: 0.12, freq: 3200 }); } },
+    whoosh() { if (on()) noise(0, 0.32, { vol: 0.09, freq: 900, q: 0.4 }); },
+    star(i = 0) { if (on()) { tone(SCALE[4 + i], 0, 0.3, { vol: 0.24 }); tone(SCALE[6 + i], 0.05, 0.34, { type: 'sine', vol: 0.12 }); } },
+    applause(seconds = 2.2) {
+      if (!on()) return;
+      for (let i = 0; i < seconds * 34; i++) {
+        const t = Math.random() * seconds;
+        noise(t, 0.05 + Math.random() * 0.05, { vol: 0.05 + Math.random() * 0.1 * (1 - t / (seconds * 1.4)), freq: 1400 + Math.random() * 2600, q: 1.2 });
+      }
+      [0.05, 0.3, 0.62].forEach((t, i) => tone(740 + i * 120, t, 0.34, { type: 'sawtooth', vol: 0.025, to: 1100 + i * 140 }));
+    },
+    boing() { if (on()) tone(320, 0, 0.22, { type: 'sine', vol: 0.22, to: 620 }); },
+    cheer() {
+      if (!on()) return;
+      [0, 0.06, 0.12].forEach((t, i) => tone(520 + i * 170, t, 0.42, { type: 'sawtooth', vol: 0.03, to: 980 + i * 170 }));
+      noise(0, 0.55, { vol: 0.08, freq: 2300, q: 0.5 });
+    },
+    fanfare() {
+      if (!on()) return;
+      [[523, 0], [659, 0.13], [784, 0.26], [1047, 0.39], [784, 0.56], [1047, 0.69]].forEach(([f, t]) => tone(f, t, 0.3, { type: 'square', vol: 0.09 }));
+      [0.39, 0.69].forEach((t) => tone(262, t, 0.42, { type: 'triangle', vol: 0.2 }));
+    },
+  };
+
+  /* A short cheerful loop. It dips while the voice is talking. */
+  const TUNE = [0, 2, 4, 2, 5, 4, 2, 4, 3, 5, 7, 5, 4, 2, 0, 2];
+  const BASS = [131, 131, 196, 196, 175, 175, 196, 196];
+  let beat = 0;
+  SEJ.music = {
+    start() {
+      if (musicTimer || state.music === false || state.sound === false || SEJ.testMode) return;
+      if (!audio()) return;
+      musicTimer = setInterval(() => {
+        if (document.hidden) return;
+        const n = TUNE[beat % TUNE.length];
+        if (beat % 8 !== 7) tone(SCALE[n] / 1, 0, 0.17, { vol: 0.045, dest: musicGain });
+        if (beat % 2 === 0) tone(BASS[(beat / 2) % BASS.length], 0, 0.28, { type: 'sine', vol: 0.09, dest: musicGain });
+        beat++;
+      }, 250);
+    },
+    stop() { clearInterval(musicTimer); musicTimer = null; },
+    duck(down) { if (musicGain && ctx) musicGain.gain.setTargetAtTime(down ? 0.12 : 0.5, ctx.currentTime, 0.08); },
+    sync() { if (state.music !== false && state.sound !== false) this.start(); else this.stop(); },
+  };
+
+  /* ---------- voice ---------- */
+  const synth = window.speechSynthesis;
+  let voice = null, pendingLine = '';
+  function chooseVoice() {
+    if (!synth) return;
+    const vs = synth.getVoices().filter((v) => /^en[-_]/i.test(v.lang));
+    const score = (v) => (/google|samantha|natural|premium|enhanced/i.test(v.name) ? 3 : 0) + (/en[-_](in|gb)/i.test(v.lang) ? 1 : 0) + (/en[-_]us/i.test(v.lang) ? 1 : 0);
+    voice = vs.sort((a, b) => score(b) - score(a))[0] || null;
+  }
+  if (synth) {
+    chooseVoice();
+    if ('onvoiceschanged' in synth) synth.onvoiceschanged = chooseVoice;
+  }
+  SEJ.voice = {
+    available: !!synth,
+    /* Resolves when speech ends, or after a time limit so games never wait on a stuck voice. */
+    say(text, { rate = 0.92, pitch = 1.08, max = 5000 } = {}) {
+      return new Promise((resolve) => {
+        const line = SEJ.clean(text).replace(/_{2,}/g, ' blank ');
+        if (!synth || !on() || !line || SEJ.testMode) return resolve();
+        if (navigator.userActivation && !navigator.userActivation.hasBeenActive) {
+          /* Browsers block speech before the first tap. Say this line right after that tap. */
+          pendingLine = line;
+          return resolve();
+        }
+        let finished = false;
+        const done = () => { if (!finished) { finished = true; SEJ.music.duck(false); resolve(); } };
+        synth.cancel();
+        const u = new SpeechSynthesisUtterance(line);
+        if (voice) u.voice = voice;
+        u.lang = voice ? voice.lang : 'en-US';
+        u.rate = rate; u.pitch = pitch;
+        u.onend = done; u.onerror = done;
+        SEJ.music.duck(true);
+        synth.speak(u);
+        setTimeout(() => { done(); }, max);
+      });
+    },
+    stop() { pendingLine = ''; if (synth) synth.cancel(); SEJ.music.duck(false); },
+    flushPending() {
+      const line = pendingLine;
+      pendingLine = '';
+      if (line) setTimeout(() => { if (!synth.speaking) SEJ.voice.say(line); }, 60);
+    },
+  };
+
+  /* ---------- microphone ---------- */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  SEJ.mic = {
+    available: !!SR && !SEJ.testMode,
+    listen() {
+      return new Promise((resolve) => {
+        const r = new SR();
+        r.lang = 'en-IN';
+        r.interimResults = false;
+        r.maxAlternatives = 3;
+        let heard = '', settled = false;
+        const end = () => { if (!settled) { settled = true; SEJ.music.duck(false); resolve(heard); } };
+        r.onresult = (e) => { heard = e.results[0][0].transcript; };
+        r.onerror = end;
+        r.onend = end;
+        SEJ.voice.stop();
+        SEJ.music.duck(true);
+        try { r.start(); } catch (e) { end(); }
+        setTimeout(() => { try { r.stop(); } catch (e) { /* already stopped */ } }, 9000);
+      });
+    },
+    /* Share of the example's words the child said. Used for praise only and never blocks progress. */
+    match(heard, target) {
+      const words = (s) => s.toLowerCase().replace(/[^a-z0-9' ]/g, ' ').split(/\s+/).filter(Boolean);
+      const t = words(target), h = new Set(words(heard));
+      return t.length ? t.filter((w) => h.has(w)).length / t.length : 0;
+    },
+  };
+
+  /* ---------- vibration ---------- */
+  SEJ.buzz = (p) => { if (navigator.vibrate && on()) { try { navigator.vibrate(p); } catch (e) { /* unsupported */ } } };
+
+  /* ---------- particles ---------- */
+  let canvas, g2, parts = [], raf = 0;
+  const COLORS = ['#ffd60a', '#ff2e93', '#00d4ff', '#9ef01a', '#ff7a00', '#9a5cff', '#ffffff'];
+  function ensureCanvas() {
+    if (canvas) return;
+    canvas = SEJ.h('canvas', { class: 'fx-canvas', 'aria-hidden': 'true' });
+    document.body.append(canvas);
+    g2 = canvas.getContext('2d');
+    const fit = () => {
+      const r = Math.min(devicePixelRatio || 1, 2);
+      canvas.width = innerWidth * r; canvas.height = innerHeight * r;
+      g2.setTransform(r, 0, 0, r, 0, 0);
+    };
+    addEventListener('resize', fit);
+    fit();
+  }
+  function frame() {
+    g2.clearRect(0, 0, innerWidth, innerHeight);
+    parts = parts.filter((p) => p.life > 0 && p.y < innerHeight + 40);
+    for (const p of parts) {
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.vx *= p.drag; p.spin += p.vs; p.life--;
+      g2.save();
+      g2.globalAlpha = Math.min(1, p.life / 24);
+      g2.translate(p.x, p.y);
+      g2.rotate(p.spin);
+      if (p.emoji) {
+        g2.font = p.size + 'px serif';
+        g2.textAlign = 'center';
+        g2.fillText(p.emoji, 0, p.size / 3);
+      } else {
+        g2.fillStyle = p.c;
+        if (p.round) { g2.beginPath(); g2.arc(0, 0, p.size / 2, 0, 7); g2.fill(); }
+        else g2.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.62);
+      }
+      g2.restore();
+    }
+    raf = parts.length ? requestAnimationFrame(frame) : 0;
+    if (!parts.length) g2.clearRect(0, 0, innerWidth, innerHeight);
+  }
+  const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
+  SEJ.fx = {
+    /* Small burst from one spot, used for every correct answer. */
+    burst(x, y, n = 16, emojis = null) {
+      if (SEJ.reducedMotion()) return;
+      ensureCanvas();
+      for (let i = 0; i < n; i++) {
+        const a = Math.random() * Math.PI * 2, s = 2.5 + Math.random() * 6;
+        parts.push({
+          x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 2, g: 0.16, drag: 0.985, life: 42 + Math.random() * 24,
+          spin: Math.random() * 6, vs: (Math.random() - 0.5) * 0.3, size: emojis ? 18 + Math.random() * 10 : 6 + Math.random() * 7,
+          c: SEJ.pick(COLORS), round: Math.random() < 0.4, emoji: emojis && i % 2 === 0 ? SEJ.pick(emojis) : null,
+        });
+      }
+      kick();
+    },
+    burstAt(el, n, emojis) {
+      if (!el || !el.getBoundingClientRect) return;
+      const r = el.getBoundingClientRect();
+      this.burst(r.left + r.width / 2, r.top + r.height / 2, n, emojis);
+    },
+    /* Falling confetti, used for wins. */
+    confetti(amount = 140) {
+      if (SEJ.reducedMotion()) return;
+      ensureCanvas();
+      for (let i = 0; i < amount; i++) {
+        parts.push({
+          x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * 0.7, vx: (Math.random() - 0.5) * 2.4, vy: 1.8 + Math.random() * 2.8,
+          g: 0.015, drag: 0.999, life: 260 + Math.random() * 120, spin: Math.random() * 6, vs: (Math.random() - 0.5) * 0.22,
+          size: 7 + Math.random() * 8, c: SEJ.pick(COLORS), round: Math.random() < 0.2,
+        });
+      }
+      kick();
+    },
+    /* Fireworks across the sky for big wins. */
+    fireworks(times = 6, gap = 260) {
+      if (SEJ.reducedMotion()) return;
+      for (let i = 0; i < times; i++) {
+        setTimeout(() => this.burst(innerWidth * (0.12 + Math.random() * 0.76), innerHeight * (0.1 + Math.random() * 0.45), 34), i * gap * (SEJ.testMode ? 0.02 : 1));
+      }
+    },
+    /* Stars fly from an answer up into the score. */
+    flyStars(fromEl, toEl, n = 3) {
+      if (!fromEl || !toEl || SEJ.reducedMotion() || SEJ.testMode) return;
+      const a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+      for (let i = 0; i < n; i++) {
+        const st = document.createElement('span');
+        st.className = 'fly-star';
+        st.textContent = '⭐';
+        st.style.left = a.left + a.width / 2 - 16 + 'px';
+        st.style.top = a.top + a.height / 2 - 16 + 'px';
+        document.body.append(st);
+        const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2);
+        const anim = st.animate([
+          { transform: 'translate(0,0) scale(.4) rotate(0deg)', opacity: 1 },
+          { transform: `translate(${dx * 0.35 + (i - 1) * 50}px, ${dy * 0.35 - 60}px) scale(1.4) rotate(180deg)`, opacity: 1, offset: 0.45 },
+          { transform: `translate(${dx}px, ${dy}px) scale(.5) rotate(420deg)`, opacity: 0.8 },
+        ], { duration: 620 + i * 90, easing: 'cubic-bezier(.4,0,.5,1)' });
+        anim.onfinish = () => st.remove();
+      }
+    },
+    /* Big comic-book word in the middle of the screen. */
+    pow(text, kind = 'good') {
+      document.querySelectorAll('.pow').forEach((p) => p.remove());
+      const el = document.createElement('div');
+      el.className = `pow pow-${kind}`;
+      el.setAttribute('role', 'status');
+      el.innerHTML = '<span class="pow-shape"></span><span class="pow-text"></span>';
+      el.querySelector('.pow-text').textContent = text;
+      document.body.append(el);
+      setTimeout(() => el.remove(), SEJ.testMode ? 30 : kind === 'good' ? 780 : 900);
+    },
+    /* The player's hero zooms across the screen on a streak. */
+    heroFly(heroId) {
+      if (SEJ.reducedMotion() || SEJ.testMode) return;
+      const el = document.createElement('div');
+      el.className = 'hero-fly';
+      el.innerHTML = `<span class="hero-trail"></span><img src="assets/heroes/${heroId}.webp" alt="">`;
+      document.body.append(el);
+      setTimeout(() => el.remove(), 1500);
+    },
+    /* Restarts a CSS animation class on an element. */
+    play(el, cls) {
+      if (!el) return;
+      el.classList.remove(cls);
+      void el.offsetWidth;
+      el.classList.add(cls);
+      el.addEventListener('animationend', () => el.classList.remove(cls), { once: true });
+    },
+  };
+
+  /* ---------- tap OR drag ----------
+     Every game piece works both ways: a tap calls onUse(null); a drag onto a matching
+     target calls onUse(target). A real <button> keeps keyboard support. */
+  SEJ.tapOrDrag = function (el, targetSelector, onUse) {
+    let start = null, ghost = null, moved = false, hot = null;
+    const targetAt = (x, y) => {
+      if (ghost) ghost.style.visibility = 'hidden';
+      const under = document.elementFromPoint(x, y);
+      if (ghost) ghost.style.visibility = '';
+      return under && under.closest(targetSelector);
+    };
+    const clearHot = () => { if (hot) hot.classList.remove('drop-hot'); hot = null; };
+    const move = (e) => {
+      if (!start) return;
+      const dx = e.clientX - start.x, dy = e.clientY - start.y;
+      if (!moved && Math.hypot(dx, dy) > 9) {
+        moved = true;
+        const r = el.getBoundingClientRect();
+        ghost = el.cloneNode(true);
+        ghost.classList.add('drag-ghost');
+        ghost.style.width = r.width + 'px';
+        ghost.style.left = r.left + 'px';
+        ghost.style.top = r.top + 'px';
+        document.body.append(ghost);
+        el.classList.add('dragging');
+        SEJ.sfx.tap();
+      }
+      if (moved) {
+        e.preventDefault();
+        ghost.style.transform = `translate(${dx}px, ${dy}px) rotate(-3deg) scale(1.06)`;
+        const t = targetAt(e.clientX, e.clientY);
+        if (t !== hot) { clearHot(); hot = t; if (hot) hot.classList.add('drop-hot'); }
+      }
+    };
+    const up = (e) => {
+      removeEventListener('pointermove', move);
+      removeEventListener('pointerup', up);
+      removeEventListener('pointercancel', cancel);
+      if (moved) {
+        const t = targetAt(e.clientX, e.clientY);
+        ghost.remove(); ghost = null;
+        el.classList.remove('dragging');
+        clearHot();
+        if (t) onUse(t);
+        /* Swallow the click that follows the drag. */
+        el.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); ev.preventDefault(); }, { once: true, capture: true });
+        setTimeout(() => { moved = false; }, 0);
+      }
+      start = null;
+    };
+    const cancel = () => {
+      removeEventListener('pointermove', move);
+      removeEventListener('pointerup', up);
+      removeEventListener('pointercancel', cancel);
+      if (ghost) ghost.remove();
+      ghost = null; start = null; moved = false;
+      el.classList.remove('dragging');
+      clearHot();
+    };
+    el.addEventListener('pointerdown', (e) => {
+      if (e.button) return;
+      start = { x: e.clientX, y: e.clientY };
+      moved = false;
+      addEventListener('pointermove', move, { passive: false });
+      addEventListener('pointerup', up);
+      addEventListener('pointercancel', cancel);
+    });
+    el.addEventListener('click', () => onUse(null));
+    el.classList.add('no-touch-scroll');
+  };
+
+  /* ---------- heroes ---------- */
+  SEJ.HEROES = {
+    mathman: { name: 'MathMan', color: '#ff7a00', power: 'Master of math', bn: 'যেকোনো গাণিতিক সমস্যা সমাধান করতে পারে' },
+    bhasha: { name: 'Ms Bhasha', color: '#ff2e93', power: 'Speaks any language', bn: 'যেকোনো ভাষা বুঝতে পারে' },
+    knight: { name: 'Nature Knight', color: '#17c964', power: 'Talks to plants and animals', bn: 'গাছপালার সাথে কথা বলতে পারে' },
+    innovara: { name: 'Innovara', color: '#00b2ff', power: 'Controls any gadget', bn: 'যেকোনো গ্যাজেট কন্ট্রোল করতে পারে' },
+  };
+  const SHAPES = {
+    circle: '<circle cx="50" cy="50" r="42"/>',
+    triangle: '<path d="M50 8 L94 88 H6Z"/>',
+    square: '<rect x="12" y="12" width="76" height="76" rx="6"/>',
+    rectangle: '<rect x="4" y="24" width="92" height="52" rx="6"/>',
+    oval: '<ellipse cx="50" cy="50" rx="46" ry="30"/>',
+    trapezium: '<path d="M26 22 H74 L96 78 H4Z"/>',
+  };
+  /* An emoji or simple shape drawn with a white sticker edge. */
+  SEJ.sticker = function (art, cls = '') {
+    const el = SEJ.h('span', { class: 'sticker ' + cls, 'aria-hidden': 'true' });
+    if (String(art).startsWith('svg:')) el.innerHTML = `<svg viewBox="0 0 100 100" class="shape-svg">${SHAPES[art.slice(4)] || ''}</svg>`;
+    else el.textContent = art;
+    return el;
+  };
+  addEventListener('pointerdown', (e) => { if (e.isPrimary) SEJ.fx.burst(e.clientX, e.clientY, 5); }, { passive: true });
+  addEventListener('pointerdown', () => SEJ.voice.flushPending(), { once: true });
+  SEJ.heroImg = (id, cls = '') => SEJ.h('img', { class: 'hero-img ' + cls, src: `assets/heroes/${id}.webp`, alt: SEJ.HEROES[id].name, draggable: 'false' });
+  SEJ.heroFace = (id, cls = '') => SEJ.h('span', { class: 'face ' + cls, style: { background: SEJ.HEROES[id].color } },
+    SEJ.h('img', { src: `assets/heroes/${id}-face.webp`, alt: '', draggable: 'false' }));
+})();
