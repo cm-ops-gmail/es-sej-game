@@ -12,7 +12,7 @@
       if (v === null || v === undefined || v === false) continue;
       if (k === 'class') el.className = v;
       else if (k === 'text') el.textContent = v;
-      else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+      else if (k === 'style' && typeof v === 'object') Object.entries(v).forEach(([p, x]) => { if (p.startsWith('--')) el.style.setProperty(p, x); else el.style[p] = x; });
       else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
       else el.setAttribute(k, v === true ? '' : v);
     }
@@ -173,7 +173,7 @@
   let beat = 0;
   SEJ.music = {
     start() {
-      if (musicTimer || state.music === false || state.sound === false || SEJ.testMode) return;
+      if (musicTimer || SEJ.noMusic || state.music === false || state.sound === false || SEJ.testMode) return;
       if (!audio()) return;
       musicTimer = setInterval(() => {
         if (document.hidden) return;
@@ -285,6 +285,8 @@
   function frame() {
     g2.clearRect(0, 0, innerWidth, innerHeight);
     parts = parts.filter((p) => p.life > 0 && p.y < innerHeight + 40);
+    /* Keeps old laptops smooth when lots of celebrations overlap: the oldest pieces go first. */
+    if (parts.length > 600) parts = parts.slice(parts.length - 600);
     for (const p of parts) {
       p.vy += p.g; p.x += p.vx; p.y += p.vy; p.vx *= p.drag; p.spin += p.vs; p.life--;
       g2.save();

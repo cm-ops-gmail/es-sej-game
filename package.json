@@ -1,0 +1,8 @@
+{
+  "name": "sej-hero-quest",
+  "private": true,
+  "description": "Hero Quest games for Spoken English Junior. Static site; the only server code is the phone-to-TV relay in api/.",
+  "dependencies": {
+    "@vercel/functions": "3.11.0"
+  }
+}

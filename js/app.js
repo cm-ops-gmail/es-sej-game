@@ -269,6 +269,11 @@
             h('p', { class: 'bn', lang: 'bn', text: l.mission.bn }),
             h('div', { class: 'mission-progress' }, '⭐ ', `${st.got} of ${st.max} stars`))),
         h('section', { 'aria-label': 'Games' }, h('h2', { class: 'section-title', text: 'Your Missions' }), h('div', { class: 'game-list' }, cards)),
+        h('section', { 'aria-label': 'Class Battle' }, h('h2', { class: 'section-title' }, 'In Class ', h('small', { text: 'with your teacher' })),
+          h('a', { class: 'class-card gummy g-violet', id: 'class-battle-link', href: `#/class/${code}`, onclick: () => sfx.tap() },
+            SEJ.sticker('🏆', 'class-art'),
+            h('span', {}, h('strong', { text: 'Class Battle' }), h('small', { text: 'Teachers: play on the class TV and control it from your phone' })),
+            h('span', { class: 'play-pill', 'aria-hidden': 'true', text: '▶' }))),
         (l.words || []).length ? h('section', { 'aria-label': 'Power words' }, h('h2', { class: 'section-title' }, 'Power Words ', h('small', { lang: 'bn', text: 'চাপ দিয়ে শোনো' })), words) : null)));
   }
 
@@ -355,6 +360,12 @@
     const hash = location.hash.replace(/^#\/?/, '');
     const [page, a, b] = hash.split('/');
     window.scrollTo(0, 0);
+    /* Class Battle runs without background music: the teacher is talking. */
+    SEJ.noMusic = page === 'class' || page === 'remote' || page === 'join';
+    if (SEJ.noMusic) SEJ.music.stop();
+    if (page === 'class') { cleanupRoute = SEJ.classPage(root(), a); return; }
+    if (page === 'remote') { cleanupRoute = SEJ.remotePage(root(), a); return; }
+    if (page === 'join') { cleanupRoute = SEJ.studentPage(root(), a); return; }
     if (page === 'teacher') return SEJ.builder.render(root(), a);
     if (page === 'heroes') return heroStep(true);
     if (page === 'welcome') return a === 'hero' ? heroStep(false) : nameStep();
@@ -369,14 +380,18 @@
     return map();
   }
   /* Short links from the curriculum sheet:
-     ?game=1.3-2 opens the second game of Lesson 1.3 straight away, ?game=1.3-talk its speaking round. */
+     ?game=1.3-2 opens the second game of Lesson 1.3 straight away, ?game=1.3-talk its speaking round,
+     ?class=1.3 its Class Battle on the TV, ?remote=CODE the teacher's phone remote, ?join=CODE a student's phone. */
   function openShortLink() {
     const q = new URLSearchParams(location.search);
     const game = q.get('game');
     const lesson = q.get('lesson');
-    if (!game && !lesson) return;
+    const battle = q.get('class');
+    const remote = q.get('remote');
+    const join = q.get('join');
+    if (!game && !lesson && !battle && remote === null && join === null) return;
     const keep = q.get('test') ? '?test=1' : '';
-    let target = `#/lesson/${lesson}`;
+    let target = battle ? `#/class/${battle}` : remote !== null ? `#/remote/${remote}` : join !== null ? `#/join/${join}` : `#/lesson/${lesson}`;
     if (game) {
       const [code, slot] = game.split('-');
       target = `#/play/${code}/${slot === 'talk' ? 'talk' : Math.max(0, parseInt(slot, 10) - 1)}`;

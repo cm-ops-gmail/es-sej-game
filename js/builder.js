@@ -191,6 +191,7 @@
             h('div', { class: 'b-links' },
               links.deck && h('a', { href: links.deck, target: '_blank', rel: 'noopener' }, 'Slides ↗'),
               links.plan && h('a', { href: links.plan, target: '_blank', rel: 'noopener' }, 'Lesson plan ↗'),
+              h('a', { href: `?class=${lesson.code}`, target: '_blank', rel: 'noopener', title: 'The class game for the TV, controlled from your phone. It uses this lesson’s words and games, so your edits appear in it.' }, '🏆 Class Battle ↗'),
               custom[lesson.code] && h('button', { class: 'link-btn', onclick: (e) => {
                 const btn = e.currentTarget;
                 if (!btn.dataset.armed) { btn.dataset.armed = '1'; btn.textContent = 'Tap again to undo all edits in this lesson'; return; }
