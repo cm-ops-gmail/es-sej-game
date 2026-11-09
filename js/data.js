@@ -15,11 +15,13 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Name",
-    "নাম"
+    "নাম",
+    true
    ],
    [
     "Age",
-    "বয়স"
+    "বয়স",
+    true
    ],
    [
     "Hobby",
@@ -98,15 +100,15 @@ window.SEJ_LESSONS = [
       "🚪"
      ],
      [
-      "Someone asks, \"What is your name?\" You say...",
-      "My name is Robin.",
+      "What is your name?",
+      "Hi, my name is Robin.",
       [
-       "I am from Dhaka."
+       "Where are you from?"
       ],
       "📛"
      ],
      [
-      "Which question asks about age?",
+      "If you want to talk about age, ask...",
       "How old are you?",
       [
        "Where do you live?"
@@ -114,10 +116,10 @@ window.SEJ_LESSONS = [
       "🎂"
      ],
      [
-      "How do you ask about pets?",
+      "If they have pets, ask...",
       "Do you have any pets?",
       [
-       "Do you have any books?"
+       "Do you have any brothers or sisters?"
       ],
       "🐶"
      ]
@@ -132,8 +134,8 @@ window.SEJ_LESSONS = [
    ],
    [
     "Where are you from?",
-    "I am from ___.",
-    "I am from Dhaka."
+    "I’m from ___.",
+    "I’m from Dhaka."
    ],
    [
     "How old are you?",
@@ -160,23 +162,28 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Helpful",
-    "যে অন্যদের সাহায্য করে"
+    "যে অন্যদের সাহায্য করে",
+    true
    ],
    [
     "Smart",
-    "যে নতুন কিছু শেখা ও সমস্যা সমাধানে পারদর্শী"
+    "যে নতুন কিছু শেখা ও সমস্যা সমাধানে পারদর্শী",
+    true
    ],
    [
     "Caring",
-    "যে অন্যের প্রতি যত্নশীল"
+    "যে অন্যের প্রতি যত্নশীল",
+    true
    ],
    [
     "Funny",
-    "যে অন্যকে হাসাতে পারে"
+    "যে অন্যকে হাসাতে পারে",
+    true
    ],
    [
     "Laugh",
-    "হাসি"
+    "হাসি",
+    true
    ]
   ],
   "games": [
@@ -265,24 +272,24 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "Who is your best friend?",
+    "Who is your favourite and why?",
     "This is ___.",
     "This is Eyamim."
    ],
    [
-    "What is your buddy like?",
-    "He or she is ___ and loves to ___.",
-    "She is funny and loves to make people laugh."
+    "Talk about your buddy.",
+    "She is quite ___ and loves to ___.",
+    "She is quite funny and loves to make people laugh."
    ],
    [
-    "Ask your buddy about a favorite color.",
+    "Say something nice about your buddy.",
+    "She is my best friend and I ___.",
+    "She is my best friend and I love her a lot."
+   ],
+   [
+    "Ask your buddy a question.",
     "What is your favorite color?",
     "What is your favorite color?"
-   ],
-   [
-    "Why do you like your buddy?",
-    "My buddy is my best friend because ___.",
-    "My buddy is my best friend because she is caring."
    ]
   ]
  },
@@ -299,35 +306,43 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Camping",
-    "তাঁবু টাঙিয়ে রাত কাটানো"
+    "প্রকৃতির মাঝে তাঁবু টাঙিয়ে রাত কাটানো",
+    true
    ],
    [
     "Swimming",
-    "পানিতে সাঁতার কাটা"
+    "পানিতে সাঁতার কাটা",
+    true
    ],
    [
     "Cycling",
-    "সাইকেল চালানো"
+    "সাইকেল চালানো",
+    true
    ],
    [
     "Hobby",
-    "শখ"
+    "শখ",
+    true
    ],
    [
     "Explore",
-    "ঘুরে দেখা"
+    "ঘুরে দেখা",
+    true
    ],
    [
     "Relax",
-    "আরাম করা"
+    "আরাম করা",
+    true
    ],
    [
     "Hiking",
-    "পাহাড়ে হাঁটা"
+    "পাহাড়ে হাঁটা",
+    true
    ],
    [
     "Exciting",
-    "আনন্দদায়ক"
+    "আনন্দদায়ক",
+    true
    ]
   ],
   "games": [
@@ -463,19 +478,24 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "What is your favorite pastime?",
-    "My favorite pastime is ___.",
-    "My favorite pastime is swimming."
+    "What was your most exciting adventure?",
+    "The name of my favourite pastime is ___.",
+    "The name of my favourite pastime is swimming."
    ],
    [
-    "Why do you enjoy it?",
-    "I love it because ___.",
-    "I love it because it helps me relax."
+    "Why do you like it?",
+    "It helps me to ___.",
+    "It helps me to relax in the water."
    ],
    [
-    "What did you do last weekend?",
-    "Last weekend, I ___. It was fun!",
-    "Last weekend, I tried a new sport. It was fun!"
+    "Talk about something you did.",
+    "Yesterday, I ___. It was fun!",
+    "Yesterday, I tried a new sport. It was fun!"
+   ],
+   [
+    "Where did you go last weekend?",
+    "Last weekend, I ___. It was exciting!",
+    "Last weekend, I visited a new place. It was exciting!"
    ]
   ]
  },
@@ -492,39 +512,48 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Wake up",
-    "ঘুম থেকে ওঠা"
+    "ঘুম থেকে ওঠা",
+    true
    ],
    [
     "Breakfast",
-    "সকালের নাস্তা"
+    "সকালের নাস্তা",
+    true
    ],
    [
     "Commute",
-    "যাতায়াত"
+    "যাতায়াত",
+    true
    ],
    [
     "Lunch",
-    "দুপুরের খাবার"
+    "দুপুরের খাবার",
+    true
    ],
    [
     "Relax",
-    "আরাম করা"
+    "আরাম করা",
+    true
    ],
    [
     "Exercise",
-    "ব্যায়াম"
+    "ব্যায়াম",
+    true
    ],
    [
     "Dinner",
-    "রাতের খাবার"
+    "রাতের খাবার",
+    true
    ],
    [
     "Tired",
-    "ক্লান্ত"
+    "ক্লান্ত",
+    true
    ],
    [
     "Sleep",
-    "ঘুম"
+    "ঘুম",
+    true
    ]
   ],
   "games": [
@@ -640,12 +669,12 @@ window.SEJ_LESSONS = [
    [
     "What do you do in the morning?",
     "In the morning, I ___.",
-    "In the morning, I brush my teeth and eat breakfast."
+    "In the morning, I brush my teeth, eat breakfast, and get ready for school."
    ],
    [
     "How do you spend your afternoon?",
     "In the afternoon, I ___.",
-    "In the afternoon, I do my homework and play with my friends."
+    "In the afternoon, I do my homework and then play with my friends."
    ],
    [
     "What do you do in the evening?",
@@ -653,9 +682,9 @@ window.SEJ_LESSONS = [
     "In the evening, I eat snacks and watch TV."
    ],
    [
-    "What time do you sleep?",
-    "I sleep at ___.",
-    "I sleep at 10 PM."
+    "What is your day like?",
+    "I eat dinner at ___.",
+    "I eat dinner at 9 PM."
    ]
   ]
  },
@@ -672,35 +701,43 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Menu",
-    "খাবারের তালিকা"
+    "খাবারের তালিকা",
+    true
    ],
    [
     "Order",
-    "খাবার চাওয়া"
+    "খাবার চাওয়া",
+    true
    ],
    [
     "Bill",
-    "টাকা দেওয়ার কাগজ"
+    "টাকা দেওয়ার কাগজ",
+    true
    ],
    [
     "Waiter",
-    "খাবার পরিবেশক"
+    "খাবার পরিবেশক",
+    true
    ],
    [
     "Water",
-    "পানি"
+    "পানি",
+    true
    ],
    [
     "Starter",
-    "শুরুর খাবার"
+    "শুরুর খাবার",
+    true
    ],
    [
     "Dessert",
-    "মিষ্টি খাবার"
+    "মিষ্টি খাবার",
+    true
    ],
    [
     "Spicy",
-    "ঝাল"
+    "ঝাল",
+    true
    ]
   ],
   "games": [
@@ -721,7 +758,7 @@ window.SEJ_LESSONS = [
       "Spoons"
      ],
      [
-      "we use them to eat solid food like meat",
+      "we use them to eat solid foods like vegetables, meat or biryani",
       "Forks"
      ],
      [
@@ -851,24 +888,24 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "What is your favorite fruit?",
+    "What are your favourite fruits?",
     "I like ___ because ___.",
     "I like mango because it is very sweet."
    ],
    [
-    "You are at a restaurant. Order a burger.",
-    "I would like a burger, please.",
-    "I would like a burger, please."
+    "What would you like to have today?",
+    "I would like ___.",
+    "I would like a burger."
    ],
    [
-    "Be the waiter. Greet your customer.",
+    "Be the waiter.",
     "Hello! How can I help you?",
     "Hello! How can I help you?"
    ],
    [
-    "Your food has arrived. What do you say?",
-    "Thank you!",
-    "Thank you!"
+    "Be the customer.",
+    "Can I have ___?",
+    "Can I have extra sauce?"
    ]
   ]
  },
@@ -885,23 +922,28 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Happened",
-    "ঘটেছে"
+    "ঘটেছে",
+    true
    ],
    [
     "Upcoming",
-    "যা শিগগিরই হবে"
+    "যা শিগগিরই হবে",
+    true
    ],
    [
     "Scheduled",
-    "নির্দিষ্ট সময়ে পরিকল্পিত"
+    "নির্দিষ্ট সময়ে পরিকল্পিত",
+    true
    ],
    [
     "Planned",
-    "আগেই ঠিক করা"
+    "আগেই ঠিক করা",
+    true
    ],
    [
     "Expected",
-    "যা হওয়ার সম্ভাবনা আছে"
+    "যা হওয়ার সম্ভাবনা আছে",
+    true
    ],
    [
     "Weekend",
@@ -1048,23 +1090,23 @@ window.SEJ_LESSONS = [
   "talk": [
    [
     "What did you do yesterday?",
-    "Yesterday, I ___.",
-    "Yesterday, I went to class."
+    "I went to ___ yesterday.",
+    "I went to class yesterday."
    ],
    [
     "What are your plans for tomorrow?",
-    "Tomorrow, I will ___.",
-    "Tomorrow, I will buy some stationery."
+    "I will go to ___.",
+    "I will go to buy some groceries."
    ],
    [
-    "How was your weekend?",
-    "I had a fun weekend. I ___.",
-    "I had a fun weekend. I played with friends."
+    "Hello, what was your favorite activity last weekend?",
+    "I had a ___ weekend.",
+    "I had a fun weekend."
    ],
    [
-    "What will you do next weekend?",
-    "I will ___ this weekend.",
-    "I will visit my relatives this weekend."
+    "What about you?",
+    "I had an okay weekend, I ___.",
+    "I had an okay weekend, I didn’t do much."
    ]
   ]
  },
@@ -1081,31 +1123,38 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Agree",
-    "একমত হওয়া"
+    "একমত হওয়া",
+    true
    ],
    [
     "Disagree",
-    "ভিন্নমত পোষণ করা"
+    "ভিন্নমত পোষন করা",
+    true
    ],
    [
     "Believe",
-    "বিশ্বাস করা"
+    "বিশ্বাস করা",
+    true
    ],
    [
     "Think",
-    "ভাবা"
+    "ভাবা/চিন্তা করা",
+    true
    ],
    [
     "Suggest",
-    "পরামর্শ দেওয়া"
+    "পরামর্শ দেওয়া",
+    true
    ],
    [
     "Feel",
-    "অনুভব করা"
+    "অনুভব করা",
+    true
    ],
    [
     "Prefer",
-    "পছন্দ করা"
+    "পছন্দ করা",
+    true
    ]
   ],
   "games": [
@@ -1242,8 +1291,8 @@ window.SEJ_LESSONS = [
   "talk": [
    [
     "Summer is better than winter. Do you agree?",
-    "I agree because ___. / I disagree because ___.",
-    "I disagree because winter feels cozy."
+    "I agree with statement because ___.",
+    "I agree with statement because I love going to the beach in summer."
    ],
    [
     "Pizza is better than burgers. What do you think?",
@@ -1251,9 +1300,9 @@ window.SEJ_LESSONS = [
     "In my opinion, pizza is better than burgers."
    ],
    [
-    "Your friend has a different idea. Disagree politely.",
-    "I see your point, but I think ___.",
-    "I see your point, but I think dogs are better."
+    "Summer is better than winter. Do you disagree?",
+    "I disagree because ___.",
+    "I disagree because winter feels cozy, and I love drinking hot chocolate."
    ],
    [
     "Ask your friend for an opinion.",
@@ -1275,31 +1324,38 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Timetable",
-    "সময়সূচী"
+    "সময়সূচী",
+    true
    ],
    [
     "Seminar",
-    "আলোচনাসভা"
+    "আলোচনাসভা",
+    true
    ],
    [
     "Assignment",
-    "লিখিত বা ব্যবহারিক বাড়ির কাজ"
+    "লিখিত বা ব্যবহারিক বাড়ির কাজ",
+    true
    ],
    [
     "Syllabus",
-    "পাঠ্যসূচী"
+    "পাঠ্যসূচী",
+    true
    ],
    [
     "Curriculum",
-    "পাঠ্যক্রম"
+    "পাঠ্যক্রম",
+    true
    ],
    [
     "Discipline",
-    "শৃঙ্খলা"
+    "শৃঙ্খলা",
+    true
    ],
    [
     "Orientation",
-    "পরিচিতি অনুষ্ঠান"
+    "পরিচিতি অনুষ্ঠান",
+    true
    ]
   ],
   "games": [
@@ -1474,13 +1530,13 @@ window.SEJ_LESSONS = [
     "My school’s name is Dhaka Model School."
    ],
    [
-    "Where is your school?",
+    "Where is your school located?",
     "It is located in ___.",
     "It is located in Mirpur."
    ],
    [
-    "Describe your playground or library.",
-    "The ___ is ___ and ___.",
+    "What do we do in the library?",
+    "The library is ___.",
     "The library is quiet and full of books."
    ],
    [
@@ -1503,23 +1559,28 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Sharp",
-    "চোখা বা ধারালো"
+    "চোখা বা ধারালো",
+    true
    ],
    [
     "Compact",
-    "ছোট এবং সুবিধাজনক"
+    "ছোট এবং সুবিধাজনক",
+    true
    ],
    [
     "Lightweight",
-    "হালকা"
+    "হালকা",
+    true
    ],
    [
     "Durable",
-    "টেকসই বা মজবুত"
+    "টেকসই বা মজবুত",
+    true
    ],
    [
     "Sticky",
-    "আঠালো"
+    "আঠালো",
+    true
    ]
   ],
   "games": [
@@ -1670,7 +1731,7 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "What is a pencil used for?",
+    "What is this object? It’s a pencil.",
     "A pencil is used for ___.",
     "A pencil is used for writing and drawing."
    ],
@@ -1680,14 +1741,14 @@ window.SEJ_LESSONS = [
     "It is usually made of wood."
    ],
    [
-    "What is your favorite thing at school?",
+    "What is your favorite activity in the school?",
     "My favorite activity is ___.",
     "My favorite activity is games class."
    ],
    [
     "Why do you like it?",
     "I like it because ___.",
-    "I like it because I get to play with my friends."
+    "I like it because I get to run, play, and have fun with my friends."
    ]
   ]
  },
@@ -1708,7 +1769,8 @@ window.SEJ_LESSONS = [
    ],
    [
     "Excuse me",
-    "কারো attention পেতে"
+    "কারো attention পেতে",
+    true
    ],
    [
     "Thank you",
@@ -1820,11 +1882,11 @@ window.SEJ_LESSONS = [
      ],
      [
       "May I",
-      "Used to ask for permission"
+      "Ask for permission politely"
      ],
      [
       "Should",
-      "Gives advice"
+      "Advice/Suggestion"
      ]
     ]
    },
@@ -1846,17 +1908,17 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "You need a pen. Ask your friend politely.",
-    "Could you please pass me the pen?",
+    "You need a pen. Ask your friend.",
+    "Could you please ___?",
     "Could you please pass me the pen?"
    ],
    [
     "You want to leave the room. Ask your teacher.",
-    "May I leave the room, please?",
+    "May I ___, please?",
     "May I leave the room, please?"
    ],
    [
-    "Your friend helped you. What do you say?",
+    "Your friend helped you. Say thanks.",
     "Thank you for ___.",
     "Thank you for helping me."
    ],
@@ -1880,23 +1942,28 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "At first",
-    "প্রথমে"
+    "প্রথমে",
+    true
    ],
    [
     "Next",
-    "এরপর"
+    "এরপর",
+    true
    ],
    [
     "Then",
-    "তারপর"
+    "তারপর",
+    true
    ],
    [
     "After that",
-    "এর পরেই"
+    "এর পরেই",
+    true
    ],
    [
     "Finally",
-    "শেষে"
+    "শেষে",
+    true
    ],
    [
     "Arrive",
@@ -2045,8 +2112,8 @@ window.SEJ_LESSONS = [
   "talk": [
    [
     "When do you arrive at school?",
-    "I arrive at school at ___.",
-    "I arrive at school at 8 AM."
+    "I arrive at school at ___ every day.",
+    "I arrive at school at 8 AM every day."
    ],
    [
     "What do you do during the break?",
@@ -2055,13 +2122,18 @@ window.SEJ_LESSONS = [
    ],
    [
     "Say your morning in order.",
-    "First, I ___. Next, I ___.",
-    "First, I wake up. Next, I eat my breakfast."
+    "At first, I ___.",
+    "At first, I wake up and brush my teeth."
    ],
    [
-    "How does your school day end?",
+    "What do you do next?",
+    "Next, I ___.",
+    "Next, I eat my breakfast."
+   ],
+   [
+    "What do you do at the end?",
     "Finally, I ___.",
-    "Finally, I pack my bag and go home."
+    "Finally, I pack my bag and leave school."
    ]
   ]
  },
@@ -2078,27 +2150,33 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Homework",
-    "বাড়ির কাজ"
+    "বাড়ির কাজ",
+    true
    ],
    [
     "Play outside",
-    "বাইরে খেলা"
+    "বাইরে খেলা",
+    true
    ],
    [
     "Help clean the house",
-    "ঘর পরিষ্কার করতে সাহায্য করা"
+    "ঘর পরিষ্কার করতে সাহায্য করা",
+    true
    ],
    [
     "Help with dinner",
-    "Dinner বানাতে সাহায্য করা"
+    "Dinner বানাতে সাহায্য করা",
+    true
    ],
    [
     "Read books",
-    "বই পড়া"
+    "বই পড়া",
+    true
    ],
    [
     "Watch TV",
-    "TV দেখা"
+    "TV দেখা",
+    true
    ]
   ],
   "games": [
@@ -2213,12 +2291,12 @@ window.SEJ_LESSONS = [
     "In the evening, I read books or watch TV."
    ],
    [
-    "Invite your friend to the park.",
+    "Invite your friend.",
     "Do you want to go to the park after school?",
     "Do you want to go to the park after school?"
    ],
    [
-    "Say no to an invitation politely.",
+    "Say no politely.",
     "I’d love to, but ___.",
     "I’d love to, but I have too much homework."
    ]
@@ -2237,39 +2315,48 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Tall",
-    "লম্বা"
+    "লম্বা",
+    true
    ],
    [
     "Huge",
-    "বিশাল"
+    "বিশাল",
+    true
    ],
    [
     "Modern",
-    "আধুনিক"
+    "আধুনিক",
+    true
    ],
    [
     "Old",
-    "পুরানো"
+    "পুরানো",
+    true
    ],
    [
     "Beautiful",
-    "সুন্দর"
+    "সুন্দর",
+    true
    ],
    [
     "Colorful",
-    "রঙিন"
+    "রঙিন",
+    true
    ],
    [
     "Cozy",
-    "আরামদায়ক"
+    "আরামদায়ক",
+    true
    ],
    [
     "Spacious",
-    "প্রশস্ত"
+    "প্রশস্ত",
+    true
    ],
    [
     "Peaceful",
-    "শান্তিপূর্ণ"
+    "শান্তিপূর্ণ",
+    true
    ]
   ],
   "games": [
@@ -2411,17 +2498,17 @@ window.SEJ_LESSONS = [
    [
     "What rooms does your home have?",
     "We have ___.",
-    "We have one living room, two bedrooms and one kitchen."
+    "We have 1 living room, 2 bedrooms, 1 balcony, 1 kitchen and 2 bathrooms."
    ],
    [
-    "What is your dream house like?",
+    "What is your dream house?",
     "My dream house is ___.",
-    "My dream house is a duplex house."
+    "My dream house is duplex house."
    ],
    [
     "Describe your dream house.",
     "It will be a ___ house with ___.",
-    "It will be a cozy house with four bedrooms."
+    "It will be a cozy house with 4 bedrooms and a living room with a big TV."
    ]
   ]
  },
@@ -2438,35 +2525,43 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Spacious",
-    "বড় এবং খোলামেলা"
+    "বড় এবং খোলামেলা",
+    true
    ],
    [
     "Cozy",
-    "আরামদায়ক এবং শান্ত"
+    "আরামদায়ক এবং শান্ত",
+    true
    ],
    [
     "Bright",
-    "উজ্জ্বল এবং আলোয় ভরা"
+    "উজ্জ্বল এবং আলোয় ভরা",
+    true
    ],
    [
     "Tidy",
-    "গোছানো এবং পরিষ্কার"
+    "গোছানো এবং পরিষ্কার",
+    true
    ],
    [
     "Messy",
-    "অগোছালো এবং এলোমেলো"
+    "অগোছালো এবং এলোমেলো",
+    true
    ],
    [
     "Laundry",
-    "কাপড় ধোয়া"
+    "কাপড় ধোয়া",
+    true
    ],
    [
     "Sweeping",
-    "ঝাড়ু দেওয়া"
+    "ঝাড়ু দেওয়া",
+    true
    ],
    [
     "Mopping",
-    "Floor মোছা"
+    "floor মুছা",
+    true
    ]
   ],
   "games": [
@@ -2595,24 +2690,24 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "Describe your bedroom.",
+    "What things are in the room?",
     "My bedroom has a ___ and a ___.",
     "My bedroom has a big bed and a wardrobe."
    ],
    [
-    "What do you do in the living room?",
+    "What do we do in the room?",
     "We ___ in the living room.",
     "We sit, chat and watch TV in the living room."
    ],
    [
-    "Which chore do you do at home?",
+    "How can we describe other household chores?",
     "I help with ___.",
     "I help with dishwashing."
    ],
    [
-    "Why do we do chores?",
-    "It keeps ___.",
-    "It keeps the house clean."
+    "Why do we need to do it?",
+    "This keeps the house ___.",
+    "This keeps the house clean and helps everyone work as a team!"
    ]
   ]
  },
@@ -2629,31 +2724,38 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Join",
-    "যোগ দেওয়া"
+    "যোগ দেওয়া",
+    true
    ],
    [
     "Visit",
-    "দেখা করা"
+    "দেখা করা",
+    true
    ],
    [
     "Celebrate",
-    "উদযাপন করা"
+    "উদযাপন করা",
+    true
    ],
    [
     "Hang out",
-    "সময় কাটানো"
+    "সময় কাটানো",
+    true
    ],
    [
     "Attend",
-    "উপস্থিত থাকা"
+    "উপস্থিত থাকা",
+    true
    ],
    [
     "Plan",
-    "পরিকল্পনা করা"
+    "পরিকল্পনা করা",
+    true
    ],
    [
     "Explore",
-    "ঘুরে দেখা"
+    "ঘুরে দেখা",
+    true
    ]
   ],
   "games": [
@@ -2759,19 +2861,19 @@ window.SEJ_LESSONS = [
     "Let’s play football in the playground this afternoon."
    ],
    [
-    "Invite your friend to your birthday party.",
+    "Would you like to come?",
     "Would you like to come to my birthday party?",
     "Would you like to come to my birthday party this Saturday?"
    ],
    [
-    "Say yes to an invitation.",
-    "Yes, I’d love to!",
+    "Say yes.",
+    "Yes, I’d love to! ___",
     "Yes, I’d love to! What time is it?"
    ],
    [
     "Say no politely.",
-    "Sorry, I can’t make it. ___",
-    "Sorry, I can’t make it. Thanks for inviting me!"
+    "I’m sorry, ___.",
+    "I’m sorry, I have other plans, but thanks for inviting me!"
    ]
   ]
  },
@@ -2788,35 +2890,43 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Take care of",
-    "যত্ন নেওয়া"
+    "যত্ন নেওয়া",
+    true
    ],
    [
     "Cook",
-    "রান্না করা"
+    "রান্না করা",
+    true
    ],
    [
     "Support",
-    "সাহায্য করা"
+    "সাহায্য করা",
+    true
    ],
    [
     "Tell stories",
-    "গল্প বলা"
+    "গল্প বলা",
+    true
    ],
    [
     "Look after",
-    "দেখভাল করা"
+    "দেখভাল করা",
+    true
    ],
    [
     "Fix",
-    "মেরামত করা"
+    "মেরামত করা",
+    true
    ],
    [
     "Share",
-    "ভাগ করে নেওয়া"
+    "ভাগ করে নেওয়া",
+    true
    ],
    [
     "Guide",
-    "পথ দেখানো"
+    "পথ দেখানো",
+    true
    ]
   ],
   "games": [
@@ -2918,17 +3028,17 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "How many members are in your family?",
+    "How many member do you have in your family?",
     "I have ___ members in my family.",
     "I have 5 members in my family."
    ],
    [
-    "What do your parents do?",
+    "What does your father and mother do?",
     "My father ___, and my mother ___.",
-    "My father works at an office, and my mother takes care of us."
+    "My father works at an office, and my mother stays at home and takes care of us."
    ],
    [
-    "Do you have brothers or sisters?",
+    "How many brothers/sisters do you have?",
     "I have ___.",
     "I have one elder brother and one younger sister."
    ],
@@ -2952,39 +3062,48 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Soft",
-    "নরম"
+    "নরম",
+    true
    ],
    [
     "Colorful",
-    "রঙিন"
+    "রঙিন",
+    true
    ],
    [
     "Big",
-    "বড়"
+    "বড়",
+    true
    ],
    [
     "Small",
-    "ছোট"
+    "ছোট",
+    true
    ],
    [
     "Fun",
-    "মজাদার"
+    "মজাদার",
+    true
    ],
    [
     "Shiny",
-    "ঝকঝকে"
+    "ঝকঝকে",
+    true
    ],
    [
     "Build",
-    "তৈরি করা"
+    "তৈরি করা",
+    true
    ],
    [
     "Solve",
-    "সমাধান করা"
+    "সমাধান করা",
+    true
    ],
    [
     "Pretend",
-    "ভান করা"
+    "ভান করা",
+    true
    ]
   ],
   "games": [
@@ -3133,24 +3252,24 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "What is your most favorite toy?",
+    "What’s your most favourite toy?",
     "My most favorite toy is ___.",
     "My most favorite toy is a soft teddy bear."
    ],
    [
-    "What does your toy look like?",
-    "It is ___. It has ___.",
-    "It is brown. It has cute black eyes."
+    "How does your favorite toy look?",
+    "It has ___.",
+    "It has cute black eyes with fluffy fur."
    ],
    [
     "Why do you like it so much?",
-    "I like it because ___.",
-    "I like it because it makes me feel safe."
+    "I like my teddy bear because ___.",
+    "I like my teddy bear because it makes me feel safe and cozy when I sleep."
    ],
    [
-    "What is your favorite game?",
-    "My favorite game is ___. We play it ___.",
-    "My favorite game is football. We play it at the park."
+    "What’s your favorite game?",
+    "I love playing ___!",
+    "I love playing football! It’s the best game ever!"
    ]
   ]
  },
@@ -3412,22 +3531,22 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "What does a lion look like?",
+    "What does the Lion look like?",
     "The lion has ___.",
-    "The lion has a golden-brown body and a big mane."
+    "The lion has a golden-brown body and a big, bushy mane around its head."
    ],
    [
-    "What can an elephant do?",
-    "It can ___.",
-    "It can use its trunk to grab food and water."
+    "What can the animal do?",
+    "The elephant can ___.",
+    "The elephant can use its trunk to grab food and water."
    ],
    [
-    "Do you have a pet?",
-    "My pet is a ___. Its name is ___.",
-    "My pet is a goldfish. Its name is Bubbles."
+    "Describe your pet.",
+    "___ is my pet ___.",
+    "Bubbles is my pet goldfish."
    ],
    [
-    "What do you do with your pet?",
+    "What is your favorite activity with your pet?",
     "My favorite activity with my pet is ___.",
     "My favorite activity with my pet is feeding it every day."
    ]
@@ -3446,39 +3565,48 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "In",
-    "মধ্যে"
+    "মধ্যে",
+    true
    ],
    [
     "On",
-    "উপর"
+    "উপর",
+    true
    ],
    [
     "Under",
-    "নিচে"
+    "নিচে",
+    true
    ],
    [
     "Near",
-    "কাছে"
+    "কাছে",
+    true
    ],
    [
     "Between",
-    "মধ্যে"
+    "মধ্যে",
+    true
    ],
    [
     "Behind",
-    "পেছনে"
+    "পেছনে",
+    true
    ],
    [
     "In front of",
-    "সামনে"
+    "সামনে",
+    true
    ],
    [
     "Far",
-    "দূরে"
+    "দুরে",
+    true
    ],
    [
     "Around",
-    "চারপাশে"
+    "চারপাশে",
+    true
    ]
   ],
   "games": [
@@ -3711,24 +3839,24 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "What color is the sky?",
-    "The sky is ___.",
-    "The sky is blue."
+    "What color is the dress?",
+    "The dress is ___.",
+    "The dress is red."
    ],
    [
-    "Pick an object near you. What color is it?",
-    "The ___ is ___.",
-    "The bag is red."
-   ],
-   [
-    "What shape is a ball?",
+    "How do we describe the ball’s shape?",
     "The ball is ___.",
     "The ball is round."
    ],
    [
-    "Where is your book?",
-    "The book is on ___.",
-    "The book is on the table."
+    "Where is the ball?",
+    "The ball is ___.",
+    "The ball is on the table."
+   ],
+   [
+    "Where is the dog?",
+    "The dog is ___.",
+    "The dog is under the table."
    ]
   ]
  },
@@ -3931,20 +4059,20 @@ window.SEJ_LESSONS = [
    [
     "What are you wearing today?",
     "Today, I am wearing ___.",
-    "Today, I am wearing a blue shirt and white sandals."
+    "Today, I am wearing a Salwar Kameez with an orna and white sandals."
    ],
    [
-    "Describe your clothes.",
-    "My ___ is ___ and made of ___.",
-    "My dress is pink and made of cotton."
+    "How would you describe the clothing?",
+    "My ___ is ___, and it’s made of ___.",
+    "My dress is pink, and it’s made of cotton."
    ],
    [
     "Why did you choose these clothes?",
-    "I chose this because ___.",
-    "I chose this because it is light and comfortable."
+    "I chose this dress because ___.",
+    "I chose this dress because it’s light and perfect for a warm day."
    ],
    [
-    "What do people wear in the cold?",
+    "What would you wear in the cold?",
     "People wear ___ when it’s cold.",
     "People wear a sweater when it’s cold."
    ]
@@ -3963,27 +4091,33 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Turn left",
-    "বামে যাওয়া"
+    "বামে যাওয়া",
+    true
    ],
    [
     "Turn right",
-    "ডানে যাওয়া"
+    "ডান যাওয়া",
+    true
    ],
    [
     "Go straight",
-    "সোজা যাওয়া"
+    "সোজা যাওয়া",
+    true
    ],
    [
     "Turn back",
-    "পেছানো"
+    "পেছানো",
+    true
    ],
    [
     "Turn around",
-    "উল্টা ঘুরে যাওয়া"
+    "উল্টা ঘুরে যাওয়া",
+    true
    ],
    [
     "Down the street",
-    "রাস্তার সামনের দিকে"
+    "রাস্তার সামনের দিকে",
+    true
    ]
   ],
   "games": [
@@ -4083,7 +4217,7 @@ window.SEJ_LESSONS = [
       "Tells drivers to stop completely before moving forward"
      ],
      [
-      "🔴 Red light",
+      "🔴 Traffic Light (Red)",
       "Stop the car and wait till the light becomes green"
      ],
      [
@@ -4111,11 +4245,11 @@ window.SEJ_LESSONS = [
       "Shows the way out of a building or area"
      ],
      [
-      "🟢 Green light",
+      "🟢 Traffic Light (Green)",
       "Go with the car"
      ],
      [
-      "🟡 Yellow light",
+      "🟡 Traffic Light (Yellow)",
       "Slow down the car"
      ]
     ]
@@ -4204,22 +4338,22 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "What does a traffic light do?",
-    "A traffic light tells cars when to ___.",
-    "A traffic light tells cars when to stop and go."
+    "What is this? What is the use of it?",
+    "A traffic light has three lights. It tells cars and people when to ___.",
+    "A traffic light has three lights. It tells cars and people when to stop, when to go, and when to slow down."
    ],
    [
     "Ask for directions to the park.",
-    "Excuse me, how do I get to the park?",
-    "Excuse me, how do I get to the park?"
+    "Excuse me, can you tell me how to get to the ___?",
+    "Excuse me, can you tell me how to get to the park?"
    ],
    [
-    "Tell someone the way.",
-    "Go straight, then turn ___.",
-    "Go straight, then turn left at the school."
+    "How do you get to the Park from the Restaurant?",
+    "Go straight and then turn ___.",
+    "Go straight and then turn left at the school."
    ],
    [
-    "Someone helped you. What do you say?",
+    "Someone helped you. Reply.",
     "Thanks! Is it far from here?",
     "Thanks! Is it far from here?"
    ]
@@ -4508,23 +4642,23 @@ window.SEJ_LESSONS = [
   "talk": [
    [
     "What is your favorite festival?",
-    "My favorite festival is ___.",
-    "My favorite festival is Pohela Boishakh."
+    "My favourite festival is ___.",
+    "My favourite festival is Pohela Boishakh."
    ],
    [
     "Who did you celebrate with?",
     "I celebrated it with ___ at ___.",
-    "I celebrated it with my parents at Ramna Park."
+    "I celebrated it with my parents and my cousin at Ramna Park."
    ],
    [
-    "Share a special moment.",
-    "I remember when ___.",
-    "I remember when I got a big red balloon."
+    "What’s your favourite festival memory?",
+    "I got ___.",
+    "I got a big red balloon and ate panta-ilish for the first time!"
    ],
    [
     "How did you feel?",
     "It made me feel ___.",
-    "It made me feel so happy."
+    "It made me feel so special and brave."
    ]
   ]
  },
@@ -4541,19 +4675,23 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Commute",
-    "যাতায়াত"
+    "যাতায়াত",
+    true
    ],
    [
     "Transportation",
-    "পরিবহন"
+    "পরিবহন",
+    true
    ],
    [
     "Route",
-    "পথ"
+    "পথ",
+    true
    ],
    [
     "Carpool",
-    "একসাথে গাড়ি ব্যবহার করা"
+    "একসাথে গাড়ি ব্যবহার করা",
+    true
    ],
    [
     "Subway",
@@ -4806,24 +4944,24 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "What is this vehicle? It has wings.",
-    "This is an ___.",
-    "This is an aeroplane."
+    "What is the name of this transport?",
+    "This is a ___.",
+    "This is a bus."
    ],
    [
-    "Where does a bus go?",
+    "Where does it go?",
     "It goes on the ___.",
     "It goes on the road."
    ],
    [
-    "Where did you go recently?",
-    "I travelled to ___.",
-    "I travelled to Cox’s Bazar."
+    "Did you travel anywhere recently? Where did you go?",
+    "I went to ___.",
+    "I went to Cox’s Bazar."
    ],
    [
-    "How did you travel, and with whom?",
-    "We travelled by ___. I went with ___.",
-    "We travelled by bus. I went with my parents."
+    "Who did you go with?",
+    "I went with ___.",
+    "I went with my parents and my little brother."
    ]
   ]
  },
@@ -4840,39 +4978,48 @@ window.SEJ_LESSONS = [
   "words": [
    [
     "Spring",
-    "বসন্ত"
+    "বসন্ত",
+    true
    ],
    [
     "Summer",
-    "গ্রীষ্ম"
+    "গ্রীষ্ম",
+    true
    ],
    [
     "Autumn",
-    "শরৎ"
+    "শরৎ",
+    true
    ],
    [
     "Winter",
-    "শীত"
+    "শীত",
+    true
    ],
    [
     "Heatwave",
-    "তাপপ্রবাহ"
+    "তাপপ্রবাহ",
+    true
    ],
    [
     "Drought",
-    "খরা"
+    "খরা",
+    true
    ],
    [
     "Monsoon",
-    "বর্ষা"
+    "বর্ষা",
+    true
    ],
    [
     "Chilly",
-    "ঠাণ্ডা"
+    "ঠাণ্ডা",
+    true
    ],
    [
     "Mild",
-    "হালকা"
+    "হালকা",
+    true
    ]
   ],
   "games": [
@@ -5114,12 +5261,12 @@ window.SEJ_LESSONS = [
   ],
   "talk": [
    [
-    "What is your favorite season?",
-    "My favorite season is ___.",
-    "My favorite season is winter."
+    "What is the name of the season?",
+    "The name of the season is ___.",
+    "The name of the season is winter."
    ],
    [
-    "What do you like about it?",
+    "What do you like about this season?",
     "I like the ___.",
     "I like the cold weather and wearing warm clothes."
    ],
@@ -5129,9 +5276,9 @@ window.SEJ_LESSONS = [
     "I wear jackets, woolly hats and gloves."
    ],
    [
-    "What do you like to do in this season?",
-    "I like ___ during this season.",
-    "I like drinking hot chocolate during this season."
+    "What do you like to do during this season?",
+    "I like ___.",
+    "I like drinking hot chocolate and staying cozy at home."
    ]
   ]
  }

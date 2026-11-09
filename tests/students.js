@@ -46,6 +46,8 @@ const CROWD = 27;
 
   const teacher = await open(390, 780, `${BASE}/?remote=${code}&test=1`, 'teacher');
   await teacher.waitForSelector('#rm-students-toggle', { timeout: 15000 });
+  await teacher.waitForTimeout(600);
+  await teacher.screenshot({ path: `${SHOTS}/teacher-setup.png`, fullPage: true });
   await waitTv(() => SEJ.classDebug.state.phone === true);
   check('teacher QR goes once connected', await tv.evaluate(() => SEJ.classDebug.state.qr === false));
 
@@ -160,8 +162,11 @@ const CROWD = 27;
   await teacher.locator('.rm-plus').nth(3).click();
   await waitTv((n) => SEJ.classDebug.state.teams[3].score === n, b4 + 1);
   check('teacher can still give points', true);
-  await teacher.locator('#rm-students').scrollIntoViewIfNeeded();
-  await teacher.screenshot({ path: `${SHOTS}/teacher-students.png`, fullPage: true });
+  await teacher.screenshot({ path: `${SHOTS}/teacher-play.png`, fullPage: true });
+  await teacher.click('#rm-more');
+  await teacher.waitForSelector('#rm-students');
+  await teacher.screenshot({ path: `${SHOTS}/teacher-more.png` });
+  await teacher.click('#rm-more-close');
 
   crowdOn = false;
   await crowdLoop;
@@ -183,6 +188,7 @@ const CROWD = 27;
 
   /* Order and speaking screens, using a lesson with those rounds. */
   const tv2 = await open(1280, 720, `${BASE}/?class=1.2&test=1`, 'tv2');
+  await tv2.waitForTimeout(100);
   await tv2.waitForSelector('#cl-students');
   await tv2.click('#cl-students');
   await tv2.waitForSelector('#cl-joined', { timeout: 15000 });

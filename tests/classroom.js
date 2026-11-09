@@ -48,12 +48,13 @@ const check = (name, ok, extra = '') => {
         if (st.kind === 'sort') check(`${code} sort group`, !!st.groups[it.group], JSON.stringify(it));
         if (st.kind === 'order') check(`${code} tiles match`, it.tiles.slice().sort().join() === it.parts.slice().sort().join(), JSON.stringify(it));
         if (st.kind === 'flash') check(`${code} flash`, it.en && it.bn, JSON.stringify(it));
+        if (st.kind === 'read') check(`${code} read`, !!it.en, JSON.stringify(it));
         if (['wheel', 'boxes', 'role'].includes(st.kind)) check(`${code} speak`, it.q && it.frame && it.sample, JSON.stringify(it));
       }
     }
   }
   console.log('Round types across lessons:', JSON.stringify(seen));
-  for (const k of ['flash', 'quiz', 'sort', 'order', 'wheel', 'boxes', 'role']) check(`${k} is used`, seen[k] > 0);
+  for (const k of ['flash', 'read', 'quiz', 'sort', 'order', 'wheel', 'boxes', 'role']) check(`${k} is used`, seen[k] > 0);
 
   /* 2. Every lesson plays from lobby to podium on the TV by itself. */
   for (const { code } of plans) {
@@ -131,6 +132,7 @@ const check = (name, ok, extra = '') => {
   check('double tap moves once', (await tvState()).item === before.item + 1);
 
   /* Team count, class mode, names, roster and picks. */
+  await phone.click('#rm-more');
   await phone.getByRole('button', { name: '3', exact: true }).click();
   await waitTv(() => SEJ.classDebug.state.teams.length === 3);
   check('TV shows 3 teams', (await tv.locator('.cl-team').count()) === 3);
@@ -165,12 +167,12 @@ const check = (name, ok, extra = '') => {
   const t0 = (await tvState()).left;
   await tv.waitForTimeout(1200);
   check('timer counts down', (await tvState()).left < t0);
-  await phone.waitForFunction(() => /Pause/.test(document.querySelector('#rm-timer').textContent), null, { timeout: 8000 });
+  await phone.waitForFunction(() => /Pause/.test(document.querySelector('#rm-timer').getAttribute('aria-label')), null, { timeout: 8000 });
   await phone.click('#rm-timer');
   await waitTv(() => !SEJ.classDebug.state.timer.running);
 
   /* The speaking round, then the podium. */
-  await phone.waitForSelector('.rm-rounds', { timeout: 8000 });
+  await phone.click('#rm-more');
   await phone.getByRole('button', { name: 'Speak', exact: true }).click();
   await waitTv(() => SEJ.classDebug.state.stage === 2);
   await tv.waitForTimeout(150);
@@ -196,7 +198,7 @@ const check = (name, ok, extra = '') => {
   await waitTv((n) => SEJ.classDebug.state.teams[1].score === n, start + 7);
 
   /* 6. End from the phone needs two taps. */
-  await phone.waitForFunction(() => [...document.querySelectorAll('.rm-btn')].some((b) => /End/.test(b.textContent)), null, { timeout: 8000 });
+  await phone.click('#rm-more');
   await phone.getByRole('button', { name: '🏁 End' }).click();
   await tv.waitForTimeout(800);
   check('one tap does not end the game', (await tvState()).screen === 'stage');
@@ -235,7 +237,64 @@ const check = (name, ok, extra = '') => {
     await tv.screenshot({ path: `${SHOTS}/style-${label}-speak-${kind2}-open.png` });
   }
 
+  /* Build a sentence on the TV: wrong order bounces back, dragging and tapping both work, right order wins. */
+  await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
+  await tv.goto(`${BASE}/index.html?test=1#/class/1.2`);
+  await tv.reload();
+  await tv.waitForSelector('#cl-start');
+  await tv.click('#cl-start');
+  await tv.evaluate(() => { SEJ.classDebug.dispatch({ type: 'goto', stage: 1 }); SEJ.$$('.cl-splash').forEach((x) => x.remove()); });
+  await tv.waitForSelector('.cl-tray .cl-tile');
+  await tv.waitForTimeout(150);
+  await tv.screenshot({ path: `${SHOTS}/tv-drag-start.png` });
+  const orderItem = await tv.evaluate(() => { const it = SEJ.classDebug.getPlan().stages[1].items[0]; return { parts: it.parts, tiles: it.tiles }; });
+  const dragTo = async (i, sel) => {
+    const a = await tv.locator(`.cl-tile[data-tile="${i}"]`).boundingBox();
+    const b = await tv.locator(sel).boundingBox();
+    await tv.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await tv.mouse.down();
+    await tv.mouse.move(a.x + a.width / 2 + 20, a.y - 10, { steps: 3 });
+    await tv.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 6 });
+    await tv.mouse.up();
+    await tv.evaluate(() => SEJ.$$('.cl-splash').forEach((x) => x.remove()));
+  };
+  await dragTo(0, '#cl-built');
+  check('drag puts a tile in the sentence', (await tv.evaluate(() => SEJ.classDebug.state.built.length)) === 1);
+  await tv.screenshot({ path: `${SHOTS}/tv-drag-one.png` });
+  await tv.locator('.cl-tile.placed').first().click();
+  check('tap takes a tile back', (await tv.evaluate(() => SEJ.classDebug.state.built.length)) === 0);
+  /* A wrong sentence shakes and clears. */
+  const used = new Set();
+  const correct = orderItem.parts.map((p) => { const i = orderItem.tiles.findIndex((t, n) => t === p && !used.has(n)); used.add(i); return i; });
+  const wrongOrder = correct.slice().reverse();
+  for (const i of wrongOrder) await tv.locator(`.cl-tray .cl-tile[data-tile="${i}"]`).click();
+  await tv.waitForFunction(() => SEJ.classDebug.state.built.length === 0 && !SEJ.classDebug.state.revealed, null, { timeout: 5000 });
+  check('wrong order clears', true);
+  /* Dropping onto a placed tile inserts before it. */
+  await dragTo(correct[1], '#cl-built');
+  await dragTo(correct[0], `.cl-tile.placed[data-tile="${correct[1]}"]`);
+  check('drop on a tile inserts before it', JSON.stringify(await tv.evaluate(() => SEJ.classDebug.state.built)) === JSON.stringify([correct[0], correct[1]]));
+  for (const i of correct.slice(2)) await tv.locator(`.cl-tray .cl-tile[data-tile="${i}"]`).click();
+  check('right order reveals', await tv.evaluate(() => SEJ.classDebug.state.revealed));
+  await tv.waitForTimeout(120);
+  await tv.screenshot({ path: `${SHOTS}/tv-drag-done.png` });
+
+  /* Read and Say, for a lesson without enough Bangla on its slides. */
+  await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
+  await tv.goto(`${BASE}/index.html?test=1#/class/4.2`);
+  await tv.reload();
+  await tv.waitForSelector('#cl-start');
+  await tv.click('#cl-start');
+  await tv.waitForTimeout(100);
+  check('Read and Say used without slide Bangla', (await tv.evaluate(() => SEJ.classDebug.getPlan().stages[0].kind)) === 'read');
+  check('Read and Say shows no Bangla', !/[\u0980-\u09FF]/.test(await tv.textContent('.cl-stage')));
+  await tv.evaluate(() => SEJ.$$('.cl-splash').forEach((x) => x.remove()));
+  await tv.screenshot({ path: `${SHOTS}/tv-read.png` });
+
   /* 8. Controls drawer works without a phone. */
+  check('TV hides teacher tools', await tv.evaluate(() => document.querySelector('#cl-tools').hidden || new Promise((r) => setTimeout(() => r(document.querySelector('#cl-tools').hidden), 3300))));
+  await tv.mouse.move(300, 300);
+  await tv.mouse.move(320, 320);
   await tv.click('#cl-controls');
   await tv.waitForSelector('.cl-drawer #rm-primary');
   await tv.screenshot({ path: `${SHOTS}/tv-drawer.png` });

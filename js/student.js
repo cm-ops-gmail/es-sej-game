@@ -148,21 +148,36 @@
     }
     function orderInput() {
       const tiles = feed.tiles;
-      const left = tiles.map((w, i) => ({ w, i })).filter((x) => !order.includes(x.i));
-      return h('div', { class: 'st-stack' },
-        h('p', { class: 'st-note st-light', text: feed.joiner ? 'Tap the words in order' : 'Tap the letters in order' }),
-        h('div', { class: 'st-built', 'aria-label': 'Your answer' }, order.map((i, pos) => h('button', {
-          class: 'st-tile placed', onclick: () => { order.splice(pos, 1); lastSig = ''; sfx.tap(); paint(); },
-        }, tiles[i]))),
-        h('div', { class: 'st-tiles' }, left.map((x) => h('button', {
-          class: 'st-tile', onclick: () => {
-            order.push(x.i);
+      const finish = () => {
+        lastSig = '';
+        if (order.length === tiles.length) answer(order.map((i) => tiles[i]).join(feed.joiner || ''));
+        else paint();
+      };
+      const place = (i, before) => {
+        order = order.filter((x) => x !== i);
+        const at = order.indexOf(before);
+        if (at >= 0) order.splice(at, 0, i); else order.push(i);
+        sfx.tap();
+        finish();
+      };
+      const tile = (i, placed) => {
+        const el = h('button', { class: `st-tile ${placed ? 'placed' : ''}`, 'data-tile': i, text: tiles[i] });
+        SEJ.tapOrDrag(el, placed ? '.st-built,.st-tiles,.st-tile.placed' : '.st-built,.st-tile.placed', (target) => {
+          if (placed && (!target || target.classList.contains('st-tiles'))) {
+            order = order.filter((x) => x !== i);
             sfx.tap();
             lastSig = '';
-            if (order.length === tiles.length) answer(order.map((i) => tiles[i]).join(feed.joiner || ''));
-            else paint();
-          },
-        }, x.w))));
+            return paint();
+          }
+          return place(i, target && target.classList.contains('st-tile') ? Number(target.dataset.tile) : undefined);
+        });
+        return el;
+      };
+      const left = tiles.map((_, i) => i).filter((i) => !order.includes(i));
+      return h('div', { class: 'st-stack' },
+        h('p', { class: 'st-note st-light', text: feed.joiner ? 'Drag or tap the words in order' : 'Drag or tap the letters in order' }),
+        h('div', { class: 'st-built', 'aria-label': 'Your answer' }, order.map((i) => tile(i, true))),
+        h('div', { class: 'st-tiles' }, left.map((i) => tile(i, false))));
     }
     function stageScreen() {
       const chosen = me.answers[feed.qid];

@@ -54,8 +54,8 @@ The rounds come from the lesson's own content, so Teacher Mode edits appear here
 
 | Round | Game | Comes from |
 |---|---|---|
-| Warm-up | Word Flash: Bangla word, students say the English | Power words |
-| Team Battle | Team Quiz, Group Sort or Put It in Order | One of the lesson's games |
+| Warm-up | Word Flash: Bangla word, students say the English. Lessons with too little Bangla on the slides use Read and Say | Power words whose Bangla is on the slides |
+| Team Battle | Team Quiz, Group Sort or Put It in Order (drag or tap the tiles, on the TV or a student's phone) | One of the lesson's games |
 | Speak | Spin and Speak, Mystery Boxes or Role-play | The speaking prompts |
 
 The phone shows the answer before the class sees it. It also has reveal and next, the timer, 50:50, team points, a random student or team,
@@ -72,7 +72,7 @@ The teacher can still give or take points, and can remove a student from the pan
 - The teacher's QR disappears once Student Play is on, so students can only scan their own. Teachers should scan theirs first.
 - A bigger team can earn more points, so keep teams about the same size.
 
-**If the phone can't connect,** select 🎛️ **Controls** on the TV. It has the same panel. On a keyboard: Space = main action, ← → = back and next,
+The TV only shows the game. **If the phone can't connect,** move the mouse or touch the TV and select 🎛️ **Controls**. It has the same panel. On a keyboard: Space = main action, ← → = back and next,
 1 to 5 = give a point, T = timer, R = random pick, C = QR code, M = controls, F = full screen.
 
 **How the phone link works:** `api/room.mjs` passes messages through Vercel's Runtime Cache, which needs no database or account setup. Rooms expire after 4 hours.

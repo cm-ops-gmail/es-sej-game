@@ -30,4 +30,5 @@ These reference games had fewer than 5 items, so slide content was added to make
 - Pictures: the games use stickers and drawn shapes instead of the images uploaded to Wordwall.
 - Long games: each play shows a fresh mix of up to 8 to 12 items, so rounds stay short. All items stay in the game.
 - Mystery Boxes: as in Wordwall, each box holds a question with two answers.
-- Speaking rounds: these are new and use sentence patterns from the slides.
+- Speaking rounds: these are new. Questions and sample answers use slide sentences where the slides have them. Some questions are short tasks for the teacher to read out, such as "Be the waiter.", and some samples fill a slide pattern, such as "My school’s name is ___."
+- Power words: the Bangla comes from the slides wherever the slides give it. 36 of the 173 meanings aren't on the slides, mostly in lessons 1.1, 2.3, 4.2, 4.4 and 4.6. They appear on the lesson page but never in Class Battle.

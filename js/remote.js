@@ -115,13 +115,23 @@
 
   SEJ.clock = (sec) => { const t = Math.max(0, Math.ceil(sec)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
 
-  /* ---------- the control panel ---------- */
+  /* ---------- the control panel ----------
+     One screen for running the class: the answer, one big next-step button, and team score tiles.
+     Everything else sits behind "More". */
   SEJ.controlPanel = function (container, send) {
-    let state = null, pending = [], armed = null, armTimer = 0, navTimer = 0, sheet = null, sentRev = -1, timerAt = 0;
+    let state = null, pending = [], armed = null, armTimer = 0, navTimer = 0, sheet = null, sentRev = -1, timerAt = 0, moreOpen = false, toastTimer = 0;
     const body = h('div', { class: 'rm-body' });
-    container.append(body);
+    const toast = h('div', { class: 'rm-toast', role: 'status', hidden: true });
+    container.append(body, toast);
 
     const tapSend = (cmd) => { SEJ.buzz(12); sfx.tap(); send(cmd); };
+    const say = (text) => {
+      toast.textContent = text;
+      toast.hidden = false;
+      SEJ.fx.play(toast, 'jelly');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.hidden = true; }, 1300);
+    };
     /* Moving buttons carry the screen they were pressed on, so a double tap can't skip a question. */
     const nav = (type, extra) => {
       if (sentRev === state.rev) return;
@@ -181,24 +191,18 @@
         onclick: () => { if (current !== n) tapSend({ type: 'teams', n }); },
       }, label)));
     }
-    function scores() {
-      const panel = h('section', { class: 'rm-card' },
-        h('div', { class: 'rm-head' }, h('h2', { text: '⭐ Scores' }), teamChooser()));
-      if (state.mode === 'class') {
-        panel.append(h('div', { class: 'rm-team' },
-          h('span', { class: 'rm-team-name', text: 'Whole class' }),
-          h('button', { class: 'rm-minus', 'aria-label': 'Take one point from the class', onclick: () => tapSend({ type: 'score', team: -1, delta: -1 }) }, '−'),
-          h('b', { class: 'rm-num', text: scoreShown(-1) }),
-          h('button', { class: 'rm-plus', 'aria-label': 'Give the class one point', onclick: () => tapSend({ type: 'score', team: -1, delta: 1 }) }, '+1')));
-      } else {
-        state.teams.forEach((t, i) => panel.append(h('div', { class: 'rm-team', style: { '--team': t.color } },
-          h('span', { class: 'rm-team-name' }, h('i', { class: 'rm-dot' }), t.name),
-          h('button', { class: 'rm-minus', 'aria-label': `Take one point from ${t.name}`, onclick: () => tapSend({ type: 'score', team: i, delta: -1 }) }, '−'),
-          h('b', { class: 'rm-num', text: scoreShown(i) }),
-          h('button', { class: 'rm-plus', 'aria-label': `Give ${t.name} one point`, onclick: () => tapSend({ type: 'score', team: i, delta: 1 }) }, '+1'))));
-        panel.append(h('button', { class: 'rm-link', onclick: namesSheet }, '✏️ Change team names'));
-      }
-      return panel;
+    /* A tile is one big +1 button. The small corner button takes a point back. */
+    function scoreTile(team, name, color) {
+      return h('div', { class: 'rm-tile', style: { '--team': color } },
+        h('button', {
+          class: 'rm-plus', 'aria-label': `Give ${name} one point`,
+          onclick: () => { tapSend({ type: 'score', team, delta: 1 }); say(`+1 ${name}`); },
+        }, h('span', { class: 'rm-tile-name', text: name }), h('b', { class: 'rm-num', text: scoreShown(team) }), h('span', { class: 'rm-tile-add', text: '+1' })),
+        h('button', { class: 'rm-minus', 'aria-label': `Take one point from ${name}`, onclick: () => { tapSend({ type: 'score', team, delta: -1 }); say(`−1 ${name}`); } }, '−'));
+    }
+    function scoreGrid() {
+      if (state.mode === 'class') return h('section', { class: 'rm-tiles one' }, scoreTile(-1, 'Whole class', '#7b2ff7'));
+      return h('section', { class: `rm-tiles n${state.teams.length}`, 'aria-label': 'Team scores' }, state.teams.map((t, i) => scoreTile(i, t.name, t.color)));
     }
     function studentsCard() {
       const list = Object.entries(state.players || {});
@@ -207,78 +211,119 @@
           h('button', { class: `rm-btn rm-toggle ${state.students ? 'rm-go' : ''}`, id: 'rm-students-toggle', 'aria-pressed': state.students ? 'true' : 'false', onclick: () => tapSend({ type: 'students' }) }, state.students ? 'On' : 'Off')),
         state.students
           ? h('div', { class: 'rm-names' },
-            h('p', { class: 'rm-note', text: `${list.length} joined. Student code: ${state.join || ''}. Right answers score by themselves. You can still use +1 and −.` }),
+            h('p', { class: 'rm-note', text: `${list.length} joined. Code: ${state.join || ''}. Right answers score by themselves.` }),
             h('button', { class: 'rm-link', onclick: () => tapSend({ type: 'joinqr' }) }, state.joinQr ? 'Hide student QR on TV' : 'Show student QR on TV'),
             h('div', { class: 'rm-players' }, list.map(([id, p]) => h('span', { class: 'rm-player' }, `${p.name} · ${p.score}`,
               h('button', { 'aria-label': `Remove ${p.name}`, onclick: () => tapSend({ type: 'kick', client: id }) }, '✕')))))
-          : h('p', { class: 'rm-note', text: 'Turn on to show a QR for students. They pick a team and answer on their own phones.' }));
+          : h('p', { class: 'rm-note', text: 'A QR appears on the TV. Students pick a team and answer on their own phones.' }));
     }
     function timerText() {
       if (!state.timer) return '';
       const left = state.timer.running ? state.timer.left - (Date.now() - timerAt) / 1000 : state.timer.left;
       return SEJ.clock(left);
     }
+    function pickStudent() { tapSend({ type: 'pick', what: 'student' }); say('Picking on the TV…'); }
+    function pickTeam() { tapSend({ type: 'pick', what: 'team' }); say('Picking on the TV…'); }
+
+    function moreSheet() {
+      const v = state.view;
+      const n = (state.roster || []).length;
+      const close = () => { moreOpen = false; paint(); };
+      return h('div', { class: 'rm-more', role: 'dialog', 'aria-label': 'More controls' },
+        h('div', { class: 'rm-more-card' },
+          h('header', { class: 'rm-more-head' }, h('h2', { text: 'More' }), h('button', { class: 'rm-btn rm-small', id: 'rm-more-close', 'aria-label': 'Close', onclick: close }, '✕')),
+          state.screen === 'stage' && h('section', { class: 'rm-card' }, h('h2', { text: 'Jump to a round' }), h('div', { class: 'rm-rounds' }, v.rounds.map((r, i) => h('button', {
+            class: `rm-btn ${i === state.stage ? 'rm-go' : ''}`, onclick: () => { if (i !== state.stage) { nav('goto', { stage: i }); moreOpen = false; paint(); } },
+          }, r)))),
+          state.screen !== 'podium' && h('section', { class: 'rm-card' }, h('h2', { text: 'Cheer on the TV' }), h('div', { class: 'rm-row rm-cheers' },
+            [['clap', '👏 Clap'], ['fanfare', '🎺 Yay'], ['wow', '🤩 Wow'], ['oops', '😅 Oops']].map(([kind, label]) => h('button', { class: 'rm-btn', onclick: () => tapSend({ type: 'cheer', kind }) }, label)))),
+          h('section', { class: 'rm-card' },
+            h('div', { class: 'rm-head' }, h('h2', { text: 'Teams' }), teamChooser()),
+            state.mode === 'teams' && h('button', { class: 'rm-link', onclick: namesSheet }, '✏️ Change team names')),
+          state.screen !== 'podium' && h('section', { class: 'rm-card' },
+            h('div', { class: 'rm-head' }, h('h2', { text: 'Who answers?' }), h('button', { class: 'rm-link', onclick: rosterSheet }, `Names (${n})`)),
+            h('div', { class: 'rm-row' },
+              h('button', { class: 'rm-btn rm-pick', id: 'rm-pick-student', disabled: !n, onclick: pickStudent }, n ? '🎲 Random student' : 'Add names first'),
+              state.mode !== 'class' && h('button', { class: 'rm-btn rm-pick', id: 'rm-pick-team', onclick: pickTeam }, '🎲 Random team'))),
+          studentsCard(),
+          h('div', { class: 'rm-row rm-tools' },
+            h('button', { class: 'rm-btn', onclick: () => tapSend({ type: 'sound' }) }, state.sound ? '🔊 TV sound on' : '🔇 TV sound off'),
+            h('button', { class: 'rm-btn', onclick: () => tapSend({ type: 'qr' }) }, state.qr ? 'Hide my QR' : 'Show my QR')),
+          h('div', { class: 'rm-row rm-tools' },
+            state.screen === 'stage' && h('button', { class: 'rm-btn', onclick: () => tapSend({ type: 'shuffle' }) }, '🔀 Shuffle'),
+            twoTap('restart', '🔄 Restart', 'Tap again: restart', { type: 'restart' }),
+            state.screen === 'stage' && twoTap('end', '🏁 End', 'Tap again: end', { type: 'end' }))));
+    }
+
+    /* Before the game: three clear steps, then one button. */
+    function setupScreen() {
+      return [
+        h('section', { class: 'rm-card rm-step' }, h('h2', {}, h('span', { class: 'rm-step-n', text: '1' }), 'How many teams?'), teamChooser(),
+          state.mode === 'teams' && h('button', { class: 'rm-link', onclick: namesSheet }, '✏️ Change team names')),
+        h('section', { class: 'rm-card rm-step' }, h('h2', {}, h('span', { class: 'rm-step-n', text: '2' }), 'How will students answer?'),
+          h('div', { class: 'rm-choice' },
+            h('button', { class: `rm-btn ${state.students ? '' : 'rm-go'}`, id: 'rm-say-aloud', 'aria-pressed': state.students ? 'false' : 'true', onclick: () => { if (state.students) tapSend({ type: 'students' }); } }, h('b', { text: '🗣️ Out loud' }), h('small', { text: 'You give the points' })),
+            h('button', { class: `rm-btn ${state.students ? 'rm-go' : ''}`, id: 'rm-students-toggle', 'aria-pressed': state.students ? 'true' : 'false', onclick: () => { if (!state.students) tapSend({ type: 'students' }); } }, h('b', { text: '🙋 On phones' }), h('small', { text: 'Points add up by themselves' }))),
+          state.students && h('p', { class: 'rm-note', id: 'rm-students', text: `${Object.keys(state.players || {}).length} joined. They scan the QR on the TV. Code: ${state.join || ''}` })),
+      ];
+    }
+    function playScreen() {
+      const v = state.view;
+      const kids = [];
+      kids.push(h('div', { class: 'rm-progress', 'aria-hidden': 'true' }, h('i', { style: { width: `${v.total ? Math.round((v.step / v.total) * 100) : 0}%` } })));
+      if (v.answer) kids.push(h('section', { class: `rm-answer ${state.revealed ? 'shown' : ''}` }, h('small', { text: state.revealed ? 'Answer on the TV now' : 'Answer (only you can see)' }), h('b', { text: v.answer })));
+      else kids.push(h('p', { class: 'rm-tip', text: v.tip }));
+      const tools = [];
+      if (state.timer && state.timer.total) {
+        const run = state.timer.running;
+        tools.push(h('button', { class: `rm-btn rm-timer-btn ${run ? 'running' : ''}`, id: 'rm-timer', 'aria-label': run ? 'Pause the timer' : 'Start the timer', onclick: () => tapSend({ type: 'timer', op: run ? 'pause' : 'start' }) },
+          run ? '⏸ ' : '⏱️ ', h('b', { class: 'rm-clock', 'data-clock': '1', text: timerText() })));
+        tools.push(h('button', { class: 'rm-btn rm-small', 'aria-label': 'Reset the timer', onclick: () => tapSend({ type: 'timer', op: 'reset' }) }, '↺'));
+      }
+      if (v.canFifty) tools.push(h('button', { class: 'rm-btn rm-fifty', id: 'rm-fifty', disabled: state.hidden.length > 0, onclick: () => tapSend({ type: 'fifty' }) }, '✂️ 50:50'));
+      const hasRoster = (state.roster || []).length > 0;
+      if (hasRoster || state.mode !== 'class') tools.push(h('button', { class: 'rm-btn rm-pick', id: 'rm-quick-pick', onclick: hasRoster ? pickStudent : pickTeam }, hasRoster ? '🎲 Student' : '🎲 Team'));
+      if (tools.length) kids.push(h('div', { class: 'rm-row rm-quick' }, tools));
+      if (v.boxes) {
+        kids.push(h('div', { class: 'rm-boxes', 'aria-label': 'Boxes' }, v.boxes.map((b) => h('button', { class: `rm-box ${b.used ? 'used' : ''}`, disabled: b.used, onclick: () => nav('box', { n: b.n }) }, String(b.n + 1)))));
+      }
+      if (state.picked) kids.push(h('p', { class: 'rm-picked' }, '🎤 ', h('b', { text: state.picked.name })));
+      if (state.students) kids.push(h('p', { class: 'rm-note rm-count' }, `🙋 ${state.answered || 0} of ${Object.keys(state.players || {}).length} answered`));
+      return kids;
+    }
+    function podiumScreen() {
+      const ranked = state.mode === 'teams' ? state.teams.slice().sort((a, b) => b.score - a.score) : [];
+      return [
+        h('section', { class: 'rm-card rm-final' }, h('h2', { text: '🏆 Final scores' }),
+          ranked.length ? ranked.map((t) => h('p', { class: 'rm-final-row' }, h('span', { text: t.name }), h('b', { text: t.score })))
+            : h('p', { class: 'rm-final-row' }, h('span', { text: 'Whole class' }), h('b', { text: state.classScore }))),
+      ];
+    }
     function paint() {
       if (!state) { body.replaceChildren(h('p', { class: 'rm-wait', text: 'Connecting to the class TV…' })); return; }
       const v = state.view;
-      const kids = [];
-      kids.push(h('header', { class: 'rm-top' },
+      const top = h('header', { class: 'rm-top' },
         h('div', { class: 'rm-title' }, h('b', {}, `${v.emoji} ${v.lesson}`), h('small', { text: v.sub })),
-        v.tip && h('p', { class: 'rm-tip' }, '💡 ', v.tip)));
-      if (v.answer) kids.push(h('section', { class: 'rm-answer' }, h('small', { text: 'Answer (only you can see this)' }), h('b', { text: v.answer })));
-      if (v.primary) {
-        const locked = sentRev === state.rev && v.primary.nav;
-        kids.push(h('button', {
-          class: 'rm-primary', id: 'rm-primary', disabled: v.primary.disabled || locked,
-          onclick: () => (v.primary.nav ? nav(v.primary.type) : tapSend({ type: v.primary.type })),
-        }, v.primary.label));
-      }
-      if (state.screen === 'stage') {
-        kids.push(h('div', { class: 'rm-row' },
-          h('button', { class: 'rm-btn', id: 'rm-back', disabled: !v.canBack, onclick: () => nav('prev') }, '⬅️ Back'),
-          h('button', { class: 'rm-btn', id: 'rm-next', onclick: () => nav('next') }, 'Next ➡️')));
-        if (v.boxes) {
-          kids.push(h('section', { class: 'rm-card' }, h('h2', { text: '🎁 Boxes' }), h('div', { class: 'rm-boxes' },
-            v.boxes.map((b) => h('button', { class: `rm-box ${b.used ? 'used' : ''}`, disabled: b.used, onclick: () => nav('box', { n: b.n }) }, String(b.n + 1))))));
-        }
-        if (state.timer && state.timer.total) {
-          const run = state.timer.running;
-          kids.push(h('section', { class: 'rm-card rm-timer' },
-            h('b', { class: 'rm-clock', 'data-clock': '1', text: timerText() }),
-            h('button', { class: `rm-btn ${run ? '' : 'rm-go'}`, id: 'rm-timer', onclick: () => tapSend({ type: 'timer', op: run ? 'pause' : 'start' }) }, run ? '⏸ Pause' : '▶️ Start'),
-            h('button', { class: 'rm-btn rm-small', 'aria-label': 'Reset the timer', onclick: () => tapSend({ type: 'timer', op: 'reset' }) }, '↺'),
-            v.canFifty && h('button', { class: 'rm-btn rm-fifty', id: 'rm-fifty', disabled: state.hidden.length > 0, onclick: () => tapSend({ type: 'fifty' }) }, '✂️ 50:50')));
-        }
-      }
-      kids.push(scores());
-      kids.push(studentsCard());
-      if (state.screen !== 'podium') {
-        const n = (state.roster || []).length;
-        kids.push(h('section', { class: 'rm-card' },
-          h('div', { class: 'rm-head' }, h('h2', { text: '🎤 Who answers?' }), h('button', { class: 'rm-link', onclick: rosterSheet }, `Names (${n})`)),
-          h('div', { class: 'rm-row' },
-            h('button', { class: 'rm-btn rm-pick', id: 'rm-pick-student', disabled: !n, onclick: () => tapSend({ type: 'pick', what: 'student' }) }, n ? '🎲 Random student' : 'Add names first'),
-            state.mode !== 'class' && h('button', { class: 'rm-btn rm-pick', id: 'rm-pick-team', onclick: () => tapSend({ type: 'pick', what: 'team' }) }, '🎲 Random team')),
-          state.picked && h('p', { class: 'rm-picked' }, 'Picked: ', h('b', { text: state.picked.name }))));
-        kids.push(h('section', { class: 'rm-card' }, h('h2', { text: '🎉 Cheer on the TV' }), h('div', { class: 'rm-row rm-cheers' },
-          [['clap', '👏 Clap'], ['fanfare', '🎺 Yay'], ['wow', '🤩 Wow'], ['oops', '😅 Oops']].map(([kind, label]) => h('button', { class: 'rm-btn', onclick: () => tapSend({ type: 'cheer', kind }) }, label)))));
-      }
-      if (state.screen === 'stage') {
-        kids.push(h('section', { class: 'rm-card' }, h('h2', { text: '🚩 Jump to a round' }), h('div', { class: 'rm-rounds' }, v.rounds.map((r, i) => h('button', {
-          class: `rm-btn ${i === state.stage ? 'rm-go' : ''}`, onclick: () => { if (i !== state.stage) nav('goto', { stage: i }); },
-        }, r)))));
-      }
-      kids.push(h('div', { class: 'rm-row rm-tools' },
-        h('button', { class: 'rm-btn', onclick: () => tapSend({ type: 'sound' }) }, state.sound ? '🔊 TV sound' : '🔇 TV sound'),
-        h('button', { class: 'rm-btn', onclick: () => tapSend({ type: 'qr' }) }, state.qr ? 'Hide QR' : 'Show QR'),
-        state.screen === 'stage' && h('button', { class: 'rm-btn', onclick: () => tapSend({ type: 'shuffle' }) }, '🔀 Shuffle')));
-      kids.push(h('div', { class: 'rm-row rm-tools' },
-        twoTap('restart', '🔄 Restart', 'Tap again: restart', { type: 'restart' }),
-        state.screen === 'stage' && twoTap('end', '🏁 End', 'Tap again: end', { type: 'end' })));
+        h('button', { class: 'rm-more-btn', id: 'rm-more', onclick: () => { moreOpen = true; paint(); } }, '☰ More'));
+      const main = state.screen === 'lobby' ? setupScreen() : state.screen === 'podium' ? podiumScreen() : playScreen();
+      const kids = [top, ...main, scoreGrid()];
+      const locked = v.primary && v.primary.nav && sentRev === state.rev;
+      kids.push(h('div', { class: 'rm-dock' },
+        state.screen === 'stage' && h('button', { class: 'rm-dock-btn', id: 'rm-back', disabled: !v.canBack, 'aria-label': 'Back', onclick: () => nav('prev') }, '◀'),
+        v.primary
+          ? h('button', { class: 'rm-primary', id: 'rm-primary', disabled: v.primary.disabled || locked, onclick: () => (v.primary.nav ? nav(v.primary.type) : tapSend({ type: v.primary.type })) }, v.primary.label)
+          : twoTap('restart', '🔄 Play again', 'Tap again: restart', { type: 'restart' }),
+        state.screen === 'stage' && h('button', { class: 'rm-dock-btn', id: 'rm-next', 'aria-label': 'Skip to next', onclick: () => nav('next') }, '▶')));
+      if (moreOpen) kids.push(moreSheet());
+      const scroller = body.querySelector('.rm-more-card');
+      const scrollTop = scroller ? scroller.scrollTop : 0;
       body.replaceChildren(...kids.filter(Boolean));
+      const again = body.querySelector('.rm-more-card');
+      if (again) again.scrollTop = scrollTop;
     }
-    setInterval(() => {
-      if (!container.isConnected || !state || !state.timer || !state.timer.running) return;
+    const tick = setInterval(() => {
+      if (!container.isConnected) { clearInterval(tick); return; }
+      if (!state || !state.timer || !state.timer.running) return;
       const el = body.querySelector('[data-clock]');
       if (el) el.textContent = timerText();
     }, 400);
