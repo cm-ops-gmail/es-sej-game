@@ -71,6 +71,26 @@
       `<g class="spot"><path d="M300 -20 L600 900 L60 900Z" fill="#ffd60a" opacity=".2"/></g><g class="spot spot2"><path d="M1300 -20 L1540 900 L1000 900Z" fill="#00d4ff" opacity=".2"/></g><g class="spot spot3"><path d="M800 -20 L1060 900 L540 900Z" fill="#ff2e93" opacity=".17"/></g>` +
       `<path d="M0 0 H300 C260 240 180 500 70 1000 H0Z" fill="#d6004d"/><path d="M40 0 C60 300 30 600 10 1000" stroke="#a3003a" stroke-width="10" fill="none"/><path d="M160 0 C140 320 90 640 40 1000" stroke="#a3003a" stroke-width="10" fill="none"/><path d="M1600 0 H1300 C1340 240 1420 500 1530 1000 H1600Z" fill="#d6004d"/><path d="M1560 0 C1540 300 1570 600 1590 1000" stroke="#a3003a" stroke-width="10" fill="none"/><path d="M1440 0 C1460 320 1510 640 1560 1000" stroke="#a3003a" stroke-width="10" fill="none"/>` +
       `<ellipse cx="800" cy="1010" rx="880" ry="120" fill="#7b2ff7"/><ellipse cx="800" cy="1010" rx="640" ry="84" fill="#ffd60a" opacity=".85"/>`),
+    /* Welcome: a magical sunrise valley with a rainbow, balloons and sparkles */
+    magic: () => {
+      const rainbow = ['#ff3b6b', '#ff8a1f', '#ffd60a', '#35d873', '#19b5ff', '#8a4bff'].map((c, i) => {
+        const r = 760 - i * 36;
+        return `<path d="M${800 - r} 820 A ${r} ${r} 0 0 1 ${800 + r} 820" fill="none" stroke="${c}" stroke-width="36" opacity=".55"/>`;
+      }).join('');
+      const balloons = Array.from({ length: 10 }, (_, i) => {
+        const c = ['#ff3b8d', '#ffd60a', '#19b5ff', '#35d873', '#ff8a1f', '#a56bff'][i % 6];
+        return `<g class="rise" style="--dur:${15 + (i % 4) * 3}s;--delay:-${i * 2.2}s"><g transform="translate(${90 + i * 158} 1050)"><ellipse rx="34" ry="42" fill="${c}"/><ellipse cx="-11" cy="-14" rx="8" ry="12" fill="#fff" opacity=".45"/><path d="M0 42 q-9 32 0 74" stroke="#fff" stroke-width="3" fill="none" opacity=".85"/></g></g>`;
+      }).join('');
+      const sparks = Array.from({ length: 26 }, (_, i) => `<circle class="twinkle" style="--delay:-${(i * 0.43) % 3}s" cx="${(i * 197 + 60) % 1560}" cy="${(i * 131 + 40) % 640}" r="${3 + (i % 3) * 2}" fill="${['#fff', '#ffe34d', '#ffb3df', '#a6efff'][i % 4]}"/>`).join('');
+      return svgWrap(sky('mg', ['#1a0657', '#4a1bb8', '#a63bd0', '#ff6fa0', '#ffb067']) + stars(46) +
+        `<defs><radialGradient id="mgGlow"><stop offset="0" stop-color="#fff6b8" stop-opacity=".95"/><stop offset=".45" stop-color="#ffd27a" stop-opacity=".45"/><stop offset="1" stop-color="#ffb067" stop-opacity="0"/></radialGradient></defs><circle class="glow-pulse" cx="800" cy="800" r="430" fill="url(#mgGlow)"/>` +
+        rainbow + sparks + cloud(250, 250, 1.3, 'drift', '#ffd9f0', 0.9) + cloud(960, 170, 1, 'drift', '#ffe9fb', 0.85) + cloud(1350, 360, 0.8, 'drift', '#ffd9f0', 0.8) + balloons +
+        hill('M0 760 C260 650 520 700 800 770 S1340 800 1600 690 V1000 H0Z', '#8d4fe0', '#5a24b8', 'mh1') +
+        hill('M0 830 C300 750 640 860 980 800 S1400 760 1600 830 V1000 H0Z', '#2fcf9a', '#0b9a80', 'mh2') + tree(150, 860, 1, '#17b36a') + tree(1470, 850, 1.1, '#12a85f') +
+        hill('M0 910 C360 850 760 940 1180 890 S1480 870 1600 905 V1000 H0Z', '#5ee05a', '#18a84a', 'mh3') +
+        [[80, 950, '#ff4fa3'], [210, 975, '#ffd60a'], [1380, 960, '#fff'], [1520, 975, '#ff7a00'], [330, 985, '#9a5cff'], [1250, 985, '#ff2e93']].map(([x, y, c]) => flower(x, y, 0.7, c)).join('')) +
+        emoji([['⭐', 8, 14, 40, 'twinkle-e'], ['✨', 90, 12, 38, 'twinkle-e', 1], ['🦋', 14, 52, 42, 'flutter'], ['🦋', 86, 46, 38, 'flutter', 1.5], ['🕊️', 78, 30, 44, 'bob', 1]]);
+    },
     /* Mystery Boxes, Hero Talk: birthday fiesta */
     fiesta: () => `<div class="burst-bg burst-violet"></div>` + svgWrap(bunting(-10)) + emoji([['🥳', 5, 34, 66], ['🎁', 91, 34, 68, 'bob', 1], ['🎵', 7, 66, 48, 'bob', 2], ['🎶', 90, 68, 50, 'bob', 1.5], ['✨', 14, 18, 38, 'twinkle-e'], ['✨', 84, 16, 42, 'twinkle-e', 1]]),
   };

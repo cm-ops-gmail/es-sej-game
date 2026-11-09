@@ -12,7 +12,7 @@ fs.mkdirSync(SHOTS, { recursive: true });
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   await ctx.addInitScript(() => {
-    localStorage.setItem('sej-hero-quest-v1', JSON.stringify({ name: 'Tester', hero: 'mathman', sound: false, music: false, stars: {}, custom: {} }));
+    localStorage.setItem('sej-hero-quest-v1', JSON.stringify({ name: 'Tester', hero: 'mathman', onboarded: true, sound: false, music: false, stars: {}, custom: {} }));
   });
   const page = await ctx.newPage();
   const problems = [];

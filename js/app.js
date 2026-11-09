@@ -52,17 +52,52 @@
     return { got, max: slots.length * 3, played: slots.filter((s) => store.starsFor(lesson.code, s.key) > 0).length, slots: slots.length };
   }
 
-  /* ---------- hero picker (optional, opened from your picture) ---------- */
-  function heroPicker() {
+  /* ---------- first visit: name, then hero, then the map ---------- */
+  const tapDevice = () => window.matchMedia && matchMedia('(pointer: coarse)').matches;
+  function onbPage(...kids) {
+    return h('div', { class: 'onb' }, SEJ.scene('magic'), h('div', { class: 'onb-inner' }, ...kids));
+  }
+  function nameStep() {
+    const input = h('input', { class: 'onb-input', id: 'player-name', maxlength: '14', placeholder: 'Type your name', value: store.state.name || '', autocomplete: 'off', 'aria-label': 'Your name', enterkeyhint: 'next' });
+    const form = h('form', { class: 'onb-card enter-pop', onsubmit: (e) => {
+      e.preventDefault();
+      const name = SEJ.setName(input.value);
+      if (!name) { fx.play(form, 'shake'); input.focus(); return; }
+      sfx.correct(2);
+      fx.burstAt(form, 30, ['⭐', '✨']);
+      voice.say(`Nice to meet you, ${name}!`);
+      go('#/welcome/hero');
+    } },
+      h('p', { class: 'onb-step', text: 'Step 1 of 2' }),
+      h('p', { class: 'onb-q', text: 'What’s your name?' }),
+      h('p', { class: 'onb-q-bn', lang: 'bn', text: 'তোমার নাম লেখো' }),
+      input,
+      h('button', { class: 'cta gummy g-green cta-big', type: 'submit' }, 'Next ▶'),
+      h('button', { class: 'link-skip', type: 'button', onclick: () => go('#/welcome/hero') }, 'Skip for now'));
+    const page = onbPage(
+      h('img', { class: 'onb-logo', src: 'assets/logo.webp', alt: 'Spoken English Junior' }),
+      h('h1', { class: 'logo-word big onb-title' }, 'Hero Quest'),
+      form);
+    page.append(h('div', { class: 'onb-squad', 'aria-hidden': 'true' }, ['knight', 'bhasha', 'mathman', 'innovara'].map((id, i) => SEJ.heroImg(id, `squad-hero sq${i}`))));
+    root().replaceChildren(page);
+    if (!tapDevice()) input.focus({ preventScroll: true });
+  }
+
+  /* changeMode: opened later from your picture, so the name can be edited here too. */
+  function heroStep(changeMode) {
     const s = store.state;
     let chosen = s.hero;
-    const input = h('input', { class: 'name-input', id: 'player-name', maxlength: '14', placeholder: 'Type your name', value: s.name || '', autocomplete: 'off', 'aria-label': 'Your name' });
-    const save = () => {
-      SEJ.setName(input.value);
+    const input = changeMode ? h('input', { class: 'onb-input onb-input-small', id: 'player-name', maxlength: '14', placeholder: 'Type your name', value: s.name || '', autocomplete: 'off', 'aria-label': 'Your name' }) : null;
+    const start = () => {
+      if (input) SEJ.setName(input.value);
       store.state.hero = chosen;
+      store.state.onboarded = true;
       store.save();
       sfx.fanfare();
-      fx.confetti(100);
+      fx.confetti(110);
+      fx.fireworks(5);
+      SEJ.music.start();
+      if (!changeMode && store.state.name) voice.say(`Let's go, ${store.state.name}!`);
       go('#/map');
     };
     const cards = Object.entries(SEJ.HEROES).map(([id, hero], i) => {
@@ -74,18 +109,21 @@
           card.classList.add('picked');
           card.setAttribute('aria-pressed', 'true');
           sfx.correct(1);
-          fx.burstAt(card, 22, ['⭐', '✨']);
+          fx.burstAt(card, 24, ['⭐', '✨']);
           voice.say(`Hello! I am ${hero.name}.`);
           SEJ.music.start();
         },
       }, h('span', { class: 'hero-stage' }, SEJ.heroImg(id)), h('strong', { text: hero.name }), h('small', { lang: 'bn', text: hero.bn }));
       return card;
     });
-    root().replaceChildren(h('div', { class: 'picker' },
-      h('div', { class: 'rays', 'aria-hidden': 'true' }),
-      h('h1', { class: 'logo-word' }, 'Pick Your Hero!'),
+    root().replaceChildren(onbPage(
+      !changeMode && h('p', { class: 'onb-step onb-step-light', text: 'Step 2 of 2' }),
+      h('h1', { class: 'logo-word onb-title2' }, 'Pick Your Hero!'),
       h('div', { class: 'hero-grid' }, cards),
-      h('div', { class: 'picker-actions' }, input, h('button', { class: 'cta gummy g-green cta-big', onclick: save }, 'Let’s Go! 🚀'))));
+      h('div', { class: 'onb-actions' },
+        input,
+        h('button', { class: 'cta gummy g-green cta-big', onclick: start }, 'Let’s Go! 🚀'),
+        !changeMode && h('button', { class: 'link-skip link-skip-light', type: 'button', onclick: () => go('#/welcome') }, '← Change my name'))));
   }
 
   /* ---------- quest map ---------- */
@@ -318,7 +356,14 @@
     const [page, a, b] = hash.split('/');
     window.scrollTo(0, 0);
     if (page === 'teacher') return SEJ.builder.render(root(), a);
-    if (page === 'heroes') return heroPicker();
+    if (page === 'heroes') return heroStep(true);
+    if (page === 'welcome') return a === 'hero' ? heroStep(false) : nameStep();
+    /* The home page greets a first-time visitor with name, then hero, then the map.
+       Direct game and lesson links skip this and open straight away. */
+    if ((!page || page === 'map') && !(store.state.onboarded || store.state.name)) {
+      history.replaceState(null, '', location.pathname + location.search + '#/welcome');
+      return nameStep();
+    }
     if (page === 'lesson') return lessonPage(a);
     if (page === 'play') return play(a, b);
     return map();
