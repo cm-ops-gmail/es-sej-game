@@ -366,6 +366,7 @@
           run ? '⏸ ' : '⏱️ ', h('b', { class: 'rm-clock', 'data-clock': '1', text: timerText() })));
         tools.push(h('button', { class: 'rm-btn rm-small', 'aria-label': 'Reset the timer', onclick: () => tapSend({ type: 'timer', op: 'reset' }) }, '↺'));
       }
+      if (v.canReveal) tools.push(h('button', { class: 'rm-btn rm-go', id: 'rm-reveal-now', onclick: () => nav('reveal') }, '👁 Reveal now'));
       if (v.canReplay) tools.push(h('button', { class: 'rm-btn rm-replay', id: 'rm-replay', onclick: () => tapSend({ type: 'replay' }) }, '🔊 Say it again'));
       if (v.canFifty) tools.push(h('button', { class: 'rm-btn rm-fifty', id: 'rm-fifty', disabled: state.hidden.length > 0, onclick: () => tapSend({ type: 'fifty' }) }, '✂️ 50:50'));
       const hasRoster = (state.roster || []).length > 0;

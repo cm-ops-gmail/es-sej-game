@@ -54,9 +54,9 @@ The rounds come from the lesson's own content, so Teacher Mode edits appear here
 
 | Round | Game | Comes from |
 |---|---|---|
-| Warm-up | Word Flash, Listen & Choose, Memory Match, Missing Letters or Match Up | Power words (Bangla only where it's on the slides) or the lesson's matching game |
-| Team Battle | Team Quiz, Riddle Time, Group Sort, Complete the Sentence, Put It in Order (drag or tap the tiles) or True or False? | One of the lesson's games |
-| Speak | Spin and Speak, Mystery Boxes, Role-play or Speaking Cards | The speaking prompts |
+| Warm-up | Word Flash, Hidden Picture, Listen & Choose, Memory Match, Word Rain, Missing Letters or Match Up | Power words (Bangla only where it's on the slides) or the lesson's matching game |
+| Team Battle | Team Quiz, Riddle Time, Odd One Out, Group Sort, Complete the Sentence, Put It in Order (drag or tap the tiles) or True or False? | One of the lesson's games |
+| Speak | Spin and Speak, Hot Potato, Mystery Boxes, Role-play or Speaking Cards | The speaking prompts |
 
 The phone shows the answer before the class sees it. It also has reveal and next, the timer, 50:50, team points, a random student or team,
 cheers, and restart and end. A game comes back with its scores if the TV page reloads within 4 hours.

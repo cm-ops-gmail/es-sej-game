@@ -54,14 +54,17 @@ const check = (name, ok, extra = '') => {
         if (st.kind === 'tf') check(`${code} true/false`, ['True', 'False'].includes(it.answer) && (it.answer === 'True') === (it.claim === it.right), JSON.stringify(it));
         if (['riddle', 'complete', 'matchup'].includes(st.kind)) check(`${code} ${st.kind} answer listed`, it.options.includes(it.answer) && new Set(it.options).size === it.options.length && it.options.length >= 2, JSON.stringify(it));
         if (st.kind === 'complete') check(`${code} complete has a gap`, typeof it.before === 'string' && typeof it.after === 'string' && !!it.answer, JSON.stringify(it));
-        if (st.kind === 'cards') check(`${code} speak`, it.q && it.frame && it.sample, JSON.stringify(it));
+        if (st.kind === 'cards' || st.kind === 'potato') check(`${code} speak`, it.q && it.frame && it.sample, JSON.stringify(it));
+        if (['reveal', 'rain', 'odd'].includes(st.kind)) check(`${code} ${st.kind} answer listed`, it.options.includes(it.answer) && new Set(it.options).size === it.options.length && it.options.length >= 3, JSON.stringify(it));
+        if (st.kind === 'reveal') check(`${code} hidden picture`, !!it.emoji && it.order.length === 9, JSON.stringify(it));
+        if (st.kind === 'odd') check(`${code} odd one out`, it.options.filter((o) => o === it.answer).length === 1 && !!it.group, JSON.stringify(it));
         if (st.kind === 'memory') check(`${code} memory`, it.cards.length === it.pairs.length * 2 && it.pairs.length >= 4, JSON.stringify(it).slice(0, 200));
         if (['wheel', 'boxes', 'role'].includes(st.kind)) check(`${code} speak`, it.q && it.frame && it.sample, JSON.stringify(it));
       }
     }
   }
   console.log('Round types across lessons:', JSON.stringify(seen));
-  for (const k of ['flash', 'listen', 'memory', 'letters', 'matchup', 'quiz', 'riddle', 'sort', 'complete', 'order', 'tf', 'wheel', 'boxes', 'role', 'cards']) check(`${k} is used`, seen[k] > 0);
+  for (const k of ['flash', 'reveal', 'listen', 'memory', 'rain', 'letters', 'matchup', 'quiz', 'riddle', 'odd', 'sort', 'complete', 'order', 'tf', 'wheel', 'potato', 'boxes', 'role', 'cards']) check(`${k} is used`, seen[k] > 0);
 
   /* 2. Every lesson plays from lobby to podium on the TV by itself. */
   for (const { code } of plans) {
@@ -71,7 +74,7 @@ const check = (name, ok, extra = '') => {
     await tv.waitForSelector('.cl-lobby');
     await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'start' }));
     let guard = 0;
-    while (guard++ < 120 && !(await tv.$('.cl-podium'))) {
+    while (guard++ < 400 && !(await tv.$('.cl-podium'))) {
       await tv.evaluate(() => {
         const d = SEJ.classDebug;
         if (d.state.spinning) return;
@@ -87,7 +90,7 @@ const check = (name, ok, extra = '') => {
   }
 
   /* 3. The phone runs the TV, on a lesson that starts with Word Flash. */
-  const flashLesson = plans.find((p) => p.plan.stages[0].kind === 'flash').code;
+  const flashLesson = (plans.find((p) => p.plan.stages[0].kind === 'flash') || plans.find((p) => ['listen', 'letters'].includes(p.plan.stages[0].kind))).code;
   await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
   await tv.goto(`${BASE}/?class=${flashLesson}&test=1`);
   await tv.reload();
@@ -359,10 +362,11 @@ const check = (name, ok, extra = '') => {
     for (const n of pair) await tv.evaluate((x) => SEJ.classDebug.dispatch({ type: 'flip', n: x }), n);
   }
   check('Memory: all pairs finish the round', await tv.evaluate(() => SEJ.classDebug.state.revealed));
-  for (const kind of ['listen', 'letters', 'tf', 'riddle', 'complete', 'matchup']) {
+  for (const kind of ['listen', 'letters', 'tf', 'riddle', 'complete', 'matchup', 'rain', 'odd', 'reveal']) {
     await openKind(kind);
     const it = await tv.evaluate(() => { const st = SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage]; const x = st.items[0]; return { right: x.answer || x.en, options: x.options }; });
-    const sel = kind === 'matchup' ? 'button.cl-mu-word' : 'button.cl-option';
+    const sel = kind === 'matchup' ? 'button.cl-mu-word' : kind === 'rain' ? 'button.cl-rain-word' : 'button.cl-option';
+    if (kind === 'reveal') { await tv.evaluate(() => { SEJ.classDebug.dispatch({ type: 'tile' }); SEJ.classDebug.dispatch({ type: 'tile' }); }); await tv.waitForTimeout(400); check('Hidden Picture opens tiles', (await tv.locator('.cl-pic-tile.open').count()) === 2); }
     check(`${kind}: options on the TV`, (await tv.locator(sel).count()) === it.options.length, `${await tv.locator(sel).count()} / ${it.options.length}`);
     await tv.screenshot({ path: `${SHOTS}/tv-${kind}.png` });
     await tv.locator(sel, { hasText: new RegExp(`^\\s*([A-D]\\s*)?${it.right.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`) }).first().click().catch(async () => { await tv.evaluate((v) => SEJ.classDebug.dispatch({ type: 'tap', value: v }), it.right); });
@@ -375,6 +379,16 @@ const check = (name, ok, extra = '') => {
   await tv.waitForTimeout(150);
   const gameAfter = await tv.evaluate(() => ({ name: SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage].name, round: SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage].round, item: SEJ.classDebug.state.item, revealed: SEJ.classDebug.state.revealed }));
   check('Try a different game changes the game', gameAfter.name !== gameBefore && gameAfter.round === roundBefore && !gameAfter.revealed, `${gameBefore} -> ${JSON.stringify(gameAfter)}`);
+
+  /* Hot Potato: the bomb ticks, goes BOOM, then shows the speaking card. */
+  await openKind('potato');
+  check('Hot Potato hides the card before BOOM', !(await tv.$('.cl-speak-q')));
+  await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'potato' }));
+  check('bomb is ticking', await tv.evaluate(() => SEJ.classDebug.state.burning && !!document.querySelector('.cl-bomb.burning')));
+  await tv.waitForFunction(() => SEJ.classDebug.state.boomed, null, { timeout: 8000 });
+  await tv.waitForTimeout(150);
+  check('BOOM shows the speaking card', !!(await tv.$('.cl-speak-q')));
+  await tv.screenshot({ path: `${SHOTS}/tv-potato.png` });
 
   /* Speaking Cards: deal, then the card shows a prompt. */
   await openKind('cards');

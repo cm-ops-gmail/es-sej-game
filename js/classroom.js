@@ -113,6 +113,7 @@
     tf: { name: 'True or False?', timer: 10, tip: 'Read it out. Teams show thumbs up or down, then reveal.' },
     riddle: { name: 'Riddle Time', timer: 25, tip: 'Read the clue like a detective. Teams guess, then reveal.' },
     complete: { name: 'Complete the Sentence', timer: 20, tip: 'Read the sentence. Teams say the missing word, then reveal.' },
+    odd: { name: 'Odd One Out', timer: 15, tip: 'Three words belong together. Teams find the one that doesn’t, then reveal.' },
   };
   const WARM_INFO = {
     flash: { name: 'Word Flash', timer: 0, tip: 'Show the Bangla word. Students say it in English, then reveal.' },
@@ -120,12 +121,15 @@
     memory: { name: 'Memory Match', timer: 0, tip: 'Students call two card numbers. Flip them from the phone or on the TV to find each pair.' },
     letters: { name: 'Missing Letters', timer: 20, tip: 'Some letters are missing. Students guess the word, then reveal.' },
     matchup: { name: 'Match Up', timer: 15, tip: 'Read the clue. Teams choose its word from the word bank, then reveal.' },
+    reveal: { name: 'Hidden Picture', timer: 0, tip: 'Open tiles one at a time. The first team to name the picture wins the point.' },
+    rain: { name: 'Word Rain', timer: 20, tip: 'Words fall down the TV. Students shout or tap the right one as it falls.' },
   };
   const SPEAK_INFO = {
     wheel: { name: 'Spin and Speak', tip: 'Spin, pick a student, and start the timer.' },
     boxes: { name: 'Mystery Boxes', tip: 'A student calls a number. Open that box and let them answer.' },
     role: { name: 'Role-play', tip: 'Two students act it out, one line at a time. Then swap.' },
     cards: { name: 'Speaking Cards', tip: 'Deal a card, pick a student, and start the timer.' },
+    potato: { name: 'Hot Potato', tip: 'Students pass an object around while the bomb ticks. Whoever holds it at BOOM answers.' },
   };
   /* How the teams compete on the TV. Each lesson starts with its own style; the teacher can change it. */
   const STYLES = ['score', 'race', 'jar', 'tug'];
@@ -144,11 +148,11 @@
     4.1: 'party', 4.2: 'jungle', 4.3: 'candy', 4.4: 'fiesta', 4.5: 'hills', 4.6: 'fiesta', 4.7: 'ocean', 4.8: 'sky',
   };
   SEJ.topicScene = (code) => TOPIC_SCENE[code] || 'magic';
-  const WARM_ORDER = ['flash', 'listen', 'memory', 'letters', 'matchup'];
-  const BATTLE_ORDER = ['quiz', 'riddle', 'sort', 'complete', 'order', 'tf'];
-  const SPEAK_ORDER = ['wheel', 'boxes', 'role', 'cards'];
+  const WARM_ORDER = ['reveal', 'flash', 'listen', 'memory', 'rain', 'letters', 'matchup'];
+  const BATTLE_ORDER = ['quiz', 'riddle', 'odd', 'sort', 'complete', 'order', 'tf'];
+  const SPEAK_ORDER = ['wheel', 'potato', 'boxes', 'role', 'cards'];
   /* Lessons take turns, so the class sees a different game each time. "variant" is the teacher's Try a different game. */
-  const choose = (available, index, variant) => (available.length ? available[(index + (variant || 0)) % available.length] : null);
+  const choose = (available, index, variant, stride = 1) => (available.length ? available[(index * stride + (variant || 0)) % available.length] : null);
   const gameFor = (lesson, group) => lesson.games.find((g) => CONVERT[g.t] && CONVERT[g.t].group === group);
 
   SEJ.classPlan = function (code, seed, variants = {}) {
@@ -171,8 +175,25 @@
     /* Match Up: a clue and its word, from a matching game or a word list with meanings. */
     const meaningGame = lesson.games.find((g) => (g.t === 'spell' || g.t === 'anagram') && g.items.length >= 4 && g.items.every((i) => i[1] && !/সাজাও/.test(i[1])) && new Set(g.items.map((i) => i[1])).size === g.items.length);
     const matchupPairs = matchGame ? matchGame.pairs.map((p) => [p[1], SEJ.clean(p[0])]) : meaningGame ? meaningGame.items.map((i) => [i[1], i[0]]) : [];
-    const warmAvailable = WARM_ORDER.filter((k) => (k === 'flash' ? onSlides.length >= 3 : k === 'listen' ? allWords.length >= 4 : k === 'memory' ? memoryPairs.length >= 4 : k === 'matchup' ? matchupPairs.length >= 4 && matchupPairs.every((p) => p[1]) : letterWords.length >= 3));
-    const warm = choose(warmAvailable, index, variants['Warm-up']);
+    /* Hidden Picture: words that come with a picture in the lesson's games. */
+    const pictures = (() => {
+      const out = [];
+      const add = (word, emoji) => { if (emoji && word && SEJ.clean(word).length <= 18 && /[a-z]/i.test(word)) out.push({ word: SEJ.clean(word), emoji: emoji.trim() }); };
+      lesson.games.forEach((g) => {
+        if (g.t === 'spell' || g.t === 'anagram') g.items.filter((i) => !/\s/.test(i[0])).forEach((i) => add(i[0][0].toUpperCase() + i[0].slice(1), i[2]));
+        if (g.t === 'sort') g.cards.forEach((c) => add(c[0], c[2]));
+        if (g.t === 'pair') g.items.filter((i) => i[2]).forEach((i) => { add(i[0], i[3]); add(i[1], i[4]); });
+      });
+      const seenWord = new Set(), seenPic = new Set();
+      return out.filter((p) => { const k = p.word.toLowerCase(); if (seenWord.has(k) || seenPic.has(p.emoji)) return false; seenWord.add(k); seenPic.add(p.emoji); return true; });
+    })();
+    /* Word Rain: a clue and its word, or a word to catch by ear. */
+    const rainPairs = onSlides.length >= 4 ? onSlides.map((w) => ({ q: w[1], answer: w[0], bn: true }))
+      : matchupPairs.length >= 4 ? matchupPairs.map((p) => ({ q: p[0], answer: p[1] }))
+        : allWords.length >= 6 ? allWords.map((w) => ({ q: '', answer: w, listen: true })) : [];
+    const warmAvailable = WARM_ORDER.filter((k) => (k === 'reveal' ? pictures.length >= 4 : k === 'rain' ? rainPairs.length >= 4 : k === 'flash' ? onSlides.length >= 3 : k === 'listen' ? allWords.length >= 4 : k === 'memory' ? memoryPairs.length >= 4 : k === 'matchup' ? matchupPairs.length >= 4 && matchupPairs.every((p) => p[1]) : letterWords.length >= 3));
+    /* Warm-ups step 3 lessons at a time, so every warm-up game lands in some lesson. */
+    const warm = choose(warmAvailable, index, variants['Warm-up'], 3);
     const warmStage = (kind, items, extra = {}) => Object.assign({ kind, round: 'Warm-up', name: WARM_INFO[kind].name, timer: WARM_INFO[kind].timer, tip: WARM_INFO[kind].tip, scene: SEJ.topicScene(code), alts: warmAvailable.length, items }, extra);
     if (warm === 'flash') {
       stages.push(warmStage('flash', mix(onSlides, r).slice(0, 6).map(([en, bn]) => ({ en, bn, options: wordOptions(en) }))));
@@ -186,6 +207,18 @@
       const pairs = mix(matchupPairs, r).slice(0, 6);
       const bank = mix(pairs.map((p) => p[1]), r);
       stages.push(warmStage('matchup', pairs.map(([clue, word]) => ({ q: clue, answer: word, options: bank.slice() })), { bank }));
+    } else if (warm === 'reveal') {
+      const words = pictures.map((p) => p.word);
+      stages.push(warmStage('reveal', mix(pictures, r).slice(0, 5).map((p) => ({
+        emoji: p.emoji, answer: p.word, order: mix([0, 1, 2, 3, 4, 5, 6, 7, 8], r),
+        options: mix(uniq([p.word, ...mix(words.filter((w) => w !== p.word), r).slice(0, 3)]), r),
+      }))));
+    } else if (warm === 'rain') {
+      const pool = uniq(rainPairs.map((p) => p.answer).concat(allWords));
+      stages.push(warmStage('rain', mix(rainPairs, r).slice(0, 6).map((p) => ({
+        q: p.q, bn: !!p.bn, listen: !!p.listen, answer: p.answer,
+        options: mix(uniq([p.answer, ...mix(pool.filter((w) => w !== p.answer), r).slice(0, 5)]), r),
+      }))));
     } else if (warm === 'letters') {
       const bnOf = Object.fromEntries(onSlides.map((w) => [w[0].toLowerCase(), w[1]]));
       stages.push(warmStage('letters', mix(letterWords, r).slice(0, 6).map((en) => {
@@ -217,12 +250,35 @@
       });
       return out.map((x) => ({ before: x.before, after: x.after, answer: x.answer, emoji: x.emoji, options: mix(uniq([x.answer, ...x.wrong]).slice(0, 4), r) }));
     })();
-    const battleAvailable = BATTLE_ORDER.filter((k) => (k === 'tf' ? gameFor(lesson, 'quiz') || gameFor(lesson, 'sort') : k === 'riddle' ? riddles.length >= 3 : k === 'complete' ? gaps.length >= 3 : gameFor(lesson, k)));
+    /* Odd One Out: three cards from one group and one from another. */
+    const oddItems = (() => {
+      const groups = [];
+      lesson.games.forEach((g) => {
+        if (g.t === 'sort') g.groups.forEach((x, n) => groups.push({ name: x.n, cards: g.cards.filter((c) => c[1] === n).map((c) => c[0]), game: g.title }));
+        if (g.t === 'whack') { groups.push({ name: 'things to say', cards: g.good, game: g.title }); groups.push({ name: 'not to say', cards: g.bad, game: g.title }); }
+      });
+      const big = groups.filter((x) => x.cards.length >= 3 && x.cards.every((c) => c.length <= 40));
+      const out = [];
+      const usedOdd = new Set();
+      for (let n = 0; n < 12 && out.length < 6 && big.length; n++) {
+        const main = big[n % big.length];
+        const others = groups.filter((x) => x !== main && x.game === main.game && x.cards.length);
+        if (!others.length) continue;
+        const other = others[n % others.length];
+        const odd = mix(other.cards.filter((c) => !usedOdd.has(c) && !main.cards.includes(c)), r)[0];
+        if (!odd) continue;
+        usedOdd.add(odd);
+        const three = mix(main.cards, r).slice(0, 3);
+        out.push({ answer: odd, group: main.name, options: mix([...three, odd], r) });
+      }
+      return out;
+    })();
+    const battleAvailable = BATTLE_ORDER.filter((k) => (k === 'odd' ? oddItems.length >= 3 : k === 'tf' ? gameFor(lesson, 'quiz') || gameFor(lesson, 'sort') : k === 'riddle' ? riddles.length >= 3 : k === 'complete' ? gaps.length >= 3 : gameFor(lesson, k)));
     const battle = choose(battleAvailable, index, variants['Team Battle']);
     if (battle) {
       const info = BATTLE_INFO[battle];
-      if (battle === 'riddle' || battle === 'complete') {
-        const items = mix(battle === 'riddle' ? riddles : gaps, r).slice(0, BATTLE_ITEMS);
+      if (battle === 'riddle' || battle === 'complete' || battle === 'odd') {
+        const items = mix(battle === 'riddle' ? riddles : battle === 'odd' ? oddItems : gaps, r).slice(0, BATTLE_ITEMS);
         stages.push({ kind: battle, round: 'Team Battle', name: info.name, timer: info.timer, tip: info.tip, scene: battle === 'riddle' ? 'space' : 'stage', alts: battleAvailable.length, items });
       } else if (battle === 'tf') {
         /* Built from the lesson's quiz or sort: is this the right answer? */
@@ -248,7 +304,7 @@
     if ((lesson.talk || []).length) {
       const kind = choose(SPEAK_ORDER, index, variants.Speak);
       stages.push({
-        kind, round: 'Speak', name: SPEAK_INFO[kind].name, timer: 45, tip: SPEAK_INFO[kind].tip, scene: 'fiesta', pick: kind !== 'role', alts: SPEAK_ORDER.length,
+        kind, round: 'Speak', name: SPEAK_INFO[kind].name, timer: kind === 'potato' ? 0 : 45, tip: SPEAK_INFO[kind].tip, scene: 'fiesta', pick: !['role', 'potato'].includes(kind), alts: SPEAK_ORDER.length,
         items: mix(lesson.talk, r).map((t) => ({ q: t[0], frame: t[1], sample: t[2] })),
       });
     }
@@ -276,11 +332,11 @@
     const style = STYLES[index % STYLES.length];
     return {
       style,
-      v: 6, code, lesson: lessonCode, seed: Math.floor(Math.random() * 1e9), rev: 1, screen: 'lobby',
+      v: 7, code, lesson: lessonCode, seed: Math.floor(Math.random() * 1e9), rev: 1, screen: 'lobby',
       stage: 0, item: 0, revealed: false, line: 0, hidden: [], used: [], spinning: false, wheelDeg: 0,
       timer: { total: 0, left: 0, running: false }, mode: 'teams', teams: makeTeams(style === 'tug' ? 2 : 4), classScore: 0,
       picked: null, picking: false, roster: loadRoster(), qr: true, phone: false, sound: store.state.sound !== false, acks: {},
-      students: false, join: '', joinQr: true, players: {}, kicked: [], answers: {}, scored: [], built: [], wrongs: [], variants: {}, mem: { open: [], done: [] },
+      students: false, join: '', joinQr: true, players: {}, kicked: [], answers: {}, scored: [], built: [], wrongs: [], variants: {}, mem: { open: [], done: [] }, tiles: 0, burning: false, boomed: false,
     };
   }
 
@@ -293,7 +349,7 @@
     if (st.kind === 'sort') return st.groups[it.group].n;
     if (st.kind === 'order') return it.parts.join(it.joiner || '');
     if (st.kind === 'listen' || st.kind === 'letters') return it.en;
-    if (st.kind === 'tf' || st.kind === 'riddle' || st.kind === 'complete' || st.kind === 'matchup') return it.answer;
+    if (['tf', 'riddle', 'complete', 'matchup', 'reveal', 'rain', 'odd'].includes(st.kind)) return it.answer;
     return null;
   }
 
@@ -301,7 +357,7 @@
   function createGame(s, getPlan) {
     const stage = () => getPlan().stages[s.stage];
     const resetTimer = () => { const t = stage() ? stage().timer : 0; s.timer = { total: t, left: t, running: false }; };
-    const clearItem = () => { s.revealed = false; s.line = 0; s.hidden = []; s.picked = null; s.answers = {}; s.built = []; s.wrongs = []; s.mem = { open: [], done: [] }; resetTimer(); s.rev++; };
+    const clearItem = () => { s.revealed = false; s.line = 0; s.hidden = []; s.picked = null; s.answers = {}; s.built = []; s.wrongs = []; s.mem = { open: [], done: [] }; s.tiles = 0; s.burning = false; s.boomed = false; resetTimer(); s.rev++; };
     const enterStage = (i, fxs) => {
       s.stage = i; s.used = []; s.spinning = false;
       s.item = stage().pick ? -1 : 0;
@@ -329,9 +385,10 @@
         if (s.line === 2) s.revealed = true;
         else { s.rev++; fxs.push({ fx: 'line' }); return; }
       } else {
-        if (s.revealed || (st.pick && s.item < 0)) return;
+        if (s.revealed || (st.pick && s.item < 0) || (st.kind === 'potato' && !s.boomed)) return;
         s.revealed = true;
         if (st.kind === 'memory') { s.mem.done = st.items[0].cards.map((_, n) => n); s.mem.open = []; }
+        if (st.kind === 'reveal') s.tiles = 9;
       }
       s.timer.running = false;
       s.rev++;
@@ -506,7 +563,7 @@
         case 'tap': {
           /* Someone answers on the TV itself. Right reveals; wrong stays on screen, crossed out, so the class tries again. */
           const st = stage();
-          if (s.screen !== 'stage' || s.revealed || s.students || !['flash', 'quiz', 'sort', 'listen', 'letters', 'tf', 'riddle', 'complete', 'matchup'].includes(st.kind)) break;
+          if (s.screen !== 'stage' || s.revealed || s.students || !['flash', 'quiz', 'sort', 'listen', 'letters', 'tf', 'riddle', 'complete', 'matchup', 'reveal', 'rain', 'odd'].includes(st.kind)) break;
           const right = rightOf(st, st.items[s.item]), value = String(cmd.value);
           if (value === right) reveal(fxs);
           else {
@@ -579,6 +636,23 @@
           break;
         case 'end': if (s.screen === 'stage') finish(fxs); break;
         case 'leave': fxs.push({ fx: 'leave' }); break;
+        case 'tile':
+          /* Hidden Picture: one more tile opens. When all are open, the answer shows. */
+          if (s.screen !== 'stage' || stage().kind !== 'reveal' || s.revealed || s.tiles >= 9) break;
+          s.tiles++;
+          fxs.push({ fx: 'tile' });
+          break;
+        case 'potato':
+          /* Hot Potato: the bomb ticks for a time nobody knows, then goes BOOM. */
+          if (s.screen !== 'stage' || stage().kind !== 'potato' || s.burning || s.boomed) break;
+          s.burning = true;
+          fxs.push({ fx: 'burn', ms: 7000 + Math.floor(Math.random() * 9000) });
+          break;
+        case 'boom':
+          if (!s.burning) break;
+          s.burning = false; s.boomed = true; s.rev++;
+          fxs.push({ fx: 'boom' });
+          break;
         default: break;
       }
       return fxs;
@@ -603,7 +677,7 @@
     const last = s.stage === plan.stages.length - 1;
     const doneHere = st.pick ? s.used.length >= count : s.item >= count - 1;
     const nextLabel = !doneHere ? 'Next ➡️' : last ? '🏁 Finish the game' : '➡️ Next round';
-    const answer = !it ? '' : st.kind === 'memory' ? '' : st.kind === 'complete' ? `${it.before}${it.answer}${it.after}` : st.kind === 'tf' ? `${it.answer} (right answer: ${it.right})` : it.answer || it.en || (st.kind === 'sort' ? `${st.groups[it.group].n}` : it.sample || '');
+    const answer = !it ? '' : st.kind === 'memory' ? '' : st.kind === 'odd' ? `${it.answer} (the others are ${it.group})` : st.kind === 'potato' ? it.sample : st.kind === 'complete' ? `${it.before}${it.answer}${it.after}` : st.kind === 'tf' ? `${it.answer} (right answer: ${it.right})` : it.answer || it.en || (st.kind === 'sort' ? `${st.groups[it.group].n}` : it.sample || '');
     let primary;
     const go = (label, type) => ({ label, type, nav: true });
     if (st.kind === 'wheel') {
@@ -617,6 +691,13 @@
       else primary = go(st.kind === 'cards' ? '🃏 Deal a card' : '🎁 Open a random box', 'box');
     } else if (st.kind === 'role') {
       primary = s.line < 2 ? go('💬 Next line', 'reveal') : go(nextLabel, 'next');
+    } else if (st.kind === 'reveal') {
+      primary = s.revealed ? go(nextLabel, 'next') : s.tiles < 9 ? go(`🧩 Open a tile (${9 - s.tiles} left)`, 'tile') : go('👁 Reveal answer', 'reveal');
+    } else if (st.kind === 'potato') {
+      if (s.burning) primary = { label: '🔥 Passing… wait for BOOM', type: 'potato', nav: true, disabled: true };
+      else if (!s.boomed) primary = go('💣 Start passing!', 'potato');
+      else if (!s.revealed) primary = go('👁 Show the example', 'reveal');
+      else primary = go(nextLabel, 'next');
     } else if (st.kind === 'memory') {
       primary = s.revealed ? go(nextLabel, 'next') : go('🃏 Show all pairs', 'reveal');
     } else {
@@ -631,7 +712,8 @@
       canFifty: st.kind === 'quiz' && !s.revealed && it && it.options.length > 2,
       boxes: st.kind === 'boxes' ? st.items.map((_, n) => ({ n, used: s.used.includes(n) })) : null,
       cards: st.kind === 'memory' ? st.items[0].cards.map((_, n) => ({ n, used: s.mem.done.includes(n) || s.mem.open.includes(n) })) : null,
-      canReplay: st.kind === 'listen',
+      canReplay: st.kind === 'listen' || (st.kind === 'rain' && !!it && it.listen),
+      canReveal: st.kind === 'reveal' && !s.revealed && s.tiles < 9,
       game: st.name, canChange: (st.alts || 1) > 1, style: s.style,
       rounds: plan.stages.map((x) => x.round),
     });
@@ -641,7 +723,7 @@
   const readSave = (lessonCode) => {
     try {
       const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-      if (saved && saved.state && saved.state.lesson === lessonCode && saved.state.v === 6 && Date.now() - saved.at < SAVE_HOURS * 3600000) return saved.state;
+      if (saved && saved.state && saved.state.lesson === lessonCode && saved.state.v === 7 && Date.now() - saved.at < SAVE_HOURS * 3600000) return saved.state;
     } catch (e) { /* start fresh */ }
     return null;
   };
@@ -678,9 +760,10 @@
       if (s.screen !== 'stage') return feed;
       const st = plan.stages[s.stage], it = s.item >= 0 ? st.items[s.item] : null;
       Object.assign(feed, { kind: st.kind, round: st.round });
-      if (['wheel', 'boxes', 'role', 'memory', 'cards'].includes(st.kind)) {
+      if (['wheel', 'boxes', 'role', 'memory', 'cards', 'potato'].includes(st.kind)) {
         feed.speak = true;
         if (st.kind === 'memory') { feed.prompt = 'Memory Match'; feed.frame = 'Look at the TV and find the pairs!'; }
+        else if (st.kind === 'potato' && !s.boomed) { feed.prompt = '💣 Hot Potato!'; feed.frame = 'Pass it on, quick!'; }
         else if (it) { feed.prompt = it.q || it.en; feed.frame = it.frame; }
         return feed;
       }
@@ -691,6 +774,9 @@
       if (st.kind === 'letters') Object.assign(feed, { prompt: it.pattern.map((c) => c || '_').join(' '), options: it.options });
       if (st.kind === 'tf') Object.assign(feed, { prompt: `${it.q} → ${it.claim}`, options: it.options });
       if (st.kind === 'riddle' || st.kind === 'matchup') Object.assign(feed, { prompt: it.q, options: it.options });
+      if (st.kind === 'reveal') Object.assign(feed, { prompt: '🧩 What is the hidden picture?', options: it.options });
+      if (st.kind === 'rain') Object.assign(feed, { prompt: it.listen ? '🔊 Listen to the TV!' : it.q, options: it.options });
+      if (st.kind === 'odd') Object.assign(feed, { prompt: 'Which one is the odd one out?', options: it.options });
       if (st.kind === 'complete') Object.assign(feed, { prompt: `${it.before}___${it.after}`, options: it.options });
       if (st.kind === 'sort') Object.assign(feed, { prompt: it.text, options: st.groups.map((g) => g.n) });
       if (st.kind === 'order') Object.assign(feed, { prompt: it.joiner ? 'Put the words in order!' : 'Spell the word!', tiles: it.tiles, joiner: it.joiner });
@@ -1096,7 +1182,52 @@
         h('p', { class: 'cl-note', text: left ? 'Who will speak next?' : 'All cards played!' }),
         h('div', { class: 'cl-deck' }, Array.from({ length: Math.min(left, 5) }, (_, n) => h('span', { class: 'cl-deck-card', style: { '--n': n } }, n === Math.min(left, 5) - 1 ? '🗣️' : ''))));
     }
-    const DRAW = { riddle: drawRiddle, complete: drawComplete, matchup: drawMatchup, cards: drawCards, listen: drawListen, letters: drawLetters, tf: drawTf, memory: drawMemory, flash: drawFlash, quiz: drawQuiz, sort: drawSort, order: drawOrder, wheel: drawWheel, boxes: drawBoxes, role: drawRole };
+    function drawReveal(st) {
+      const it = st.items[s.item];
+      const open = new Set(it.order.slice(0, s.tiles));
+      return h('div', { class: 'cl-quiz cl-reveal' },
+        h('div', { class: 'cl-card cl-pic-card' },
+          h('div', { class: 'cl-pic' },
+            h('span', { class: 'cl-pic-art', 'aria-hidden': 'true', text: it.emoji }),
+            h('div', { class: 'cl-pic-tiles' }, Array.from({ length: 9 }, (_, n) => h('span', { class: `cl-pic-tile t${n % 4} ${open.has(n) ? 'open' : ''}`, text: open.has(n) ? '' : n + 1 })))),
+          h('div', { class: 'cl-pic-side' },
+            h('small', { class: 'cl-ask', text: s.revealed ? 'It’s…' : 'What is the hidden picture?' }),
+            s.revealed ? h('p', { class: 'cl-flash-en answer-pop', text: it.answer }) : h('p', { class: 'cl-pic-count', text: `${9 - s.tiles} tiles left` }))),
+        optionButtons(it.options, it.answer));
+    }
+    function drawRain(st) {
+      const it = st.items[s.item];
+      const live = !s.revealed && !s.students;
+      return h('div', { class: 'cl-rain' },
+        h('div', { class: 'cl-card cl-question cl-rain-clue' },
+          it.listen ? h('button', { class: 'cl-speaker', 'aria-label': 'Hear it again', onclick: () => readItem() }, '🔊') : SEJ.sticker('🌧️', 'cl-q-art'),
+          h('div', {}, h('small', { class: 'cl-ask', text: it.listen ? 'Catch the word you hear!' : 'Catch the word that matches!' }),
+            !it.listen && h('p', { class: it.bn ? 'cl-rain-bn' : '', lang: it.bn ? 'bn' : null, text: it.q }))),
+        h('div', { class: `cl-rain-field ${s.revealed ? 'stopped' : ''}` }, it.options.map((w, n) => {
+          const right = w === it.answer, wrong = s.wrongs.includes(w);
+          return h(live && !wrong ? 'button' : 'span', {
+            class: `cl-rain-word c${n} ${wrong ? 'crossed' : ''} ${s.revealed ? (right ? 'caught answer-pop' : 'gone') : ''}`,
+            id: s.revealed && right ? 'cl-answer' : null, style: { '--n': n },
+            onclick: live && !wrong ? () => dispatch({ type: 'tap', value: w }) : null,
+          }, w);
+        })));
+    }
+    function drawOdd(st) {
+      const it = st.items[s.item];
+      return h('div', { class: 'cl-quiz' },
+        h('div', { class: 'cl-card cl-question cl-odd-card' },
+          SEJ.sticker('🔍', 'cl-q-art'),
+          h('div', {}, h('p', { text: 'Which one is the odd one out?' }), s.revealed && h('p', { class: 'cl-tf-fix answer-pop', text: `The others are all: ${it.group}` }))),
+        optionButtons(it.options, it.answer));
+    }
+    function drawPotato(st) {
+      const it = st.items[s.item];
+      if (s.boomed) return h('div', { class: 'cl-box-open' }, h('p', { class: 'cl-box-tag', text: '💥 BOOM! Your turn!' }), speakCard(it));
+      return h('div', { class: 'cl-potato' },
+        h('span', { class: `cl-bomb ${s.burning ? 'burning' : ''}`, 'aria-hidden': 'true', text: '💣' }),
+        h('p', { class: 'cl-note', text: s.burning ? 'Pass it on! Quick, quick!' : 'Get ready to pass the potato!' }));
+    }
+    const DRAW = { reveal: drawReveal, rain: drawRain, odd: drawOdd, potato: drawPotato, riddle: drawRiddle, complete: drawComplete, matchup: drawMatchup, cards: drawCards, listen: drawListen, letters: drawLetters, tf: drawTf, memory: drawMemory, flash: drawFlash, quiz: drawQuiz, sort: drawSort, order: drawOrder, wheel: drawWheel, boxes: drawBoxes, role: drawRole };
 
     function topPlayers() {
       const top = Object.values(s.players).filter((p) => p.score > 0).sort((a, b) => b.score - a.score).slice(0, 3);
@@ -1127,7 +1258,7 @@
     }
 
     function signature() {
-      return JSON.stringify([s.screen, s.stage, s.item, s.revealed, s.line, s.built, s.wrongs, s.mem, s.variants, s.style, s.hidden, s.used, s.spinning, s.seed, s.phone, s.students, s.join, s.screen === 'podium' ? Object.values(s.players).map((p) => p.score) : 0, s.screen === 'podium' ? s.teams : 0, s.screen === 'podium' ? s.mode + s.classScore : 0]);
+      return JSON.stringify([s.screen, s.stage, s.item, s.revealed, s.line, s.built, s.wrongs, s.mem, s.variants, s.style, s.tiles, s.burning, s.boomed, s.hidden, s.used, s.spinning, s.seed, s.phone, s.students, s.join, s.screen === 'podium' ? Object.values(s.players).map((p) => p.score) : 0, s.screen === 'podium' ? s.teams : 0, s.screen === 'podium' ? s.mode + s.classScore : 0]);
     }
     function draw() {
       if (!alive) return;
@@ -1153,7 +1284,7 @@
       if (s.screen !== 'stage') return;
       const st = plan.stages[s.stage], it = s.item >= 0 ? st.items[s.item] : null;
       if (!it) return;
-      const line = st.kind === 'quiz' || st.kind === 'tf' || st.kind === 'riddle' || st.kind === 'matchup' ? it.q : st.kind === 'complete' ? `${it.before} blank ${it.after}` : st.kind === 'listen' ? it.en : st.kind === 'sort' ? it.text : st.kind === 'role' ? it.q : '';
+      const line = st.kind === 'odd' ? 'Which one is the odd one out?' : st.kind === 'rain' ? (it.listen ? it.answer : '') : st.kind === 'potato' ? (s.boomed ? it.q : '') : st.kind === 'quiz' || st.kind === 'tf' || st.kind === 'riddle' || st.kind === 'matchup' ? it.q : st.kind === 'complete' ? `${it.before} blank ${it.after}` : st.kind === 'listen' ? it.en : st.kind === 'sort' ? it.text : st.kind === 'role' ? it.q : '';
       if (line) say(line);
     }
     function splash(top, title, heroId) {
@@ -1201,6 +1332,16 @@
         case 'pair': sfx.correct(2); fx.pow('PAIR!'); say(e.text); break;
         case 'noPair': sfx.boing(); later(() => dispatch({ type: 'unflip' }), 1300); break;
         case 'replay': readItem(); break;
+        case 'tile': sfx.pop(); break;
+        case 'burn': {
+          /* Ticks speed up as BOOM gets close. */
+          const total = e.ms * speed();
+          let t = 0, gap = 520;
+          while (t < total) { const at = t; later(() => { if (s.burning) sfx.tick(Math.min(8, Math.floor((at / total) * 9))); }, at / speed()); t += gap; gap = Math.max(140, gap * 0.94); }
+          later(() => dispatch({ type: 'boom' }), e.ms);
+          break;
+        }
+        case 'boom': sfx.wrong(); sfx.cheer(); SEJ.buzz([80, 40, 120]); fx.pow('BOOM!'); fx.burst(innerWidth / 2, innerHeight / 2, 50, ['💥', '⭐']); later(() => say(plan.stages[s.stage].items[s.item].q), 700); break;
         case 'phone': sfx.correct(1); fx.pow('PHONE READY!'); break;
         case 'open': {
           sfx.pop(); sfx.correct(0);

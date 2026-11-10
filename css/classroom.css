@@ -353,6 +353,34 @@ button.cl-mu-word { cursor: pointer; }
 .cl-deck-card { position: absolute; inset: 0; display: grid; place-items: center; border: .8vmin solid #fff; border-radius: 3vmin; background: linear-gradient(160deg, #ff5cae, #7b2ff7); box-shadow: 0 1.2vmin 2vmin rgba(43, 15, 107, .4); font-size: 14vmin; transform: translate(calc(var(--n) * 1.2vmin), calc(var(--n) * -1.2vmin)) rotate(calc(var(--n) * 2deg - 4deg)); }
 .cl-deck-card:last-child { animation: sticker-bob 2.2s ease-in-out infinite; }
 
+/* Hidden Picture, Word Rain, Odd One Out, Hot Potato */
+.cl-pic-card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 3vmin; padding: 1.4vmin 3vmin; text-align: left; }
+.cl-pic { position: relative; width: 30vmin; height: 30vmin; min-width: 130px; min-height: 130px; border-radius: 2.6vmin; overflow: hidden; background: radial-gradient(circle, #fff8cf, #ffe0f0); }
+.cl-pic-art { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22vmin; line-height: 1; }
+.cl-pic-tiles { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: .5vmin; padding: .5vmin; }
+.cl-pic-tile { display: grid; place-items: center; border-radius: 1.4vmin; font-family: var(--display); font-size: 4vmin; color: #fff; transition: transform .35s, opacity .35s; background: #7b2ff7; box-shadow: inset 0 -.6vmin 0 rgba(0, 0, 0, .18); }
+.cl-pic-tile.t1 { background: #ff2e93; } .cl-pic-tile.t2 { background: #00b2ff; } .cl-pic-tile.t3 { background: #ff7a00; }
+.cl-pic-tile.open { opacity: 0; transform: scale(.4) rotate(20deg); }
+.cl-pic-count { font-family: var(--display); font-size: clamp(22px, 5vmin, 64px); color: var(--violet); }
+.cl-reveal .cl-options { grid-auto-rows: minmax(0, 18vmin); }
+.cl-rain { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 1.4vmin; min-height: 0; }
+.cl-rain-clue { gap: 2vmin; padding-block: 1.2vmin; }
+.cl-rain-bn { font-family: 'Baloo Da 2', 'Noto Sans Bengali', var(--body); color: var(--violet); font-size: clamp(26px, 6.6vmin, 88px) !important; }
+.cl-rain-field { position: relative; min-height: 0; overflow: hidden; border-radius: 3vmin; background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .32)); }
+.cl-rain-word { position: absolute; top: -16%; left: calc(2% + var(--n) * 16%); width: 15%; padding: 1.2vmin .6vmin; border: 0; border-radius: 2vmin; background: linear-gradient(180deg, #38b6ff, #0a6fe0); color: #fff; box-shadow: 0 .7vmin 0 #0749a0; font-family: var(--display); font-size: clamp(14px, 3.3vmin, 44px); text-align: center; overflow-wrap: anywhere; cursor: pointer; animation: rain-fall 7.5s linear infinite; animation-delay: calc(var(--n) * -1.25s); }
+.cl-rain-word.c1, .cl-rain-word.c4 { background: linear-gradient(180deg, #ff5cae, #e8127c); box-shadow: 0 .7vmin 0 #a50a58; }
+.cl-rain-word.c2, .cl-rain-word.c5 { background: linear-gradient(180deg, #35d873, #0ea44c); box-shadow: 0 .7vmin 0 #087536; }
+@keyframes rain-fall { 0% { top: -16%; } 100% { top: 102%; } }
+.cl-rain-word.crossed { opacity: .35; text-decoration: line-through; cursor: default; }
+.cl-rain-field.stopped .cl-rain-word { animation: none; }
+.cl-rain-word.gone { opacity: 0; }
+.cl-rain-word.caught { top: 50%; left: 50%; width: auto; padding: 2vmin 6vmin; transform: translate(-50%, -50%); font-size: clamp(28px, 8vmin, 110px); background: linear-gradient(180deg, #ffe34d, #ffbe00); color: var(--ink); box-shadow: 0 1vmin 0 #c98a00; }
+.cl-odd-card { gap: 2vmin; }
+.cl-potato { display: grid; justify-items: center; align-content: center; gap: 2vmin; }
+.cl-bomb { font-size: 34vmin; line-height: 1; filter: drop-shadow(0 1.4vmin 0 rgba(43, 15, 107, .45)); }
+.cl-bomb.burning { animation: bomb-shake .32s ease-in-out infinite; }
+@keyframes bomb-shake { 0%, 100% { transform: rotate(-7deg) scale(1); } 50% { transform: rotate(7deg) scale(1.07); } }
+
 /* Battle styles */
 .cl-style-banner { padding: .7vmin 2.6vmin; background: #ffe34d; border-radius: 99px; color: var(--ink); font-size: clamp(15px, 2.7vmin, 34px); font-weight: 600; box-shadow: 0 .6vmin 0 #c98a00; }
 .cl-style-banner b { font-family: var(--display); font-weight: 400; }
@@ -501,7 +529,7 @@ button.cl-tile:active { cursor: grabbing; }
 
 /* ---------- smooth mode: for devices that can't keep up ---------- */
 .unit.offscreen *, .map-hero.offscreen * { animation-play-state: paused !important; }
-.lite .scene *, .lite .decor-layer *, .lite .rays, .lite .logo-word, .lite .cl-gift, .lite .squad-hero, .lite .big-art { animation: none !important; }
+.lite .scene *, .lite .decor-layer *, .lite .cl-bomb, .lite .rays, .lite .logo-word, .lite .cl-gift, .lite .squad-hero, .lite .big-art { animation: none !important; }
 .lite .sticker { filter: drop-shadow(0 3px 2px rgba(43, 15, 107, .3)); }
 .lite .gummy { transition: none; box-shadow: 0 6px 0 var(--c3); }
 .cl-gift, .cl-place-hero, .cl-place-crown { will-change: transform; }
