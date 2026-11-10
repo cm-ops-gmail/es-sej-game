@@ -34,10 +34,11 @@ const check = (name, ok, extra = '') => {
   check('24 lessons', plans.length === 24, plans.length);
   const seen = {};
   for (const { code, plan } of plans) {
-    check(`${code} three rounds`, plan.stages.length === 3, plan.stages.length);
+    check(`${code} has Team Battle and Speak`, plan.stages.length >= 2 && plan.stages.some((x) => x.round === 'Team Battle') && plan.stages.some((x) => x.round === 'Speak'), plan.stages.length);
+    check(`${code} has no Read and Say`, !plan.stages.some((x) => x.kind === 'read'));
     for (const st of plan.stages) {
       seen[st.kind] = (seen[st.kind] || 0) + 1;
-      check(`${code} ${st.kind} has items`, st.items.length >= 2, st.items.length);
+      check(`${code} ${st.kind} has items`, st.items.length >= (st.kind === 'memory' ? 1 : 2), st.items.length);
       for (const it of st.items) {
         if (st.kind === 'quiz') {
           check(`${code} quiz answer listed`, it.options.includes(it.answer), JSON.stringify(it));
@@ -48,13 +49,16 @@ const check = (name, ok, extra = '') => {
         if (st.kind === 'sort') check(`${code} sort group`, !!st.groups[it.group], JSON.stringify(it));
         if (st.kind === 'order') check(`${code} tiles match`, it.tiles.slice().sort().join() === it.parts.slice().sort().join(), JSON.stringify(it));
         if (st.kind === 'flash') check(`${code} flash`, it.en && it.bn, JSON.stringify(it));
-        if (st.kind === 'read') check(`${code} read`, !!it.en, JSON.stringify(it));
+        if (['listen', 'letters'].includes(st.kind)) check(`${code} ${st.kind} answer listed`, it.options.includes(it.en) && new Set(it.options).size === it.options.length, JSON.stringify(it));
+        if (st.kind === 'letters') check(`${code} letters pattern`, it.pattern.length === it.en.length && it.pattern.some((c) => !c) && !!it.pattern[0], JSON.stringify(it));
+        if (st.kind === 'tf') check(`${code} true/false`, ['True', 'False'].includes(it.answer) && (it.answer === 'True') === (it.claim === it.right), JSON.stringify(it));
+        if (st.kind === 'memory') check(`${code} memory`, it.cards.length === it.pairs.length * 2 && it.pairs.length >= 4, JSON.stringify(it).slice(0, 200));
         if (['wheel', 'boxes', 'role'].includes(st.kind)) check(`${code} speak`, it.q && it.frame && it.sample, JSON.stringify(it));
       }
     }
   }
   console.log('Round types across lessons:', JSON.stringify(seen));
-  for (const k of ['flash', 'read', 'quiz', 'sort', 'order', 'wheel', 'boxes', 'role']) check(`${k} is used`, seen[k] > 0);
+  for (const k of ['flash', 'listen', 'memory', 'letters', 'quiz', 'sort', 'order', 'tf', 'wheel', 'boxes', 'role']) check(`${k} is used`, seen[k] > 0);
 
   /* 2. Every lesson plays from lobby to podium on the TV by itself. */
   for (const { code } of plans) {
@@ -69,7 +73,7 @@ const check = (name, ok, extra = '') => {
         const d = SEJ.classDebug;
         if (d.state.spinning) return;
         if (!d.state.teams[1].score) d.dispatch({ type: 'score', team: 1, delta: 1 });
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+        d.primary();
       });
       await tv.waitForTimeout(30);
     }
@@ -79,12 +83,13 @@ const check = (name, ok, extra = '') => {
     check(`${code} no page scroll`, !overflow);
   }
 
-  /* 3. The phone runs the TV. */
+  /* 3. The phone runs the TV, on a lesson that starts with Word Flash. */
+  const flashLesson = plans.find((p) => p.plan.stages[0].kind === 'flash').code;
   await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
-  await tv.goto(`${BASE}/?class=1.3&test=1`);
+  await tv.goto(`${BASE}/?class=${flashLesson}&test=1`);
   await tv.reload();
   await tv.waitForSelector('.cl-lobby');
-  check('short link opens the lobby', /#\/class\/1\.3/.test(tv.url()), tv.url());
+  check('short link opens the lobby', tv.url().includes(`#/class/${flashLesson}`), tv.url());
   await tv.screenshot({ path: `${SHOTS}/tv-lobby.png` });
   const code = await tv.evaluate(() => SEJ.classDebug.state.code);
   const qrUrl = `${BASE}/?remote=${code}&test=1`;
@@ -171,13 +176,22 @@ const check = (name, ok, extra = '') => {
   await phone.click('#rm-pick-student');
   await waitTv(() => !!SEJ.classDebug.state.picked);
   check('random student picked', roster.includes((await tvState()).picked.name));
-  await phone.getByRole('button', { name: '🤩 Wow' }).click();
+  check('phone offers Try a different game', !!(await phone.$('#rm-change')));
+  await phone.click('#rm-more-close');
+  /* Reactions: on the main phone screen, reaching the TV, and the phone says when the TV has no sound yet. */
+  for (const kind of ['clap', 'fanfare', 'wow', 'oops']) check(`${kind} reaction on phone`, !!(await phone.$(`.rm-reaction[data-reaction="${kind}"]`)));
+  check('TV has no Controls button', !(await tv.$('#cl-controls')));
+  await tv.evaluate(() => { window.__cheer = 0; const pow = SEJ.fx.pow; SEJ.fx.pow = function (t, k) { window.__cheer++; window.__said = t; return pow.call(this, t, k); }; });
+  await phone.locator('.rm-reaction[data-reaction="wow"]').click();
+  await tv.waitForFunction(() => window.__said === 'WOW!', null, { timeout: 8000 });
+  check('Wow reaches the TV', true);
+  await phone.click('#rm-more');
 
   /* Battle round with timer on the TV. */
   await phone.getByRole('button', { name: 'Team Battle' }).click();
   await waitTv(() => SEJ.classDebug.state.stage === 1);
   await phone.waitForSelector('#rm-timer', { timeout: 8000 });
-  const battleKind = await tv.evaluate(() => SEJ.classDebug.getPlan().stages[1].kind);
+  const battleKind = await tv.evaluate(() => SEJ.classDebug.getPlan().stages[SEJ.classDebug.round('Team Battle')].kind);
   await tv.waitForTimeout(150);
   await tv.screenshot({ path: `${SHOTS}/tv-battle-${battleKind}.png` });
   await phone.screenshot({ path: `${SHOTS}/phone-battle.png`, fullPage: true });
@@ -236,17 +250,17 @@ const check = (name, ok, extra = '') => {
     await tv.waitForSelector('.cl-lobby');
     await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'start' }));
     await tv.waitForTimeout(100);
-    await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'goto', stage: 1 }));
+    await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'goto', stage: SEJ.classDebug.round('Team Battle') }));
     await tv.waitForTimeout(100);
-    const kind1 = await tv.evaluate(() => SEJ.classDebug.getPlan().stages[1].kind);
+    const kind1 = await tv.evaluate(() => SEJ.classDebug.getPlan().stages[SEJ.classDebug.round('Team Battle')].kind);
     await tv.evaluate(() => { SEJ.$$('.cl-splash').forEach((x) => x.remove()); });
     await tv.screenshot({ path: `${SHOTS}/style-${label}-battle-${kind1}.png` });
     await tv.evaluate(() => { const d = SEJ.classDebug; d.dispatch({ type: 'reveal' }); d.dispatch({ type: 'score', team: 0, delta: 1 }); });
     await tv.waitForTimeout(100);
     await tv.screenshot({ path: `${SHOTS}/style-${label}-battle-${kind1}-open.png` });
-    await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'goto', stage: 2 }));
+    await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'goto', stage: SEJ.classDebug.round('Speak') }));
     await tv.waitForTimeout(100);
-    const kind2 = await tv.evaluate(() => SEJ.classDebug.getPlan().stages[2].kind);
+    const kind2 = await tv.evaluate(() => SEJ.classDebug.getPlan().stages[SEJ.classDebug.round('Speak')].kind);
     await tv.evaluate(() => { SEJ.$$('.cl-splash').forEach((x) => x.remove()); });
     await tv.screenshot({ path: `${SHOTS}/style-${label}-speak-${kind2}.png` });
     await tv.evaluate((k) => { const d = SEJ.classDebug; if (k === 'wheel') d.dispatch({ type: 'spin' }); else if (k === 'boxes') d.dispatch({ type: 'box', n: 1 }); else { d.dispatch({ type: 'reveal' }); d.dispatch({ type: 'reveal' }); } }, kind2);
@@ -262,11 +276,11 @@ const check = (name, ok, extra = '') => {
   await tv.reload();
   await tv.waitForSelector('.cl-lobby');
   await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'start' }));
-  await tv.evaluate(() => { SEJ.classDebug.dispatch({ type: 'goto', stage: 1 }); SEJ.$$('.cl-splash').forEach((x) => x.remove()); });
+  await tv.evaluate(() => { SEJ.classDebug.dispatch({ type: 'goto', stage: SEJ.classDebug.round('Team Battle') }); SEJ.$$('.cl-splash').forEach((x) => x.remove()); });
   await tv.waitForSelector('.cl-tray .cl-tile');
   await tv.waitForTimeout(150);
   await tv.screenshot({ path: `${SHOTS}/tv-drag-start.png` });
-  const orderItem = await tv.evaluate(() => { const it = SEJ.classDebug.getPlan().stages[1].items[0]; return { parts: it.parts, tiles: it.tiles }; });
+  const orderItem = await tv.evaluate(() => { const it = SEJ.classDebug.getPlan().stages[SEJ.classDebug.round('Team Battle')].items[0]; return { parts: it.parts, tiles: it.tiles }; });
   const dragTo = async (i, sel) => {
     const a = await tv.locator(`.cl-tile[data-tile="${i}"]`).boundingBox();
     const b = await tv.locator(sel).boundingBox();
@@ -303,41 +317,102 @@ const check = (name, ok, extra = '') => {
   await tv.goto(`${BASE}/index.html?test=1#/class/1.1`);
   await tv.reload();
   await tv.waitForSelector('.cl-lobby');
-  await tv.evaluate(() => { const d = SEJ.classDebug; d.dispatch({ type: 'start' }); d.dispatch({ type: 'goto', stage: 1 }); SEJ.$$('.cl-splash').forEach((x) => x.remove()); });
+  await tv.evaluate(() => { const d = SEJ.classDebug; d.dispatch({ type: 'start' }); d.dispatch({ type: 'goto', stage: d.round('Team Battle') }); SEJ.$$('.cl-splash').forEach((x) => x.remove()); });
   await tv.waitForSelector('button.cl-option');
   await tv.waitForTimeout(200);
-  const q = await tv.evaluate(() => { const it = SEJ.classDebug.getPlan().stages[1].items[0]; return { answer: it.answer, wrong: it.options.find((o) => o !== it.answer) }; });
+  const q = await tv.evaluate(() => { const it = SEJ.classDebug.getPlan().stages[SEJ.classDebug.round('Team Battle')].items[0]; return { answer: it.answer, wrong: it.options.find((o) => o !== it.answer) }; });
   await tv.locator('button.cl-option', { hasText: q.wrong }).first().click();
   check('wrong tap is crossed out', await tv.evaluate(() => SEJ.classDebug.state.wrongs.length === 1 && !SEJ.classDebug.state.revealed));
   await tv.locator('button.cl-option', { hasText: q.answer }).first().click();
   check('right tap reveals', await tv.evaluate(() => SEJ.classDebug.state.revealed));
 
-  /* Read and Say, for a lesson without enough Bangla on its slides. */
+  /* New games: Memory Match by tapping on the TV, Listen & Choose, Missing Letters, True or False, and changing a game. */
+  const byKind = (kind) => plans.find((p) => p.plan.stages.some((x) => x.kind === kind));
+  const openKind = async (kind) => {
+    const p = byKind(kind);
+    await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
+    await tv.goto(`${BASE}/index.html?test=1#/class/${p.code}`);
+    await tv.reload();
+    await tv.waitForSelector('.cl-lobby');
+    await tv.evaluate((k) => { const d = SEJ.classDebug; d.dispatch({ type: 'start' }); d.dispatch({ type: 'goto', stage: d.getPlan().stages.findIndex((x) => x.kind === k) }); SEJ.$$('.cl-splash').forEach((x) => x.remove()); }, kind);
+    await tv.waitForTimeout(150);
+    return p.code;
+  };
+  await openKind('memory');
+  const memCards = await tv.evaluate(() => SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage].items[0].cards);
+  const firstPair = memCards.map((c, n) => [c, n]).filter(([c]) => c.p === memCards[0].p).map(([, n]) => n);
+  const other = memCards.findIndex((c) => c.p !== memCards[0].p);
+  await tv.locator(`.cl-mem-card[data-card="0"]`).click();
+  await tv.locator(`.cl-mem-card[data-card="${other}"]`).click();
+  await tv.waitForFunction(() => SEJ.classDebug.state.mem.open.length === 0, null, { timeout: 5000 });
+  check('Memory: two different cards turn back over', await tv.evaluate(() => SEJ.classDebug.state.mem.done.length === 0));
+  await tv.locator(`.cl-mem-card[data-card="${firstPair[0]}"]`).click();
+  await tv.locator(`.cl-mem-card[data-card="${firstPair[1]}"]`).click();
+  check('Memory: a pair stays open', await tv.evaluate(() => SEJ.classDebug.state.mem.done.length === 2));
+  await tv.screenshot({ path: `${SHOTS}/tv-memory.png` });
+  for (let p = 0; p < memCards.length / 2; p++) {
+    const pair = memCards.map((c, n) => [c, n]).filter(([c]) => c.p === p).map(([, n]) => n);
+    for (const n of pair) await tv.evaluate((x) => SEJ.classDebug.dispatch({ type: 'flip', n: x }), n);
+  }
+  check('Memory: all pairs finish the round', await tv.evaluate(() => SEJ.classDebug.state.revealed));
+  for (const kind of ['listen', 'letters', 'tf']) {
+    await openKind(kind);
+    const it = await tv.evaluate(() => { const st = SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage]; const x = st.items[0]; return { right: x.answer || x.en, options: x.options }; });
+    check(`${kind}: options on the TV`, (await tv.locator('button.cl-option').count()) === it.options.length);
+    await tv.screenshot({ path: `${SHOTS}/tv-${kind}.png` });
+    await tv.locator('button.cl-option', { hasText: new RegExp(`^${it.right}$`) }).first().click().catch(async () => { await tv.evaluate((v) => SEJ.classDebug.dispatch({ type: 'tap', value: v }), it.right); });
+    check(`${kind}: right answer reveals`, await tv.evaluate(() => SEJ.classDebug.state.revealed));
+  }
+  /* Try a different game: the round changes to another game of the same kind. */
+  const gameBefore = await tv.evaluate(() => SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage].name);
+  await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'change' }));
+  await tv.waitForTimeout(150);
+  const gameAfter = await tv.evaluate(() => ({ name: SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage].name, round: SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage].round, item: SEJ.classDebug.state.item, revealed: SEJ.classDebug.state.revealed }));
+  check('Try a different game changes the game', gameAfter.name !== gameBefore && gameAfter.round === 'Team Battle' && !gameAfter.revealed, `${gameBefore} -> ${JSON.stringify(gameAfter)}`);
+
+  /* A lesson without enough Bangla on its slides starts at Team Battle. */
   await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
   await tv.goto(`${BASE}/index.html?test=1#/class/4.2`);
   await tv.reload();
   await tv.waitForSelector('.cl-lobby');
   await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'start' }));
   await tv.waitForTimeout(100);
-  check('Read and Say used without slide Bangla', (await tv.evaluate(() => SEJ.classDebug.getPlan().stages[0].kind)) === 'read');
+  check('lesson 4.2 has no Word Flash', !(await tv.evaluate(() => SEJ.classDebug.getPlan().stages.some((x) => x.kind === 'flash'))));
   check('voice has its clip list', await tv.evaluate(() => Array.isArray(window.SEJ_VOICE)));
-  check('Read and Say shows no Bangla', !/[\u0980-\u09FF]/.test(await tv.textContent('.cl-stage')));
-  await tv.evaluate(() => SEJ.$$('.cl-splash').forEach((x) => x.remove()));
-  await tv.screenshot({ path: `${SHOTS}/tv-read.png` });
 
-  /* 8. Controls drawer works without a phone. */
-  check('TV hides teacher tools', await tv.evaluate(() => document.querySelector('#cl-tools').hidden || new Promise((r) => setTimeout(() => r(document.querySelector('#cl-tools').hidden), 3300))));
+  /* 8. Nothing on the TV controls the game: no buttons, no drawer, no control keys. */
   await tv.mouse.move(300, 300);
   await tv.mouse.move(320, 320);
-  await tv.click('#cl-controls');
-  await tv.waitForSelector('.cl-drawer .pin-card');
-  check('TV controls ask for the PIN', !(await tv.$('.cl-drawer #rm-primary')));
-  await typePin(tv, '1010');
-  await tv.waitForSelector('.cl-drawer #rm-primary', { timeout: 8000 });
-  await tv.screenshot({ path: `${SHOTS}/tv-drawer.png` });
-  const scoreBefore = await tv.evaluate(() => SEJ.classDebug.state.teams[0].score);
-  await tv.locator('.cl-drawer .rm-plus').first().click();
-  check('TV drawer gives points', (await tv.evaluate(() => SEJ.classDebug.state.teams[0].score)) === scoreBefore + 1);
+  await tv.mouse.click(640, 10);
+  await tv.waitForTimeout(300);
+  check('TV has no control buttons', !(await tv.$('#cl-controls, .cl-tools, .cl-drawer')));
+  const before8 = await tv.evaluate(() => JSON.stringify([SEJ.classDebug.state.item, SEJ.classDebug.state.revealed, SEJ.classDebug.state.teams.map((t) => t.score)]));
+  for (const k of [' ', 'Enter', 'ArrowRight', '1', 't', 'r', 'm', 'c']) await tv.keyboard.press(k);
+  await tv.waitForTimeout(300);
+  check('keys on the TV change nothing', (await tv.evaluate(() => JSON.stringify([SEJ.classDebug.state.item, SEJ.classDebug.state.revealed, SEJ.classDebug.state.teams.map((t) => t.score)]))) === before8);
+  check('no PIN pad on the TV', !(await tv.$('.pin-card')));
+  await tv.screenshot({ path: `${SHOTS}/tv-clean.png` });
+
+  /* Sound warning. The TV page must not be touched first: Playwright's page probes count as a click, so its code is read from its traffic. */
+  const quietCtx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  await quietCtx.addInitScript(() => { localStorage.setItem('sej-hero-quest-v1', JSON.stringify({ onboarded: true, sound: true, music: false, stars: {}, custom: {} })); });
+  const quietTv = await quietCtx.newPage();
+  let quietCode = '';
+  quietTv.on('request', (r) => { const m = r.url().match(/api\/room\?code=([A-Z0-9]{6})&side=tv/); if (m) quietCode = m[1]; });
+  await quietTv.goto(`${BASE}/?class=1.2`);
+  for (let i = 0; i < 50 && !quietCode; i++) await new Promise((r) => setTimeout(r, 100));
+  const quietPhone = await phoneCtx.newPage();
+  await quietPhone.goto(`${BASE}/?remote=${quietCode}`);
+  await quietPhone.waitForSelector('.pin-card', { timeout: 8000 });
+  for (const d of '1010') await quietPhone.locator(`.pin-key[data-key="${d}"]`).click();
+  await quietPhone.waitForSelector('#rm-sound-note', { timeout: 8000 });
+  check('phone warns the TV has no sound yet', /click or touch the TV/.test(await quietPhone.textContent('#rm-sound-note')));
+  await quietPhone.screenshot({ path: `${SHOTS}/phone-sound-note.png` });
+  await quietTv.mouse.click(640, 30);
+  await quietPhone.waitForFunction(() => !document.querySelector('#rm-sound-note'), null, { timeout: 8000 });
+  check('warning clears once the TV is clicked', true);
+  await quietPhone.close();
+  await quietCtx.close();
 
   /* 9. The relay refuses bad input. */
   const api = tvCtx.request;

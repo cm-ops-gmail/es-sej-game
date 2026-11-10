@@ -195,7 +195,7 @@
         parts.push(waiting('Answer locked! ✓', 'Watch the TV for the answer.'));
         return parts;
       }
-      parts.push(h('p', { class: `st-prompt ${feed.kind === 'flash' ? 'bn' : ''}`, text: feed.prompt || '' }));
+      parts.push(h('p', { class: `st-prompt ${feed.kind === 'flash' ? 'bn' : ''} ${feed.kind === 'letters' ? 'st-letters' : ''}`, text: feed.prompt || '' }));
       if (feed.kind === 'order') parts.push(orderInput());
       else {
         const colors = ['g-pink', 'g-blue', 'g-orange', 'g-green'];

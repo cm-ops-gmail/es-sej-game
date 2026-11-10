@@ -110,60 +110,95 @@
     quiz: { name: 'Team Quiz', timer: 20, tip: 'Start the timer. Pick a team to answer, reveal, then give points.' },
     sort: { name: 'Group Sort', timer: 15, tip: 'Teams vote for the right group. Reveal drops the card in.' },
     order: { name: 'Put It in Order', timer: 30, tip: 'A team says it in the right order. Reveal shows the answer.' },
+    tf: { name: 'True or False?', timer: 10, tip: 'Read it out. Teams show thumbs up or down, then reveal.' },
+  };
+  const WARM_INFO = {
+    flash: { name: 'Word Flash', timer: 0, tip: 'Show the Bangla word. Students say it in English, then reveal.' },
+    listen: { name: 'Listen & Choose', timer: 15, tip: 'The TV says a word. Students choose what they heard. Tap 🔊 to hear it again.' },
+    memory: { name: 'Memory Match', timer: 0, tip: 'Students call two card numbers. Flip them from the phone or on the TV to find each pair.' },
+    letters: { name: 'Missing Letters', timer: 20, tip: 'Some letters are missing. Students guess the word, then reveal.' },
   };
   const SPEAK_INFO = {
     wheel: { name: 'Spin and Speak', tip: 'Spin, pick a student, and start the timer.' },
     boxes: { name: 'Mystery Boxes', tip: 'A student calls a number. Open that box and let them answer.' },
     role: { name: 'Role-play', tip: 'Two students act it out, one line at a time. Then swap.' },
   };
+  const WARM_ORDER = ['flash', 'listen', 'memory', 'letters'];
+  const BATTLE_ORDER = ['quiz', 'sort', 'order', 'tf'];
+  const SPEAK_ORDER = ['wheel', 'boxes', 'role'];
+  /* Lessons take turns, so the class sees a different game each time. "variant" is the teacher's Try a different game. */
+  const choose = (available, index, variant) => (available.length ? available[(index + (variant || 0)) % available.length] : null);
+  const gameFor = (lesson, group) => lesson.games.find((g) => CONVERT[g.t] && CONVERT[g.t].group === group);
 
-  /* Lessons take turns between battle styles, so the class doesn't see the same game each time. */
-  function chooseBattle(lesson, index) {
-    const wanted = ['quiz', 'sort', 'order'];
-    for (let step = 0; step < wanted.length; step++) {
-      const group = wanted[(index + step) % wanted.length];
-      const game = lesson.games.find((g) => CONVERT[g.t] && CONVERT[g.t].group === group);
-      if (game) return { game, group };
-    }
-    return null;
-  }
-
-  SEJ.classPlan = function (code, seed) {
+  SEJ.classPlan = function (code, seed, variants = {}) {
     const raw = SEJ.lessonsRaw();
     const index = raw.findIndex((l) => l.code === code);
     const lesson = raw[index];
     if (!lesson) return null;
     const r = seeded(seed);
     const stages = [];
-    /* Word Flash only shows Bangla that is on the lesson slides. A lesson without enough of it reads the English words instead. */
+    const allWords = (lesson.words || []).map((w) => w[0]);
+    /* Bangla is only shown when it's on the lesson slides. */
     const onSlides = (lesson.words || []).filter((w) => w[2]);
-    const words = mix(onSlides, r).slice(0, 6);
-    if (onSlides.length < 3) {
-      stages.push({
-        kind: 'read', round: 'Warm-up', name: 'Read and Say', timer: 0, scene: 'sky',
-        tip: 'The class reads the word together. Reveal to hear it.',
-        items: mix(lesson.words || [], r).slice(0, 6).map(([en]) => ({ en })),
-      });
-    } else if (words.length) {
-      stages.push({
-        kind: 'flash', round: 'Warm-up', name: 'Word Flash', timer: 0, scene: 'sky',
-        tip: 'Show the Bangla word. Students say it in English, then reveal.',
-        items: words.map(([en, bn]) => ({
-          en, bn, options: mix(uniq([en, ...mix((lesson.words || []).map((w) => w[0]).filter((w) => w !== en), r).slice(0, 3)]), r),
-        })),
-      });
+    const wordOptions = (en) => mix(uniq([en, ...mix(allWords.filter((w) => w !== en), r).slice(0, 3)]), r);
+
+    /* ---------- warm-up ---------- */
+    const matchGame = lesson.games.find((g) => g.t === 'match' && g.pairs.length >= 4 && g.pairs.every((p) => p[0].length <= 28 && p[1].length <= 34));
+    const memoryPairs = onSlides.length >= 4 ? onSlides.map((w) => [w[0], w[1]]) : matchGame ? matchGame.pairs.map((p) => [SEJ.clean(p[0]), p[1]]) : [];
+    const letterWords = uniq(allWords.concat(lesson.games.filter((g) => g.t === 'spell').flatMap((g) => g.items.map((i) => i[0])))
+      .filter((w) => /^[A-Za-z]{4,10}$/.test(w)));
+    const warmAvailable = WARM_ORDER.filter((k) => (k === 'flash' ? onSlides.length >= 3 : k === 'listen' ? allWords.length >= 4 : k === 'memory' ? memoryPairs.length >= 4 : letterWords.length >= 3));
+    const warm = choose(warmAvailable, index, variants['Warm-up']);
+    const warmStage = (kind, items, extra = {}) => Object.assign({ kind, round: 'Warm-up', name: WARM_INFO[kind].name, timer: WARM_INFO[kind].timer, tip: WARM_INFO[kind].tip, scene: 'sky', alts: warmAvailable.length, items }, extra);
+    if (warm === 'flash') {
+      stages.push(warmStage('flash', mix(onSlides, r).slice(0, 6).map(([en, bn]) => ({ en, bn, options: wordOptions(en) }))));
+    } else if (warm === 'listen') {
+      stages.push(warmStage('listen', mix(allWords, r).slice(0, 6).map((en) => ({ en, options: wordOptions(en) }))));
+    } else if (warm === 'memory') {
+      const pairs = mix(memoryPairs, r).slice(0, 6);
+      const cards = mix(pairs.flatMap((p, i) => [{ p: i, text: p[0] }, { p: i, text: p[1], bn: /[ঀ-৿]/.test(p[1]) }]), r);
+      stages.push(warmStage('memory', [{ pairs, cards }]));
+    } else if (warm === 'letters') {
+      const bnOf = Object.fromEntries(onSlides.map((w) => [w[0].toLowerCase(), w[1]]));
+      stages.push(warmStage('letters', mix(letterWords, r).slice(0, 6).map((en) => {
+        const letters = Array.from(en.toUpperCase());
+        /* About half the letters are hidden, never the first one. */
+        const hide = new Set(mix(letters.map((_, i) => i).slice(1), r).slice(0, Math.ceil(letters.length / 2)));
+        const options = mix(uniq([en, ...mix(letterWords.filter((w) => w !== en && Math.abs(w.length - en.length) <= 2), r).slice(0, 3)]), r);
+        return { en, pattern: letters.map((c, i) => (hide.has(i) ? '' : c)), bn: bnOf[en.toLowerCase()] || '', options };
+      })));
     }
-    const pickedBattle = chooseBattle(lesson, index);
-    if (pickedBattle) {
-      const built = CONVERT[pickedBattle.game.t].make(pickedBattle.game, r);
-      const info = BATTLE_INFO[pickedBattle.group];
-      const items = mix(built.items, r).slice(0, BATTLE_ITEMS);
-      if (items.length) stages.push({ kind: pickedBattle.group, round: 'Team Battle', name: info.name, gameTitle: pickedBattle.game.title, timer: info.timer, tip: info.tip, scene: 'stage', groups: built.groups, note: built.note, items });
+
+    /* ---------- team battle ---------- */
+    const battleAvailable = BATTLE_ORDER.filter((k) => (k === 'tf' ? gameFor(lesson, 'quiz') || gameFor(lesson, 'sort') : gameFor(lesson, k)));
+    const battle = choose(battleAvailable, index, variants['Team Battle']);
+    if (battle) {
+      const info = BATTLE_INFO[battle];
+      if (battle === 'tf') {
+        /* Built from the lesson's quiz or sort: is this the right answer? */
+        const source = gameFor(lesson, 'quiz') || gameFor(lesson, 'sort');
+        const built = CONVERT[source.t].make(source, r);
+        const items = mix(built.items, r).slice(0, BATTLE_ITEMS).map((it, n) => {
+          const isSort = !!built.groups;
+          const right = isSort ? built.groups[it.group].n : it.answer;
+          const wrongs = isSort ? built.groups.map((g) => g.n).filter((x) => x !== right) : it.options.filter((o) => o !== right);
+          const honest = !wrongs.length || (r() < 0.5) !== (n % 2 === 0);
+          return { q: isSort ? it.text : it.q, claim: honest ? right : wrongs[Math.floor(r() * wrongs.length)], answer: honest ? 'True' : 'False', options: ['True', 'False'], emoji: it.emoji || '', right };
+        });
+        stages.push({ kind: 'tf', round: 'Team Battle', name: info.name, gameTitle: source.title, timer: info.timer, tip: info.tip, scene: 'stage', alts: battleAvailable.length, items });
+      } else {
+        const source = gameFor(lesson, battle);
+        const built = CONVERT[source.t].make(source, r);
+        const items = mix(built.items, r).slice(0, BATTLE_ITEMS);
+        if (items.length) stages.push({ kind: battle, round: 'Team Battle', name: info.name, gameTitle: source.title, timer: info.timer, tip: info.tip, scene: 'stage', alts: battleAvailable.length, groups: built.groups, note: built.note, items });
+      }
     }
+
+    /* ---------- speak ---------- */
     if ((lesson.talk || []).length) {
-      const kind = ['wheel', 'boxes', 'role'][index % 3];
+      const kind = choose(SPEAK_ORDER, index, variants.Speak);
       stages.push({
-        kind, round: 'Speak', name: SPEAK_INFO[kind].name, timer: 45, tip: SPEAK_INFO[kind].tip, scene: 'fiesta', pick: kind !== 'role',
+        kind, round: 'Speak', name: SPEAK_INFO[kind].name, timer: 45, tip: SPEAK_INFO[kind].tip, scene: 'fiesta', pick: kind !== 'role', alts: SPEAK_ORDER.length,
         items: mix(lesson.talk, r).map((t) => ({ q: t[0], frame: t[1], sample: t[2] })),
       });
     }
@@ -188,11 +223,11 @@
 
   function newState(code, lessonCode) {
     return {
-      v: 4, code, lesson: lessonCode, seed: Math.floor(Math.random() * 1e9), rev: 1, screen: 'lobby',
+      v: 5, code, lesson: lessonCode, seed: Math.floor(Math.random() * 1e9), rev: 1, screen: 'lobby',
       stage: 0, item: 0, revealed: false, line: 0, hidden: [], used: [], spinning: false, wheelDeg: 0,
       timer: { total: 0, left: 0, running: false }, mode: 'teams', teams: makeTeams(4), classScore: 0,
       picked: null, picking: false, roster: loadRoster(), qr: true, phone: false, sound: store.state.sound !== false, acks: {},
-      students: false, join: '', joinQr: true, players: {}, kicked: [], answers: {}, scored: [], built: [], wrongs: [],
+      students: false, join: '', joinQr: true, players: {}, kicked: [], answers: {}, scored: [], built: [], wrongs: [], variants: {}, mem: { open: [], done: [] },
     };
   }
 
@@ -204,6 +239,8 @@
     if (st.kind === 'quiz') return it.answer;
     if (st.kind === 'sort') return st.groups[it.group].n;
     if (st.kind === 'order') return it.parts.join(it.joiner || '');
+    if (st.kind === 'listen' || st.kind === 'letters') return it.en;
+    if (st.kind === 'tf') return it.answer;
     return null;
   }
 
@@ -211,7 +248,7 @@
   function createGame(s, getPlan) {
     const stage = () => getPlan().stages[s.stage];
     const resetTimer = () => { const t = stage() ? stage().timer : 0; s.timer = { total: t, left: t, running: false }; };
-    const clearItem = () => { s.revealed = false; s.line = 0; s.hidden = []; s.picked = null; s.answers = {}; s.built = []; s.wrongs = []; resetTimer(); s.rev++; };
+    const clearItem = () => { s.revealed = false; s.line = 0; s.hidden = []; s.picked = null; s.answers = {}; s.built = []; s.wrongs = []; s.mem = { open: [], done: [] }; resetTimer(); s.rev++; };
     const enterStage = (i, fxs) => {
       s.stage = i; s.used = []; s.spinning = false;
       s.item = stage().pick ? -1 : 0;
@@ -241,6 +278,7 @@
       } else {
         if (s.revealed || (st.pick && s.item < 0)) return;
         s.revealed = true;
+        if (st.kind === 'memory') { s.mem.done = st.items[0].cards.map((_, n) => n); s.mem.open = []; }
       }
       s.timer.running = false;
       s.rev++;
@@ -414,7 +452,7 @@
         case 'tap': {
           /* Someone answers on the TV itself. Right reveals; wrong stays on screen, crossed out, so the class tries again. */
           const st = stage();
-          if (s.screen !== 'stage' || s.revealed || s.students || !['flash', 'quiz', 'sort'].includes(st.kind)) break;
+          if (s.screen !== 'stage' || s.revealed || s.students || !['flash', 'quiz', 'sort', 'listen', 'letters', 'tf'].includes(st.kind)) break;
           const right = rightOf(st, st.items[s.item]), value = String(cmd.value);
           if (value === right) reveal(fxs);
           else {
@@ -423,6 +461,36 @@
           }
           break;
         }
+        case 'flip': {
+          /* Memory Match: two cards at a time. A pair stays open; two different cards turn back over. */
+          const st = stage();
+          if (s.screen !== 'stage' || st.kind !== 'memory' || s.revealed || s.mem.open.length >= 2) break;
+          const cards = st.items[0].cards, n = Number(cmd.n);
+          if (!cards[n] || s.mem.done.includes(n) || s.mem.open.includes(n)) break;
+          s.mem.open.push(n);
+          fxs.push({ fx: 'flip' });
+          if (s.mem.open.length === 2) {
+            const [a, b] = s.mem.open;
+            if (cards[a].p === cards[b].p) {
+              s.mem.done.push(a, b);
+              s.mem.open = [];
+              fxs.push({ fx: 'pair', text: cards[a].bn ? cards[b].text : cards[a].text });
+              if (s.mem.done.length === cards.length) reveal(fxs);
+            } else fxs.push({ fx: 'noPair' });
+          }
+          break;
+        }
+        case 'unflip': s.mem.open = []; break;
+        case 'replay': fxs.push({ fx: 'replay' }); break;
+        case 'change': {
+          /* Swaps this round for another game that teaches the same thing. */
+          if (s.screen !== 'stage' || (stage().alts || 1) < 2) break;
+          const round = stage().round;
+          s.variants[round] = (s.variants[round] || 0) + 1;
+          fxs.push({ fx: 'plan' }, { fx: 'changed' });
+          break;
+        }
+        case 'enterAgain': if (s.screen === 'stage') enterStage(s.stage, fxs); break;
         case 'cheer': fxs.push({ fx: 'cheer', kind: cmd.kind }); break;
         case 'sound':
           s.sound = !s.sound;
@@ -449,6 +517,7 @@
           clearItem();
           break;
         case 'end': if (s.screen === 'stage') finish(fxs); break;
+        case 'leave': fxs.push({ fx: 'leave' }); break;
         default: break;
       }
       return fxs;
@@ -472,7 +541,7 @@
     const last = s.stage === plan.stages.length - 1;
     const doneHere = st.pick ? s.used.length >= count : s.item >= count - 1;
     const nextLabel = !doneHere ? 'Next ➡️' : last ? '🏁 Finish the game' : '➡️ Next round';
-    const answer = !it ? '' : it.answer || it.en || (st.kind === 'sort' ? `${st.groups[it.group].n}` : it.sample || '');
+    const answer = !it ? '' : st.kind === 'memory' ? '' : st.kind === 'tf' ? `${it.answer} (right answer: ${it.right})` : it.answer || it.en || (st.kind === 'sort' ? `${st.groups[it.group].n}` : it.sample || '');
     let primary;
     const go = (label, type) => ({ label, type, nav: true });
     if (st.kind === 'wheel') {
@@ -486,6 +555,8 @@
       else primary = go('🎁 Open a random box', 'box');
     } else if (st.kind === 'role') {
       primary = s.line < 2 ? go('💬 Next line', 'reveal') : go(nextLabel, 'next');
+    } else if (st.kind === 'memory') {
+      primary = s.revealed ? go(nextLabel, 'next') : go('🃏 Show all pairs', 'reveal');
     } else {
       primary = s.revealed ? go(nextLabel, 'next') : go('👁 Reveal answer', 'reveal');
     }
@@ -497,6 +568,9 @@
       canBack: s.stage > 0 || (st.pick ? s.used.length > 0 : s.item > 0),
       canFifty: st.kind === 'quiz' && !s.revealed && it && it.options.length > 2,
       boxes: st.kind === 'boxes' ? st.items.map((_, n) => ({ n, used: s.used.includes(n) })) : null,
+      cards: st.kind === 'memory' ? st.items[0].cards.map((_, n) => ({ n, used: s.mem.done.includes(n) || s.mem.open.includes(n) })) : null,
+      canReplay: st.kind === 'listen',
+      game: st.name, canChange: (st.alts || 1) > 1,
       rounds: plan.stages.map((x) => x.round),
     });
   }
@@ -505,7 +579,7 @@
   const readSave = (lessonCode) => {
     try {
       const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-      if (saved && saved.state && saved.state.lesson === lessonCode && saved.state.v === 4 && Date.now() - saved.at < SAVE_HOURS * 3600000) return saved.state;
+      if (saved && saved.state && saved.state.lesson === lessonCode && saved.state.v === 5 && Date.now() - saved.at < SAVE_HOURS * 3600000) return saved.state;
     } catch (e) { /* start fresh */ }
     return null;
   };
@@ -518,14 +592,14 @@
     s.picking = false;
     s.timer.running = false;
     store.state.sound = s.sound;
-    let plan = SEJ.classPlan(lessonCode, s.seed);
+    let plan = SEJ.classPlan(lessonCode, s.seed, s.variants);
     const game = createGame(s, () => plan);
-    let alive = true, linkOk = null, link = null, drawer = null, panel = null;
+    let alive = true, linkOk = null, link = null;
     const timers = new Set();
     const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); if (alive) fn(); }, ms * speed()); timers.add(t); return t; };
 
     const publicState = () => {
-      const copy = Object.assign({}, s, { view: teacherView(s, plan), answered: Object.keys(s.answers).length });
+      const copy = Object.assign({}, s, { view: teacherView(s, plan), answered: Object.keys(s.answers).length, tvSound: SEJ.soundAllowed() });
       delete copy.spinTo;
       delete copy.answers;
       delete copy.scored;
@@ -542,14 +616,18 @@
       if (s.screen !== 'stage') return feed;
       const st = plan.stages[s.stage], it = s.item >= 0 ? st.items[s.item] : null;
       Object.assign(feed, { kind: st.kind, round: st.round });
-      if (['wheel', 'boxes', 'role', 'read'].includes(st.kind)) {
+      if (['wheel', 'boxes', 'role', 'memory'].includes(st.kind)) {
         feed.speak = true;
-        if (it) { feed.prompt = it.q || it.en; feed.frame = it.frame; }
+        if (st.kind === 'memory') { feed.prompt = 'Memory Match'; feed.frame = 'Look at the TV and find the pairs!'; }
+        else if (it) { feed.prompt = it.q || it.en; feed.frame = it.frame; }
         return feed;
       }
       Object.assign(feed, { qid: `${s.seed}:${s.stage}:${s.item}`, revealed: s.revealed, hidden: s.hidden });
       if (st.kind === 'flash') Object.assign(feed, { prompt: it.bn, options: it.options });
       if (st.kind === 'quiz') Object.assign(feed, { prompt: it.q, options: it.options });
+      if (st.kind === 'listen') Object.assign(feed, { prompt: '🔊 Listen to the TV!', options: it.options });
+      if (st.kind === 'letters') Object.assign(feed, { prompt: it.pattern.map((c) => c || '_').join(' '), options: it.options });
+      if (st.kind === 'tf') Object.assign(feed, { prompt: `${it.q} → ${it.claim}`, options: it.options });
       if (st.kind === 'sort') Object.assign(feed, { prompt: it.text, options: st.groups.map((g) => g.n) });
       if (st.kind === 'order') Object.assign(feed, { prompt: it.joiner ? 'Put the words in order!' : 'Spell the word!', tiles: it.tiles, joiner: it.joiner });
       if (s.revealed) feed.right = rightOf(st, it);
@@ -593,21 +671,7 @@
     const sideBar = h('aside', { class: 'cl-side' }, teacherQr, studentQr);
     const answeredChip = h('span', { class: 'cl-chip cl-answered', role: 'status', hidden: true });
     const soundChip = h('button', { class: 'cl-chip cl-sound-chip', id: 'cl-sound-on', onclick: () => { sfx.fanfare(); soundChip.hidden = true; } }, '🔊 Click once to turn on sound');
-    const codeChip = h('button', { class: 'cl-chip', onclick: () => dispatch({ type: 'qr' }), title: 'Show or hide the QR code' });
     const linkWarn = h('span', { class: 'cl-chip cl-chip-warn', role: 'status', hidden: true }, '⚠️ Phone link lost. Reconnecting…');
-    /* The class only sees the game. The teacher's tools appear when the mouse moves or the screen is touched. */
-    const tools = h('div', { class: 'cl-tools', id: 'cl-tools', hidden: true },
-      codeChip,
-      h('button', { class: 'cl-chip', id: 'cl-controls', onclick: () => toggleDrawer(), 'aria-label': 'Open teacher controls' }, '🎛️ Controls'),
-      h('button', { class: 'cl-chip cl-icon', onclick: () => toggleFullscreen(), 'aria-label': 'Full screen', title: 'Full screen (F)' }, '⛶'),
-      h('a', { class: 'cl-chip cl-icon', href: `#/lesson/${lessonCode}`, 'aria-label': 'Leave Class Battle', title: 'Leave' }, '✕'));
-    let toolsTimer = 0;
-    const showTools = () => {
-      tools.hidden = false;
-      clearTimeout(toolsTimer);
-      toolsTimer = setTimeout(() => { if (drawerHost.hidden) tools.hidden = true; }, 3000);
-    };
-    const drawerHost = h('div', { class: 'cl-drawer', hidden: true });
     const sceneHost = h('div', { class: 'cl-scene' });
     const page = h('div', { class: 'cl-tv' },
       sceneHost,
@@ -617,14 +681,11 @@
         timerBox,
         soundChip,
         answeredChip,
-        linkWarn,
-        tools),
-      stageArea, sideBar, teamBar, drawerHost);
+        linkWarn),
+      stageArea, sideBar, teamBar);
     root.replaceChildren(page);
-    page.addEventListener('mousemove', showTools);
-    page.addEventListener('pointerdown', showTools);
     soundChip.hidden = !(navigator.userActivation && !navigator.userActivation.hasBeenActive);
-    const soundReady = () => { soundChip.hidden = true; };
+    const soundReady = () => { soundChip.hidden = true; if (link) link.changed(); };
     addEventListener('pointerdown', soundReady, { once: true });
     addEventListener('keydown', soundReady, { once: true });
 
@@ -632,26 +693,6 @@
       if (document.fullscreenElement) document.exitFullscreen();
       else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
     }
-    let tvUnlocked = !SEJ.relay.available || SEJ.testMode;
-    let drawerUnlocked = !SEJ.relay.available;
-    function toggleDrawer(force) {
-      const show = force !== undefined ? force : drawerHost.hidden;
-      drawerHost.hidden = !show;
-      if (show && !drawerUnlocked) {
-        drawerHost.replaceChildren(SEJ.pinPad({
-          code: s.code, title: 'Teacher PIN', note: 'Enter the PIN to use the controls.',
-          onCancel: () => { drawerHost.replaceChildren(); drawerHost.hidden = true; },
-          onOk: () => { drawerUnlocked = true; tvUnlocked = true; drawerHost.replaceChildren(); toggleDrawer(true); },
-        }));
-        return;
-      }
-      if (show && !panel) {
-        drawerHost.append(h('button', { class: 'cl-drawer-close', onclick: () => toggleDrawer(false), 'aria-label': 'Close controls' }, '✕ Close controls'));
-        panel = SEJ.controlPanel(drawerHost, (cmd) => dispatch(cmd));
-      }
-      if (show) panel.update(publicState());
-    }
-
     /* ---------- drawing ---------- */
     let sceneName = '', lastSig = '', shownDeg = s.wheelDeg;
     function setScene(name) {
@@ -697,8 +738,6 @@
         SEJ.sticker(plan.lesson.emoji, 'cl-top-art'),
         h('div', { class: 'cl-top-text' }, h('b', { text: plan.lesson.title }), h('small', { text: st ? v.sub : `Lesson ${plan.lesson.code} · Class Battle` })));
       const ok = !SEJ.relay.available ? null : linkOk;
-      codeChip.textContent = `📱 ${s.code}`;
-      codeChip.hidden = !SEJ.relay.available;
       linkWarn.hidden = !(s.phone && ok === false);
     }
     function drawQr() {
@@ -749,7 +788,7 @@
           h('p', { class: `cl-lobby-wait ${s.phone ? 'ready' : ''}`, role: 'status', text: s.phone ? '✅ Teacher connected. Starting soon!' : 'Waiting for the teacher…' })),
         SEJ.relay.available
           ? h('div', { class: 'cl-lobby-qr enter-pop', id: 'cl-lobby-qr' })
-          : h('div', { class: 'cl-lobby-qr enter-pop' }, h('p', { class: 'cl-qr-note', text: 'The phone remote works on the live website. Here, move the mouse and use Controls, or your keyboard.' }))));
+          : h('div', { class: 'cl-lobby-qr enter-pop' }, h('p', { class: 'cl-qr-note', text: 'Class Battle is run from the teacher’s phone, which needs the live website.' }))));
       const box = $('#cl-lobby-qr', stageArea);
       if (box) {
         if (s.students && s.join) {
@@ -893,13 +932,45 @@
           s.line >= 2 && h('p', { class: 'cl-bubble right sample answer-pop', id: 'cl-answer' }, '⭐ ', it.sample)),
         h('div', { class: 'cl-actor' }, SEJ.heroImg(b, 'cl-actor-img'), h('span', { class: 'cl-actor-tag', text: 'Student B' })));
     }
-    function drawRead(st) {
+    function drawListen(st) {
       const it = st.items[s.item];
-      return h('div', { class: `cl-card cl-flash ${s.revealed ? 'is-open' : ''}` },
-        h('small', { class: 'cl-ask', text: s.revealed ? 'Well done!' : 'Read it together!' }),
-        h('p', { class: `cl-flash-en ${s.revealed ? 'answer-pop' : ''}`, id: s.revealed ? 'cl-answer' : null, text: it.en }));
+      return h('div', { class: 'cl-quiz' },
+        h('div', { class: 'cl-card cl-question cl-listen-card' },
+          h('button', { class: 'cl-speaker', 'aria-label': 'Hear it again', onclick: () => readItem() }, '🔊'),
+          h('div', {}, h('small', { class: 'cl-ask', text: s.revealed ? 'You heard:' : 'Listen and choose!' }), s.revealed && h('p', { class: 'cl-flash-en answer-pop', text: it.en }))),
+        optionButtons(it.options, it.en));
     }
-    const DRAW = { read: drawRead, flash: drawFlash, quiz: drawQuiz, sort: drawSort, order: drawOrder, wheel: drawWheel, boxes: drawBoxes, role: drawRole };
+    function drawLetters(st) {
+      const it = st.items[s.item];
+      return h('div', { class: 'cl-quiz' },
+        h('div', { class: 'cl-card cl-question cl-letters-card' },
+          h('small', { class: 'cl-ask', text: 'Which word is it?' }),
+          h('div', { class: 'cl-letter-row' }, it.pattern.map((c, i) => h('span', { class: `cl-letter-box ${c ? '' : 'missing'} ${s.revealed && !c ? 'answer-pop filled' : ''}`, text: c || (s.revealed ? it.en[i].toUpperCase() : '') }))),
+          it.bn && h('p', { class: 'cl-order-hint', lang: 'bn', text: it.bn })),
+        optionButtons(it.options, it.en));
+    }
+    function drawTf(st) {
+      const it = st.items[s.item];
+      return h('div', { class: 'cl-quiz' },
+        h('div', { class: 'cl-card cl-question cl-tf-card' },
+          h('p', {}, it.emoji && SEJ.sticker(it.emoji, 'cl-q-art'), ' ', it.q),
+          h('p', { class: 'cl-tf-claim' }, 'Answer: ', h('b', { text: it.claim })),
+          s.revealed && it.answer === 'False' && h('p', { class: 'cl-tf-fix answer-pop', text: `✓ ${it.right}` })),
+        optionButtons(it.options, it.answer));
+    }
+    function drawMemory(st) {
+      const cards = st.items[0].cards;
+      return h('div', { class: 'cl-memory' },
+        h('p', { class: 'cl-note', text: s.revealed ? 'All pairs found!' : 'Find the pairs! Call two numbers.' }),
+        h('div', { class: `cl-mem-grid n${cards.length}` }, cards.map((c, n) => {
+          const up = s.mem.done.includes(n) || s.mem.open.includes(n);
+          return h('button', {
+            class: `cl-mem-card ${up ? 'up' : ''} ${s.mem.done.includes(n) ? 'done' : ''}`, 'data-card': n, 'aria-label': up ? c.text : `Card ${n + 1}`,
+            onclick: () => dispatch({ type: 'flip', n }),
+          }, up ? h('span', { class: 'cl-mem-text', lang: c.bn ? 'bn' : null, text: c.text }) : h('b', { text: n + 1 }));
+        })));
+    }
+    const DRAW = { listen: drawListen, letters: drawLetters, tf: drawTf, memory: drawMemory, flash: drawFlash, quiz: drawQuiz, sort: drawSort, order: drawOrder, wheel: drawWheel, boxes: drawBoxes, role: drawRole };
 
     function topPlayers() {
       const top = Object.values(s.players).filter((p) => p.score > 0).sort((a, b) => b.score - a.score).slice(0, 3);
@@ -930,7 +1001,7 @@
     }
 
     function signature() {
-      return JSON.stringify([s.screen, s.stage, s.item, s.revealed, s.line, s.built, s.wrongs, s.hidden, s.used, s.spinning, s.seed, s.phone, s.students, s.join, s.screen === 'podium' ? Object.values(s.players).map((p) => p.score) : 0, s.screen === 'podium' ? s.teams : 0, s.screen === 'podium' ? s.mode + s.classScore : 0]);
+      return JSON.stringify([s.screen, s.stage, s.item, s.revealed, s.line, s.built, s.wrongs, s.mem, s.variants, s.hidden, s.used, s.spinning, s.seed, s.phone, s.students, s.join, s.screen === 'podium' ? Object.values(s.players).map((p) => p.score) : 0, s.screen === 'podium' ? s.teams : 0, s.screen === 'podium' ? s.mode + s.classScore : 0]);
     }
     function draw() {
       if (!alive) return;
@@ -947,7 +1018,6 @@
         }
       }
       drawTop(); drawTeams(); drawTimer(); drawQr();
-      if (panel && !drawerHost.hidden) panel.update(publicState());
     }
 
     /* ---------- moments of celebration ---------- */
@@ -957,7 +1027,7 @@
       if (s.screen !== 'stage') return;
       const st = plan.stages[s.stage], it = s.item >= 0 ? st.items[s.item] : null;
       if (!it) return;
-      const line = st.kind === 'quiz' ? it.q : st.kind === 'sort' ? it.text : st.kind === 'read' ? it.en : st.kind === 'role' ? it.q : '';
+      const line = st.kind === 'quiz' || st.kind === 'tf' ? it.q : st.kind === 'listen' ? it.en : st.kind === 'sort' ? it.text : st.kind === 'role' ? it.q : '';
       if (line) say(line);
     }
     function splash(top, title, heroId) {
@@ -998,7 +1068,12 @@
         }
         case 'next': sfx.whoosh(); voice.stop(); readItem(); break;
         case 'line': sfx.pop(); say(plan.stages[s.stage].items[s.item].frame); break;
-        case 'plan': plan = SEJ.classPlan(s.lesson, s.seed); lastSig = ''; break;
+        case 'plan': plan = SEJ.classPlan(s.lesson, s.seed, s.variants); lastSig = ''; break;
+        case 'changed': dispatch({ type: 'enterAgain' }); break;
+        case 'flip': sfx.pop(); break;
+        case 'pair': sfx.correct(2); fx.pow('PAIR!'); say(e.text); break;
+        case 'noPair': sfx.boing(); later(() => dispatch({ type: 'unflip' }), 1300); break;
+        case 'replay': readItem(); break;
         case 'phone': sfx.correct(1); fx.pow('PHONE READY!'); break;
         case 'open': {
           sfx.pop(); sfx.correct(0);
@@ -1026,10 +1101,12 @@
           SEJ.buzz(30);
           later(() => { const a = $('#cl-answer'); if (a) fx.burstAt(a, 30, ['⭐', '✨']); }, 40);
           const st = plan.stages[s.stage], it = st.items[s.item];
-          say(it.en || it.answer || it.sample || (st.kind === 'sort' ? `${it.text}. ${st.groups[it.group].n}` : ''));
+          if (st.kind === 'memory') break;
+          say(st.kind === 'tf' ? it.right : it.en || it.answer || it.sample || (st.kind === 'sort' ? `${it.text}. ${st.groups[it.group].n}` : ''));
           break;
         }
         case 'place': sfx.pop(); break;
+        case 'leave': later(() => { location.hash = `#/lesson/${lessonCode}`; }, 300); break;
         case 'wrongTap': sfx.wrong(); SEJ.buzz(40); break;
         case 'wrongOrder': {
           sfx.wrong();
@@ -1062,10 +1139,10 @@
         }
         case 'pick': showPick(e.name, e.pool); break;
         case 'cheer':
-          if (e.kind === 'clap') { sfx.applause(2.2); fx.confetti(70); }
-          else if (e.kind === 'fanfare') { sfx.fanfare(); fx.fireworks(4); }
-          else if (e.kind === 'wow') { sfx.cheer(); fx.pow('WOW!'); fx.burst(innerWidth / 2, innerHeight / 2, 40, ['🤩', '⭐']); }
-          else if (e.kind === 'oops') { sfx.wrong(); fx.pow('OOPS!', 'soft'); }
+          if (e.kind === 'clap') { sfx.applause(2.6); sfx.cheer(); fx.pow('WELL DONE!'); fx.confetti(70); fx.burst(innerWidth / 2, innerHeight / 2, 30, ['👏', '⭐']); say('Well done!'); }
+          else if (e.kind === 'fanfare') { sfx.fanfare(); sfx.cheer(); fx.pow('HOORAY!'); fx.fireworks(4); say('Hooray!'); }
+          else if (e.kind === 'wow') { sfx.wow(); sfx.cheer(); fx.pow('WOW!'); fx.burst(innerWidth / 2, innerHeight / 2, 40, ['🤩', '⭐']); say('Wow!'); }
+          else if (e.kind === 'oops') { sfx.wrong(); fx.pow('OOPS!', 'soft'); say('Oops!'); }
           break;
         case 'podium': {
           sfx.fanfare(); sfx.applause(3.2);
@@ -1120,25 +1197,10 @@
       drawTimer();
     }, 200);
 
-    /* Keyboard: handy when the TV is run from a laptop. */
+    /* F switches full screen. Every control is on the teacher's phone. */
     const onKey = (e) => {
-      if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const v = teacherView(s, plan);
-      const k = e.key;
-      if (k === 'f' || k === 'F') { toggleFullscreen(); return; }
-      if (k === 'm' || k === 'M') { toggleDrawer(); return; }
-      if (!tvUnlocked) return;
-      if (k === ' ' || k === 'Enter') {
-        if (e.target && e.target.tagName === 'BUTTON') return;
-        e.preventDefault();
-        if (v.primary && !v.primary.disabled) dispatch({ type: v.primary.type });
-      } else if (k === 'ArrowRight') dispatch({ type: s.screen === 'lobby' ? 'start' : 'next' });
-      else if (k === 'ArrowLeft') dispatch({ type: 'prev' });
-      else if (/^[1-5]$/.test(k)) dispatch({ type: 'score', team: s.mode === 'class' ? -1 : Number(k) - 1, delta: 1 });
-      else if (k === 't' || k === 'T') dispatch({ type: 'timer', op: s.timer.running ? 'pause' : 'start' });
-      else if (k === 'r' || k === 'R') dispatch({ type: 'pick', what: s.roster.length ? 'student' : 'team' });
-      else if (k === 'c' || k === 'C') dispatch({ type: 'qr' });
+      if (e.key === 'f' || e.key === 'F') toggleFullscreen();
     };
     addEventListener('keydown', onKey);
 
@@ -1169,7 +1231,13 @@
     }
     draw();
     persist();
-    if (SEJ.testMode) SEJ.classDebug = { state: s, dispatch, getPlan: () => plan };
+    if (SEJ.testMode) {
+      SEJ.classDebug = {
+        state: s, dispatch, getPlan: () => plan,
+        round: (name) => plan.stages.findIndex((x) => x.round === name),
+        primary: () => { const v = teacherView(s, plan); if (v.primary && !v.primary.disabled) dispatch({ type: v.primary.type }); },
+      };
+    }
 
     return () => {
       alive = false;
@@ -1181,7 +1249,6 @@
       if (link) link.stop();
       wake();
       voice.stop();
-      clearTimeout(toolsTimer);
       SEJ.$$('.cl-splash,.cl-pick').forEach((x) => x.remove());
     };
   };

@@ -155,6 +155,7 @@
       [0.05, 0.3, 0.62].forEach((t, i) => tone(740 + i * 120, t, 0.34, { type: 'sawtooth', vol: 0.025, to: 1100 + i * 140 }));
     },
     boing() { if (on()) tone(320, 0, 0.22, { type: 'sine', vol: 0.22, to: 620 }); },
+    wow() { if (on()) { tone(330, 0, 0.5, { type: 'triangle', vol: 0.24, to: 990 }); tone(495, 0.08, 0.5, { type: 'sine', vol: 0.16, to: 1320 }); noise(0.1, 0.6, { vol: 0.08, freq: 2600, q: 0.5 }); } },
     cheer() {
       if (!on()) return;
       [0, 0.06, 0.12].forEach((t, i) => tone(520 + i * 170, t, 0.42, { type: 'sawtooth', vol: 0.03, to: 980 + i * 170 }));
@@ -226,6 +227,8 @@
     u.onend = done; u.onerror = done;
     synth.speak(u);
   };
+  /* Whether this page can make sound yet. Browsers keep it silent until someone clicks the page. */
+  SEJ.soundAllowed = () => !navigator.userActivation || navigator.userActivation.hasBeenActive;
   SEJ.voice = {
     available: !!synth || (!!player && clips.size > 0),
     /* Resolves when speech ends, or after a time limit so games never wait on a stuck voice. */

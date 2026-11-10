@@ -298,6 +298,41 @@
 .st-tile.placed { background: #fff; box-shadow: 0 3px 0 #b8a6f0; }
 .st-rank { margin: 0; padding-left: 24px; text-align: left; font-size: 18px; }
 
+/* New class games */
+.cl-listen-card, .cl-letters-card { gap: 2.4vmin; }
+.cl-speaker { flex: none; display: grid; place-items: center; width: 13vmin; height: 13vmin; min-width: 64px; min-height: 64px; border: 0; border-radius: 50%; background: linear-gradient(180deg, #a56bff, #6a22e0); box-shadow: 0 .8vmin 0 #4714a3; font-size: 7vmin; cursor: pointer; animation: glow-pulse 2s ease-in-out infinite; }
+.cl-speaker:active { transform: translateY(.6vmin); box-shadow: 0 .2vmin 0 #4714a3; }
+.cl-letters-card { flex-direction: column; }
+.cl-letter-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.2vmin; }
+.cl-letter-box { display: grid; place-items: center; width: 9vmin; height: 10vmin; min-width: 36px; min-height: 40px; background: #f1ecff; border-radius: 1.6vmin; box-shadow: inset 0 -.6vmin 0 #d9ccff; font-family: var(--display); font-size: clamp(24px, 6.4vmin, 84px); color: var(--ink); }
+.cl-letter-box.missing { background: #fff; border: .5vmin dashed var(--violet); box-shadow: none; }
+.cl-letter-box.filled { background: #e5ffe0; color: #087536; border-style: solid; border-color: #0ea44c; }
+.cl-tf-card { flex-direction: column; gap: 1vmin; }
+.cl-tf-card p { font-size: clamp(22px, 5vmin, 66px); }
+.cl-tf-claim { color: var(--violet); }
+.cl-tf-claim b { color: var(--ink); padding: 0 1.4vmin; background: #fff8cf; border-radius: 1.4vmin; }
+.cl-tf-fix { color: #087536; font-weight: 700; }
+.cl-memory { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 1.6vmin; min-height: 0; }
+.cl-mem-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(0, 1fr); gap: 1.6vmin; min-height: 0; }
+.cl-mem-grid.n12, .cl-mem-grid.n10 { grid-template-columns: repeat(4, 1fr); }
+.cl-mem-card { display: grid; place-items: center; min-height: 0; width: 100%; height: 100%; padding: 1vmin; border: 0; border-radius: 2.6vmin; background: linear-gradient(160deg, #a56bff, #6a22e0); color: #fff; box-shadow: 0 .9vmin 0 #4714a3; cursor: pointer; transition: transform .25s; }
+.cl-mem-card b { font-family: var(--display); font-weight: 400; font-size: clamp(26px, 7vmin, 90px); }
+.cl-mem-card.up { background: #fff; color: var(--ink); box-shadow: 0 .9vmin 0 #b8a6f0; transform: rotateY(0) scale(1.02); animation: answer-pop .4s both; }
+.cl-mem-card.done { background: #e5ffe0; box-shadow: 0 .9vmin 0 #0ea44c; }
+.cl-mem-text { font-size: clamp(15px, 3.4vmin, 44px); font-weight: 700; line-height: 1.12; text-align: center; overflow-wrap: anywhere; }
+.cl-mem-text[lang='bn'] { font-family: 'Baloo Da 2', 'Noto Sans Bengali', var(--body); color: var(--violet); }
+.rm-change { width: 100%; min-height: 54px; background: #fff8cf; border-color: #e0b800; font-size: 16px; }
+.rm-cards { grid-template-columns: repeat(6, 1fr); }
+.rm-quick .rm-replay { background: var(--violet); border-color: var(--violet); color: #fff; }
+.st-prompt.st-letters { font-family: var(--display); font-size: 34px; letter-spacing: .12em; }
+
+/* Reactions on the teacher's phone */
+.rm-reactions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.rm-reaction { display: grid; justify-items: center; gap: 1px; min-height: 66px; padding: 6px 2px; border: 2px solid #ddd2f7; border-radius: 16px; background: #fff; color: var(--ink); font-size: 14px; font-weight: 700; touch-action: manipulation; }
+.rm-reaction:active { transform: scale(.94); background: #fff8cf; }
+.rm-reaction-icon { font-size: 27px; line-height: 1.1; }
+.rm-sound-note { width: 100%; margin: 0; padding: 10px 14px; border: 2px solid #e0a800; border-radius: 14px; background: #fff8cf; color: var(--ink); font-size: 15px; font-weight: 700; text-align: center; }
+
 /* Teacher PIN */
 .pin-page { display: grid; place-items: center; background: linear-gradient(160deg, #7b2ff7, #4714a3); }
 .pin-card { display: grid; justify-items: center; gap: 12px; width: min(360px, 100%); padding: 22px 18px; background: #fff; border-radius: 26px; box-shadow: 0 8px 0 rgba(43, 15, 107, .45), 0 18px 34px rgba(43, 15, 107, .35); }

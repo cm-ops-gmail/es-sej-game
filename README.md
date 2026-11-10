@@ -50,12 +50,12 @@ Every lesson has one Class Battle for the live class. It plays on the class TV a
 2. Scan the QR code with your phone, or open `?remote=` plus the code shown on the TV, then enter the teacher PIN. The server checks the PIN. It's `1010` unless `TEACHER_PIN` is set in Vercel.
 3. Choose whole class or 2 to 5 teams, then start.
 
-The rounds come from the lesson's own content, so Teacher Mode edits appear here too:
+The rounds come from the lesson's own content, so Teacher Mode edits appear here too. Lessons take turns between games, so each lesson gets a different mix, and **More → Try a different game** swaps the current round for another game with the same kind of learning:
 
 | Round | Game | Comes from |
 |---|---|---|
-| Warm-up | Word Flash: Bangla word, students say the English. Lessons with too little Bangla on the slides use Read and Say | Power words whose Bangla is on the slides |
-| Team Battle | Team Quiz, Group Sort or Put It in Order (drag or tap the tiles, on the TV or a student's phone) | One of the lesson's games |
+| Warm-up | Word Flash, Listen & Choose, Memory Match or Missing Letters | Power words (Bangla only where it's on the slides) or the lesson's matching game |
+| Team Battle | Team Quiz, Group Sort, Put It in Order (drag or tap the tiles) or True or False? | One of the lesson's games |
 | Speak | Spin and Speak, Mystery Boxes or Role-play | The speaking prompts |
 
 The phone shows the answer before the class sees it. It also has reveal and next, the timer, 50:50, team points, a random student or team,
@@ -72,12 +72,12 @@ The teacher can still give or take points, and can remove a student from the pan
 - The teacher's QR disappears once Student Play is on, so students can only scan their own. Teachers should scan theirs first.
 - A bigger team can earn more points, so keep teams about the same size.
 
-The TV only shows the game. **If the phone can't connect,** move the mouse or touch the TV and select 🎛️ **Controls**. It has the same panel. On a keyboard: Space = main action, ← → = back and next,
-1 to 5 = give a point, T = timer, R = random pick, C = QR code, M = controls, F = full screen.
+The TV only shows the game. Every control is on the teacher's phone after scanning and entering the PIN. Press F on a keyboard for full screen. To close the game, use **More → Close the game on the TV**.
+1 to 5 = give a point, T = timer, R = random pick, C = QR code, M = controls, F = full screen. Everything except F and M needs the PIN first.
 
 **How the phone link works:** `api/room.mjs` passes messages through Vercel's Runtime Cache, which needs no database or account setup. Rooms expire after 4 hours.
-Team names and any student names the teacher adds pass through it, so use first names only. The phone link needs the live site; from a double-clicked
-`index.html`, use Controls.
+Team names and any student names the teacher adds pass through it, so use first names only. Class Battle needs the live site, because it's run from the
+teacher's phone.
 
 ## Links worth sharing
 
