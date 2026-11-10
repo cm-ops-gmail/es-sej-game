@@ -53,7 +53,8 @@ for (const l of lessons) {
       g.cards.forEach((c) => { if (c[1] >= g.groups.length) bad(w, `bad group for ${c[0]}`); });
     }
     if (g.t === 'anagram' || g.t === 'spell') g.items.forEach((i) => {
-      if (!/^[a-zA-Z]{2,14}( [a-zA-Z]{1,14})*$/.test(i[0])) bad(w, `bad word ${i[0]}`);
+      /* A single word needs 2 or more letters; a sentence may start with a word like "I". */
+      if (!/^([a-zA-Z]{2,14}|[a-zA-Z]{1,14}( [a-zA-Z]{1,14})+)$/.test(i[0])) bad(w, `bad word ${i[0]}`);
       if (!i[1]) bad(w, `no clue for ${i[0]}`);
       if (i[1].toLowerCase().includes(i[0].toLowerCase())) bad(w, `clue gives away ${i[0]}`);
     });

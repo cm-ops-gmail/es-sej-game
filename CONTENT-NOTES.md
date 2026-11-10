@@ -26,6 +26,7 @@ These reference games had fewer than 5 items, so slide content was added to make
 - 2.4 Step by Step (2 added)
 
 ## How the games differ from Wordwall
+- Game types are varied across the course: each lesson keeps its own questions and words, but some games now use a different game type than their Wordwall reference, so neighbouring lessons rarely repeat a type. For example, a sorting game can become Pop-Up Chicks or Quick Check, a quiz can become Mystery Boxes or Balloon Pop, and a sentence game can become a word-order check ("Is this sentence correct?"), in which half the sentences have two words swapped. No game was turned into a fill-in-the-gap game unless its gaps and wrong options came from the original, so no question has two right answers.
 - Pair or No Pair: Wordwall creates its "no pair" rounds automatically. Here they are fixed (1.5 Food Friends, 4.3 Shape Pairs).
 - Pictures: the games use stickers and drawn shapes instead of the images uploaded to Wordwall.
 - Long games: each play shows a fresh mix of up to 8 to 12 items, so rounds stay short. All items stay in the game.

@@ -220,7 +220,7 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "quiz",
+    "t": "boxes",
     "title": "Who Is That Hero?",
     "items": [
      [
@@ -258,15 +258,43 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "unjumble",
+    "t": "tf",
     "title": "Make Questions",
+    "labels": [
+     "Correct",
+     "Not correct"
+    ],
     "items": [
-     "🔢|What can Mathman do?",
-     "🗣️|Who can understand and speak any language?",
-     "🌳|Who can talk to plants and animals?",
-     "🔬|Who can control any technology or gadgets?",
-     "🎨|What is your favorite color?",
-     "😊|Why are you happy?"
+     [
+      "What Mathman can do?",
+      false,
+      "🔢"
+     ],
+     [
+      "Who can understand and speak any language?",
+      true,
+      "🗣️"
+     ],
+     [
+      "Who talk can to plants and animals?",
+      false,
+      "🌳"
+     ],
+     [
+      "Who can control any technology or gadgets?",
+      true,
+      "🔬"
+     ],
+     [
+      "What your is favorite color?",
+      false,
+      "🎨"
+     ],
+     [
+      "Why are you happy?",
+      true,
+      "😊"
+     ]
     ]
    }
   ],
@@ -414,64 +442,36 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "boxes",
+    "t": "find",
     "title": "Hobby Mystery Boxes",
     "items": [
      [
       "You can do this quietly at home or in a library.",
-      "Reading",
-      [
-       "Swimming"
-      ],
-      "📖"
+      "Reading"
      ],
      [
       "You can do this with a guitar, piano, or violin.",
-      "Playing music",
-      [
-       "Reading"
-      ],
-      "🎸"
+      "Playing music"
      ],
      [
       "You often need ingredients like vegetables, spices, and sauces.",
-      "Cooking",
-      [
-       "Photography"
-      ],
-      "🍳"
+      "Cooking"
      ],
      [
       "You use pieces like cards, dice, or tokens.",
-      "Board Games",
-      [
-       "Reading"
-      ],
-      "🎲"
+      "Board Games"
      ],
      [
       "You need good lighting and a steady hand.",
-      "Photography",
-      [
-       "Fishing"
-      ],
-      "📷"
+      "Photography"
      ],
      [
       "This activity is done near a lake, river, or the ocean.",
-      "Fishing",
-      [
-       "Gardening"
-      ],
-      "🎣"
+      "Fishing"
      ],
      [
       "You might dig in the soil and water regularly.",
-      "Gardening",
-      [
-       "Cooking"
-      ],
-      "🌱"
+      "Gardening"
      ]
     ]
    }
@@ -599,67 +599,87 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "unjumble",
+    "t": "whack",
     "title": "Morning Time",
-    "items": [
-     "🦷|I brush my teeth in the morning.",
-     "🍳|I eat my breakfast in the morning.",
-     "🏫|I go to the school with my mother.",
-     "⏰|I wake up in the morning.",
-     "🎒|I get ready for school."
+    "prompt": "Tap only the correct sentences!",
+    "good": [
+     "I brush my teeth in the morning.",
+     "I eat my breakfast in the morning.",
+     "I go to the school with my mother.",
+     "I wake up in the morning.",
+     "I get ready for school."
+    ],
+    "bad": [
+     "I my brush teeth in the morning.",
+     "I to go the school with my mother.",
+     "I ready get for school."
     ]
    },
    {
-    "t": "sort",
+    "t": "quiz",
     "title": "When Do You Do It?",
-    "groups": [
-     {
-      "n": "Morning",
-      "e": "🌅"
-     },
-     {
-      "n": "Afternoon",
-      "e": "☀️"
-     },
-     {
-      "n": "Night",
-      "e": "🌙"
-     }
-    ],
-    "cards": [
+    "items": [
      [
-      "Wake up",
-      0,
+      "Where does “Wake up” go?",
+      "Morning",
+      [
+       "Afternoon",
+       "Night"
+      ],
       "⏰"
      ],
      [
-      "Breakfast",
-      0,
+      "Where does “Breakfast” go?",
+      "Morning",
+      [
+       "Afternoon",
+       "Night"
+      ],
       "🍳"
      ],
      [
-      "Brushing teeth",
-      0,
+      "Where does “Brushing teeth” go?",
+      "Morning",
+      [
+       "Afternoon",
+       "Night"
+      ],
       "🦷"
      ],
      [
-      "Lunch",
-      1,
+      "Where does “Lunch” go?",
+      "Afternoon",
+      [
+       "Morning",
+       "Night"
+      ],
       "🍛"
      ],
      [
-      "Play",
-      1,
+      "Where does “Play” go?",
+      "Afternoon",
+      [
+       "Morning",
+       "Night"
+      ],
       "⚽"
      ],
      [
-      "Dinner",
-      2,
+      "Where does “Dinner” go?",
+      "Night",
+      [
+       "Morning",
+       "Afternoon"
+      ],
       "🍽️"
      ],
      [
-      "Sleep",
-      2,
+      "Where does “Sleep” go?",
+      "Night",
+      [
+       "Morning",
+       "Afternoon"
+      ],
       "😴"
      ]
     ]
@@ -742,36 +762,36 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "find",
+    "t": "match",
     "title": "Kitchen Balloon Pop",
-    "items": [
+    "pairs": [
      [
-      "help us measure ingredients",
-      "Measuring cups"
+      "Measuring cups",
+      "help us measure ingredients"
      ],
      [
-      "a surface where we cut vegetables",
-      "Cutting boards"
+      "Cutting boards",
+      "a surface where we cut vegetables"
      ],
      [
-      "we use for stirring",
-      "Spoons"
+      "Spoons",
+      "we use for stirring"
      ],
      [
-      "we use them to eat solid foods like vegetables, meat or biryani",
-      "Forks"
+      "Forks",
+      "we use them to eat solid foods like vegetables, meat or biryani"
      ],
      [
-      "we use it for cutting and slicing",
-      "Knife"
+      "Knife",
+      "we use it for cutting and slicing"
      ],
      [
-      "the first meal of the day",
-      "Breakfast"
+      "Breakfast",
+      "the first meal of the day"
      ],
      [
-      "the last meal of the day",
-      "Dinner"
+      "Dinner",
+      "the last meal of the day"
      ]
     ]
    },
@@ -993,46 +1013,52 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "blank",
+    "t": "quiz",
     "title": "What Will Happen?",
     "items": [
      [
-      "I {will} go to the store tomorrow.",
+      "I ___ go to the store tomorrow.",
+      "will",
       [
        "was"
       ],
       "🏪"
      ],
      [
-      "She will {visit} her friend next week.",
+      "She will ___ her friend next week.",
+      "visit",
       [
        "visited"
       ],
       "👫"
      ],
      [
-      "They are {going} to watch a movie tonight.",
+      "They are ___ to watch a movie tonight.",
+      "going",
       [
        "go"
       ],
       "🎬"
      ],
      [
-      "The exam is {approaching}",
+      "The exam is ___",
+      "approaching",
       [
        "approach"
       ],
       "📝"
      ],
      [
-      "First, I will {wake} up early at 7 AM.",
+      "First, I will ___ up early at 7 AM.",
+      "wake",
       [
        "woke"
       ],
       "⏰"
      ],
      [
-      "I will {be} very busy this weekend.",
+      "I will ___ very busy this weekend.",
+      "be",
       [
        "was"
       ],
@@ -1277,14 +1303,38 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "unjumble",
+    "t": "tf",
     "title": "Disagree Politely",
+    "labels": [
+     "Correct",
+     "Not correct"
+    ],
     "items": [
-     "🤝|I see your point, but I think differently.",
-     "💡|I understand what you're saying, but can I explain my side?",
-     "🙂|I don’t agree, but I respect your opinion.",
-     "💡|That’s a good idea, but what if we try this instead?",
-     "🤗|Let’s find a way that works for both of us."
+     [
+      "I your see point, but I think differently.",
+      false,
+      "🤝"
+     ],
+     [
+      "I understand what you're saying, but can I explain my side?",
+      true,
+      "💡"
+     ],
+     [
+      "I agree, don’t but I respect your opinion.",
+      false,
+      "🙂"
+     ],
+     [
+      "That’s a good idea, but what if we try this instead?",
+      true,
+      "💡"
+     ],
+     [
+      "Let’s a find way that works for both of us.",
+      false,
+      "🤗"
+     ]
     ]
    }
   ],
@@ -1360,43 +1410,36 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "spell",
+    "t": "match",
     "title": "School Spelling Bee",
-    "items": [
+    "pairs": [
      [
       "curriculum",
-      "পাঠ্যক্রম",
-      "📚"
+      "পাঠ্যক্রম"
      ],
      [
       "discipline",
-      "শৃঙ্খলা",
-      "🧍"
+      "শৃঙ্খলা"
      ],
      [
       "orientation",
-      "পরিচিতি অনুষ্ঠান",
-      "🎤"
+      "পরিচিতি অনুষ্ঠান"
      ],
      [
       "transcript",
-      "সনদপত্র / মার্কশীট",
-      "📄"
+      "সনদপত্র / মার্কশীট"
      ],
      [
       "canteen",
-      "Where we buy food at school",
-      "🍱"
+      "Where we buy food at school"
      ],
      [
       "library",
-      "Quiet and full of books",
-      "📖"
+      "Quiet and full of books"
      ],
      [
       "classroom",
-      "Where we have our lessons",
-      "🏫"
+      "Where we have our lessons"
      ]
     ]
    },
@@ -1477,49 +1520,18 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "sort",
+    "t": "whack",
     "title": "There Is or There Are?",
-    "groups": [
-     {
-      "n": "There is",
-      "e": "1️⃣"
-     },
-     {
-      "n": "There are",
-      "e": "🔢"
-     }
+    "prompt": "Tap only the There is ones!",
+    "good": [
+     "a library in my school.",
+     "a big playground.",
+     "some water in the bottle."
     ],
-    "cards": [
-     [
-      "a library in my school.",
-      0,
-      "📚"
-     ],
-     [
-      "a big playground.",
-      0,
-      "⚽"
-     ],
-     [
-      "some water in the bottle.",
-      0,
-      "💧"
-     ],
-     [
-      "two canteens in my school.",
-      1,
-      "🍱"
-     ],
-     [
-      "many classrooms in my school.",
-      1,
-      "🏫"
-     ],
-     [
-      "a lot of books in the library.",
-      1,
-      "📖"
-     ]
+    "bad": [
+     "two canteens in my school.",
+     "many classrooms in my school.",
+     "a lot of books in the library."
     ]
    }
   ],
@@ -1585,111 +1597,156 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "sort",
+    "t": "quiz",
     "title": "Classroom or Living Room?",
-    "groups": [
-     {
-      "n": "Classroom Object",
-      "e": "🏫"
-     },
-     {
-      "n": "Living Room Object",
-      "e": "🛋️"
-     }
-    ],
-    "cards": [
+    "items": [
      [
-      "Eraser",
-      0,
+      "Where does “Eraser” go?",
+      "Classroom Object",
+      [
+       "Living Room Object"
+      ],
       "🧽"
      ],
      [
-      "Pen",
-      0,
+      "Where does “Pen” go?",
+      "Classroom Object",
+      [
+       "Living Room Object"
+      ],
       "🖊️"
      ],
      [
-      "Pencil",
-      0,
+      "Where does “Pencil” go?",
+      "Classroom Object",
+      [
+       "Living Room Object"
+      ],
       "✏️"
      ],
      [
-      "Notebook",
-      0,
+      "Where does “Notebook” go?",
+      "Classroom Object",
+      [
+       "Living Room Object"
+      ],
       "📓"
      ],
      [
-      "Whiteboard",
-      0,
+      "Where does “Whiteboard” go?",
+      "Classroom Object",
+      [
+       "Living Room Object"
+      ],
       "⬜"
      ],
      [
-      "Blackboard",
-      0,
+      "Where does “Blackboard” go?",
+      "Classroom Object",
+      [
+       "Living Room Object"
+      ],
       "⬛"
      ],
      [
-      "Sofa",
-      1,
+      "Where does “Sofa” go?",
+      "Living Room Object",
+      [
+       "Classroom Object"
+      ],
       "🛋️"
      ],
      [
-      "Armchair",
-      1,
+      "Where does “Armchair” go?",
+      "Living Room Object",
+      [
+       "Classroom Object"
+      ],
       "💺"
      ],
      [
-      "Tea Table",
-      1,
+      "Where does “Tea Table” go?",
+      "Living Room Object",
+      [
+       "Classroom Object"
+      ],
       "☕"
      ],
      [
-      "TV",
-      1,
+      "Where does “TV” go?",
+      "Living Room Object",
+      [
+       "Classroom Object"
+      ],
       "📺"
      ],
      [
-      "Carpet",
-      1,
+      "Where does “Carpet” go?",
+      "Living Room Object",
+      [
+       "Classroom Object"
+      ],
       "🟥"
      ],
      [
-      "Curtains",
-      1,
+      "Where does “Curtains” go?",
+      "Living Room Object",
+      [
+       "Classroom Object"
+      ],
       "🌤️"
      ]
     ]
    },
    {
-    "t": "match",
+    "t": "boxes",
     "title": "Finish the Sentence",
-    "pairs": [
+    "items": [
      [
+      "writing and drawing",
       "A pencil is used for",
-      "writing and drawing"
+      [
+       "Pencils come in"
+      ],
+      ""
      ],
      [
+      "different sizes and colors",
       "Pencils come in",
-      "different sizes and colors"
+      [
+       "Notebooks can have"
+      ],
+      ""
      ],
      [
+      "and erase mistakes easily",
       "A pencil helps us write",
-      "and erase mistakes easily"
+      [
+       "A notebook is made of"
+      ],
+      ""
      ],
      [
+      "paper and a cover",
       "A notebook is made of",
-      "paper and a cover"
+      [
+       "A pencil helps us write"
+      ],
+      ""
      ],
      [
+      "hardcovers or softcovers",
       "Notebooks can have",
-      "hardcovers or softcovers"
+      [
+       "A pencil is used for"
+      ],
+      ""
      ]
     ]
    },
    {
-    "t": "anagram",
+    "t": "spell",
     "title": "School Bag Scramble",
-    "audio": true,
     "items": [
      [
       "scissors",
@@ -1861,32 +1918,32 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "match",
+    "t": "find",
     "title": "Magic Words",
-    "pairs": [
+    "items": [
      [
-      "Thank you",
-      "shows appreciation"
+      "shows appreciation",
+      "Thank you"
      ],
      [
-      "You're welcome",
-      "Used to respond politely when someone thanks you"
+      "Used to respond politely when someone thanks you",
+      "You're welcome"
      ],
      [
-      "Please",
-      "Used to make a request politely"
+      "Used to make a request politely",
+      "Please"
      ],
      [
-      "Excuse me",
-      "Used to get attention or apologize politely."
+      "Used to get attention or apologize politely.",
+      "Excuse me"
      ],
      [
-      "May I",
-      "Ask for permission politely"
+      "Ask for permission politely",
+      "May I"
      ],
      [
-      "Should",
-      "Advice/Suggestion"
+      "Advice/Suggestion",
+      "Should"
      ]
     ]
    },
@@ -1980,105 +2037,70 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "sort",
+    "t": "whack",
     "title": "Regular or Irregular?",
-    "groups": [
-     {
-      "n": "Regular Actions",
-      "e": "🔁"
-     },
-     {
-      "n": "Irregular Actions",
-      "e": "🎈"
-     }
+    "prompt": "Tap only the Regular Actions ones!",
+    "good": [
+     "Brushing your teeth",
+     "Eating breakfast",
+     "Going to school",
+     "Completing homework",
+     "Having lunch",
+     "Taking a shower",
+     "Having Dinner"
     ],
-    "cards": [
+    "bad": [
+     "Attending a birthday party",
+     "Going on a picnic",
+     "Visiting a zoo",
+     "Going to a doctor for checkup",
+     "Going on a forest camping",
+     "Attending a family dinner party",
+     "Going on a vacation"
+    ]
+   },
+   {
+    "t": "tf",
+    "title": "Step by Step",
+    "labels": [
+     "Correct",
+     "Not correct"
+    ],
+    "items": [
      [
-      "Brushing your teeth",
-      0,
+      "In morning, the I wake up and brush my teeth.",
+      false,
       "🦷"
      ],
      [
-      "Eating breakfast",
-      0,
-      "🍳"
-     ],
-     [
-      "Going to school",
-      0,
+      "At noon, I have lunch with my classmates.",
+      true,
       "🏫"
      ],
      [
-      "Completing homework",
-      0,
-      "📝"
-     ],
-     [
-      "Having lunch",
-      0,
+      "After I lunch, play with my friends.",
+      false,
       "🍛"
      ],
      [
-      "Taking a shower",
-      0,
-      "🚿"
+      "Finally, I go home.",
+      true,
+      "🏠"
      ],
      [
-      "Having Dinner",
-      0,
-      "🍽️"
+      "Next, eat I my breakfast.",
+      false,
+      "🍳"
      ],
      [
-      "Attending a birthday party",
-      1,
-      "🎂"
-     ],
-     [
-      "Going on a picnic",
-      1,
-      "🧺"
-     ],
-     [
-      "Visiting a zoo",
-      1,
-      "🦁"
-     ],
-     [
-      "Going to a doctor for checkup",
-      1,
-      "🩺"
-     ],
-     [
-      "Going on a forest camping",
-      1,
-      "🏕️"
-     ],
-     [
-      "Attending a family dinner party",
-      1,
-      "🥘"
-     ],
-     [
-      "Going on a vacation",
-      1,
-      "🏖️"
+      "Then, I go to school with my mother.",
+      true,
+      "🏫"
      ]
     ]
    },
    {
-    "t": "unjumble",
-    "title": "Step by Step",
-    "items": [
-     "🦷|In the morning, I wake up and brush my teeth.",
-     "🏫|At noon, I have lunch with my classmates.",
-     "🍛|After lunch, I play with my friends.",
-     "🏠|Finally, I go home.",
-     "🍳|Next, I eat my breakfast.",
-     "🏫|Then, I go to school with my mother."
-    ]
-   },
-   {
-    "t": "spell",
+    "t": "anagram",
     "title": "Routine Spelling",
     "items": [
      [
@@ -2239,41 +2261,47 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "tf",
+    "t": "sort",
     "title": "Formal or Informal?",
-    "labels": [
-     "Formal",
-     "Informal"
+    "groups": [
+     {
+      "n": "Formal",
+      "e": "✅"
+     },
+     {
+      "n": "Informal",
+      "e": "❌"
+     }
     ],
-    "items": [
+    "cards": [
      [
       "Do you want to read some books?",
-      false,
+      1,
       "📚"
      ],
      [
       "Why don’t we go for a bike ride?",
-      false,
+      1,
       "🚲"
      ],
      [
       "Let’s practice some music!",
-      false,
+      1,
       "🎹"
      ],
      [
       "Would you like to play video games?",
-      true,
+      0,
       "🎮"
      ],
      [
       "How about cleaning the house today?",
-      true,
+      0,
       "🧹"
      ],
      [
       "I was wondering if you’d like to watch TV?",
-      true,
+      0,
       "📺"
      ]
     ]
@@ -2361,28 +2389,28 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "match",
+    "t": "find",
     "title": "Room Match",
-    "pairs": [
+    "items": [
      [
-      "🛏️ Bedroom",
-      "We sleep here"
+      "We sleep here",
+      "Bedroom"
      ],
      [
-      "🍳 Kitchen",
-      "We cook food here"
+      "We cook food here",
+      "Kitchen"
      ],
      [
-      "🛁 Bathroom",
-      "We take a bath here"
+      "We take a bath here",
+      "Bathroom"
      ],
      [
-      "🛋️ Living Room",
-      "We spend time with family here"
+      "We spend time with family here",
+      "Living Room"
      ],
      [
-      "🍽️ Dining Room",
-      "We eat with family here"
+      "We eat with family here",
+      "Dining Room"
      ]
     ]
    },
@@ -2566,7 +2594,7 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "spell",
+    "t": "anagram",
     "title": "Room Word Spelling",
     "items": [
      [
@@ -2617,32 +2645,56 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "match",
+    "t": "boxes",
     "title": "Chores Match",
-    "pairs": [
+    "items": [
      [
-      "🧺 Laundry",
-      "Washing clothes"
+      "Washing clothes",
+      "Laundry",
+      [
+       "Dishwashing"
+      ],
+      "🧺"
      ],
      [
-      "🍽️ Dishwashing",
-      "Cleaning plates and cups"
+      "Cleaning plates and cups",
+      "Dishwashing",
+      [
+       "Laundry"
+      ],
+      "🍽️"
      ],
      [
-      "🧹 Sweeping",
-      "Using a broom to clean floors"
+      "Using a broom to clean floors",
+      "Sweeping",
+      [
+       "Laundry"
+      ],
+      "🧹"
      ],
      [
-      "✨ Dusting",
-      "Wiping away dust"
+      "Wiping away dust",
+      "Dusting",
+      [
+       "Laundry"
+      ],
+      "✨"
      ],
      [
-      "💧 Mopping",
-      "Cleaning floors with water"
+      "Cleaning floors with water",
+      "Mopping",
+      [
+       "Laundry"
+      ],
+      "💧"
      ],
      [
-      "🛒 Grocery Shopping",
-      "Buying food and essentials"
+      "Buying food and essentials",
+      "Grocery Shopping",
+      [
+       "Laundry"
+      ],
+      "🛒"
      ]
     ]
    },
@@ -2760,38 +2812,32 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "spell",
+    "t": "match",
     "title": "Plan Words Spelling",
-    "items": [
+    "pairs": [
      [
       "join",
-      "যোগ দেওয়া",
-      "🙌"
+      "যোগ দেওয়া"
      ],
      [
       "visit",
-      "দেখা করা",
-      "🚪"
+      "দেখা করা"
      ],
      [
       "celebrate",
-      "উদযাপন করা",
-      "🎉"
+      "উদযাপন করা"
      ],
      [
       "attend",
-      "উপস্থিত থাকা",
-      "✋"
+      "উপস্থিত থাকা"
      ],
      [
       "plan",
-      "পরিকল্পনা করা",
-      "📝"
+      "পরিকল্পনা করা"
      ],
      [
       "explore",
-      "ঘুরে দেখা",
-      "🧭"
+      "ঘুরে দেখা"
      ]
     ]
    },
@@ -2972,16 +3018,48 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "unjumble",
+    "t": "tf",
     "title": "Family Sentences",
+    "labels": [
+     "Correct",
+     "Not correct"
+    ],
     "items": [
-     "❤️|I love my family.",
-     "👴|My grandfather stays with us.",
-     "👧|I have one elder brother and one younger sister.",
-     "🧒|I’m the middle child.",
-     "🏙️|We live together in a small apartment in Dhaka.",
-     "❤️|In our family, we support each other.",
-     "🤝|We spend a lot of quality time together."
+     [
+      "I my love family.",
+      false,
+      "❤️"
+     ],
+     [
+      "My grandfather stays with us.",
+      true,
+      "👴"
+     ],
+     [
+      "I one have elder brother and one younger sister.",
+      false,
+      "👧"
+     ],
+     [
+      "I’m the middle child.",
+      true,
+      "🧒"
+     ],
+     [
+      "We together live in a small apartment in Dhaka.",
+      false,
+      "🏙️"
+     ],
+     [
+      "In our family, we support each other.",
+      true,
+      "❤️"
+     ],
+     [
+      "We a spend lot of quality time together.",
+      false,
+      "🤝"
+     ]
     ]
    },
    {
@@ -3108,36 +3186,36 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "match",
+    "t": "find",
     "title": "Toy Words",
-    "pairs": [
+    "items": [
      [
-      "Soft",
-      "Feels gentle, like a pillow."
+      "Feels gentle, like a pillow.",
+      "Soft"
      ],
      [
-      "Colorful",
-      "Full of bright colors, like a rainbow."
+      "Full of bright colors, like a rainbow.",
+      "Colorful"
      ],
      [
-      "Big",
-      "Large in size, like an elephant."
+      "Large in size, like an elephant.",
+      "Big"
      ],
      [
-      "Small",
-      "Tiny, like a mouse."
+      "Tiny, like a mouse.",
+      "Small"
      ],
      [
-      "Fun",
-      "Makes you happy, like playing games."
+      "Makes you happy, like playing games.",
+      "Fun"
      ],
      [
-      "Shiny",
-      "Bright and reflects light, like a mirror."
+      "Bright and reflects light, like a mirror.",
+      "Shiny"
      ],
      [
-      "Loud",
-      "A strong sound, like thunder."
+      "A strong sound, like thunder.",
+      "Loud"
      ]
     ]
    },
@@ -3319,104 +3397,32 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "sort",
+    "t": "whack",
     "title": "Pet or Wild?",
-    "groups": [
-     {
-      "n": "Pet Animals",
-      "e": "🏠"
-     },
-     {
-      "n": "Wild Animals",
-      "e": "🌴"
-     }
+    "prompt": "Tap only the Pet Animals ones!",
+    "good": [
+     "Dog",
+     "Cat",
+     "Goldfish",
+     "Hamster",
+     "Guinea Pig",
+     "Rabbit",
+     "Parrot",
+     "Canary"
     ],
-    "cards": [
-     [
-      "Dog",
-      0,
-      "🐕"
-     ],
-     [
-      "Cat",
-      0,
-      "🐈"
-     ],
-     [
-      "Goldfish",
-      0,
-      "🐠"
-     ],
-     [
-      "Hamster",
-      0,
-      "🐹"
-     ],
-     [
-      "Guinea Pig",
-      0,
-      "🐹"
-     ],
-     [
-      "Rabbit",
-      0,
-      "🐇"
-     ],
-     [
-      "Parrot",
-      0,
-      "🦜"
-     ],
-     [
-      "Canary",
-      0,
-      "🐤"
-     ],
-     [
-      "Bear",
-      1,
-      "🐻"
-     ],
-     [
-      "Giraffe",
-      1,
-      "🦒"
-     ],
-     [
-      "Crocodile",
-      1,
-      "🐊"
-     ],
-     [
-      "Fox",
-      1,
-      "🦊"
-     ],
-     [
-      "Lion",
-      1,
-      "🦁"
-     ],
-     [
-      "Tiger",
-      1,
-      "🐅"
-     ],
-     [
-      "Rhinoceros",
-      1,
-      "🦏"
-     ],
-     [
-      "Hippopotamus",
-      1,
-      "🦛"
-     ]
+    "bad": [
+     "Bear",
+     "Giraffe",
+     "Crocodile",
+     "Fox",
+     "Lion",
+     "Tiger",
+     "Rhinoceros",
+     "Hippopotamus"
     ]
    },
    {
-    "t": "quiz",
-    "show": true,
+    "t": "boxes",
     "title": "Guess the Animal!",
     "items": [
      [
@@ -3492,39 +3498,32 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "anagram",
+    "t": "match",
     "title": "Animal Scramble",
-    "audio": true,
-    "items": [
+    "pairs": [
      [
       "hippopotamus",
-      "জলহস্তী",
-      "🦛"
+      "জলহস্তী"
      ],
      [
       "orangutan",
-      "A big orange ape",
-      "🦧"
+      "A big orange ape"
      ],
      [
       "woodpecker",
-      "কাঠঠোকরা",
-      "🐦"
+      "কাঠঠোকরা"
      ],
      [
       "chameleon",
-      "It changes its color",
-      "🦎"
+      "It changes its color"
      ],
      [
       "kangaroo",
-      "It has a pouch for its baby",
-      "🦘"
+      "It has a pouch for its baby"
      ],
      [
       "crocodile",
-      "কুমির",
-      "🐊"
+      "কুমির"
      ]
     ]
    }
@@ -3770,8 +3769,7 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "quiz",
-    "show": true,
+    "t": "plane",
     "title": "Where Is It?",
     "items": [
      [
@@ -3779,60 +3777,48 @@ window.SEJ_LESSONS = [
       "under",
       [
        "on",
-       "above",
-       "in"
-      ],
-      "🐕"
+       "above"
+      ]
      ],
      [
       "She walked ___ the door without knocking.",
       "through",
       [
        "between",
-       "around",
-       "under"
-      ],
-      "🚪"
+       "around"
+      ]
      ],
      [
       "The plane flew ___ the mountains.",
       "across",
       [
        "under",
-       "behind",
-       "into"
-      ],
-      "✈️"
+       "behind"
+      ]
      ],
      [
       "The baby is sleeping ___ the bed.",
       "on",
       [
        "into",
-       "by",
-       "over"
-      ],
-      "👶"
+       "by"
+      ]
      ],
      [
       "We had a picnic ___ the park.",
       "in",
       [
        "under",
-       "over",
-       "to"
-      ],
-      "🧺"
+       "over"
+      ]
      ],
      [
       "The rabbit ran ___ the hole.",
       "into",
       [
        "across",
-       "over",
-       "from"
-      ],
-      "🐇"
+       "over"
+      ]
      ]
     ]
    }
@@ -3983,74 +3969,110 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "match",
+    "t": "find",
     "title": "Who Am I? Clothes",
-    "pairs": [
+    "items": [
      [
-      "🥾 Boots",
-      "I keep your feet warm in the winter. You wear me with socks."
+      "I keep your feet warm in the winter. You wear me with socks.",
+      "Boots"
      ],
      [
-      "🧢 Cap",
-      "I protect your head from the sun during hot summer days."
+      "I protect your head from the sun during hot summer days.",
+      "Cap"
      ],
      [
-      "👘 Panjabi",
-      "I’m a traditional dress worn by boys during festivals"
+      "I’m a traditional dress worn by boys during festivals",
+      "Panjabi"
      ],
      [
-      "🧥 Raincoat",
-      "You wear me when it's raining and I help keep you dry."
+      "You wear me when it's raining and I help keep you dry.",
+      "Raincoat"
      ],
      [
-      "🕶️ Sunglasses",
-      "I’m worn on your eyes to protect them from sunlight"
+      "I’m worn on your eyes to protect them from sunlight",
+      "Sunglasses"
      ],
      [
-      "🩱 Swimsuit",
-      "I’m worn by swimmers and I help you move easily in the water"
+      "I’m worn by swimmers and I help you move easily in the water",
+      "Swimsuit"
      ]
     ]
    },
    {
-    "t": "match",
+    "t": "boxes",
     "title": "What Should You Wear?",
-    "pairs": [
+    "items": [
      [
-      "🌧️ Rainy",
-      "You should wear a raincoat."
+      "You should wear a raincoat.",
+      "Rainy",
+      [
+       "Cold"
+      ],
+      "🌧️"
      ],
      [
-      "☀️ Sunny",
-      "You should wear sunglasses."
+      "You should wear sunglasses.",
+      "Sunny",
+      [
+       "Snowy"
+      ],
+      "☀️"
      ],
      [
-      "🥶 Cold",
-      "You must wear a jacket."
+      "You must wear a jacket.",
+      "Cold",
+      [
+       "Rainy"
+      ],
+      "🥶"
      ],
      [
-      "🔥 Hot",
-      "You can wear light cotton clothes."
+      "You can wear light cotton clothes.",
+      "Hot",
+      [
+       "Sunny"
+      ],
+      "🔥"
      ],
      [
-      "🏖️ Beach",
-      "You should take a swimsuit."
+      "You should take a swimsuit.",
+      "Beach",
+      [
+       "Hiking"
+      ],
+      "🏖️"
      ],
      [
-      "❄️ Snowy",
-      "You must wear boots and gloves."
+      "You must wear boots and gloves.",
+      "Snowy",
+      [
+       "Rainy"
+      ],
+      "❄️"
      ],
      [
-      "🏫 School",
-      "You have to wear your uniform."
+      "You have to wear your uniform.",
+      "School",
+      [
+       "Rainy"
+      ],
+      "🏫"
      ],
      [
-      "🏠 Home",
-      "You can wear whatever you want."
+      "You can wear whatever you want.",
+      "Home",
+      [
+       "School"
+      ],
+      "🏠"
      ],
      [
-      "🥾 Hiking",
-      "You should wear comfortable shoes."
+      "You should wear comfortable shoes.",
+      "Hiking",
+      [
+       "Cold"
+      ],
+      "🥾"
      ]
     ]
    }
@@ -4122,9 +4144,8 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "anagram",
+    "t": "spell",
     "title": "Make a Word",
-    "audio": true,
     "items": [
      [
       "straight",
@@ -4757,183 +4778,105 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "sort",
+    "t": "whack",
     "title": "Where Does It Go?",
-    "groups": [
-     {
-      "n": "In the air",
-      "e": "☁️"
-     },
-     {
-      "n": "On the road",
-      "e": "🛣️"
-     }
+    "prompt": "Tap only the In the air ones!",
+    "good": [
+     "Airplane",
+     "Helicopter",
+     "Hot Air Balloon",
+     "Spaceship",
+     "Rocket",
+     "Glider",
+     "Jet Plane",
+     "Military Fighter Jet",
+     "Zeppelin / Airship",
+     "Hang Glider"
     ],
-    "cards": [
-     [
-      "Airplane",
-      0,
-      "✈️"
-     ],
-     [
-      "Helicopter",
-      0,
-      "🚁"
-     ],
-     [
-      "Hot Air Balloon",
-      0,
-      "🎈"
-     ],
-     [
-      "Spaceship",
-      0,
-      "🛸"
-     ],
-     [
-      "Rocket",
-      0,
-      "🚀"
-     ],
-     [
-      "Glider",
-      0,
-      "🛩️"
-     ],
-     [
-      "Jet Plane",
-      0,
-      "✈️"
-     ],
-     [
-      "Military Fighter Jet",
-      0,
-      "🛩️"
-     ],
-     [
-      "Zeppelin / Airship",
-      0,
-      "🎈"
-     ],
-     [
-      "Hang Glider",
-      0,
-      "🪂"
-     ],
-     [
-      "Bus",
-      1,
-      "🚌"
-     ],
-     [
-      "Car",
-      1,
-      "🚗"
-     ],
-     [
-      "Rickshaw",
-      1,
-      "🛺"
-     ],
-     [
-      "CNG",
-      1,
-      "🛺"
-     ],
-     [
-      "Bicycle",
-      1,
-      "🚲"
-     ],
-     [
-      "Truck",
-      1,
-      "🚚"
-     ],
-     [
-      "Mini-Bus",
-      1,
-      "🚐"
-     ],
-     [
-      "Motorbike",
-      1,
-      "🏍️"
-     ],
-     [
-      "Covered Van",
-      1,
-      "🚛"
-     ],
-     [
-      "Jeep",
-      1,
-      "🚙"
-     ]
+    "bad": [
+     "Bus",
+     "Car",
+     "Rickshaw",
+     "CNG",
+     "Bicycle",
+     "Truck",
+     "Mini-Bus",
+     "Motorbike",
+     "Covered Van",
+     "Jeep"
     ]
    },
    {
-    "t": "blank",
+    "t": "quiz",
     "title": "Complete the Blanks",
     "items": [
      [
-      "A bus is {in front of} the school.",
+      "A bus is ___ the school.",
+      "in front of",
       [
        "on"
       ],
       "🚌"
      ],
      [
-      "The car is {in} the garage.",
+      "The car is ___ the garage.",
+      "in",
       [
        "of"
       ],
       "🚗"
      ],
      [
-      "The bicycle is {behind} the tree.",
+      "The bicycle is ___ the tree.",
+      "behind",
       [
        "inside"
       ],
       "🚲"
      ],
      [
-      "The motorbike is {between} two trucks.",
+      "The motorbike is ___ two trucks.",
+      "between",
       [
        "on"
       ],
       "🏍️"
      ],
      [
-      "The plane is flying {over} the city.",
+      "The plane is flying ___ the city.",
+      "over",
       [
        "under"
       ],
       "✈️"
      ],
      [
-      "The rickshaw is {under} the bridge.",
+      "The rickshaw is ___ the bridge.",
+      "under",
       [
        "inside"
       ],
       "🛺"
      ],
      [
-      "The boat is {near} the shore.",
+      "The boat is ___ the shore.",
+      "near",
       [
        "in"
       ],
       "🚤"
      ],
      [
-      "The train is {on} the tracks.",
+      "The train is ___ the tracks.",
+      "on",
       [
        "of"
       ],
       "🚆"
      ],
      [
-      "The van is {beside} the bus stop.",
+      "The van is ___ the bus stop.",
+      "beside",
       [
        "on"
       ],
@@ -5024,8 +4967,7 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "quiz",
-    "show": true,
+    "t": "plane",
     "title": "Season Quiz Show",
     "items": [
      [
@@ -5033,97 +4975,78 @@ window.SEJ_LESSONS = [
       "Rainy Season",
       [
        "Summer",
-       "Winter",
-       "Spring"
-      ],
-      "🧥"
+       "Winter"
+      ]
      ],
      [
       "What is the weather like in winter?",
       "Very cold",
       [
        "Hot and sunny",
-       "Wet and rainy",
-       "Cool and fresh"
-      ],
-      "❄️"
+       "Wet and rainy"
+      ]
      ],
      [
       "What do people do in the rainy season?",
       "Jump in puddles",
       [
        "Go swimming",
-       "Sit by the fire",
-       "Go on picnics"
-      ],
-      "🌧️"
+       "Sit by the fire"
+      ]
      ],
      [
       "What do people wear in summer?",
       "T-shirts and caps",
       [
        "Woolen jackets",
-       "Raincoats",
-       "Gloves"
-      ],
-      "☀️"
+       "Raincoats"
+      ]
      ],
      [
       "Which season is known for blooming flowers?",
       "Spring",
       [
        "Autumn",
-       "Summer",
-       "Late Autumn"
-      ],
-      "🌷"
+       "Summer"
+      ]
      ],
      [
       "What do people like to drink in winter?",
       "Hot chocolate",
       [
        "Cold drinks",
-       "Lemonade",
-       "Juice"
-      ],
-      "☕"
+       "Lemonade"
+      ]
      ],
      [
       "Which season has cool and windy weather with falling leaves?",
       "Autumn",
       [
        "Spring",
-       "Winter",
-       "Summer"
-      ],
-      "🍂"
+       "Winter"
+      ]
      ],
      [
       "Which season comes before winter and feels chilly?",
       "Late Autumn",
       [
        "Autumn",
-       "Spring",
-       "Summer"
-      ],
-      "🍁"
+       "Spring"
+      ]
      ],
      [
       "When do people wear jackets and scarves?",
       "Winter",
       [
        "Autumn",
-       "Summer",
-       "Rainy Season"
-      ],
-      "🧣"
+       "Summer"
+      ]
      ]
     ]
    },
    {
-    "t": "anagram",
+    "t": "spell",
     "title": "Spell the Season",
-    "audio": true,
     "items": [
      [
       "spring",
@@ -5183,79 +5106,19 @@ window.SEJ_LESSONS = [
     ]
    },
    {
-    "t": "blank",
+    "t": "unjumble",
     "title": "A or An?",
     "items": [
-     [
-      "It’s hot today. I want to eat {an} ice cream.",
-      [
-       "a"
-      ],
-      "🍦"
-     ],
-     [
-      "In winter, I wear {a} jacket to stay warm.",
-      [
-       "an"
-      ],
-      "🧥"
-     ],
-     [
-      "Spring is {an} amazing season.",
-      [
-       "a"
-      ],
-      "🌷"
-     ],
-     [
-      "He is holding {an} umbrella in the rainy season.",
-      [
-       "a"
-      ],
-      "☂️"
-     ],
-     [
-      "My mom made {a} hot cup of tea in winter.",
-      [
-       "an"
-      ],
-      "🍵"
-     ],
-     [
-      "I saw {an} eagle flying in the sky.",
-      [
-       "a"
-      ],
-      "🦅"
-     ],
-     [
-      "That is {a} beautiful scarf for autumn.",
-      [
-       "an"
-      ],
-      "🧣"
-     ],
-     [
-      "We had {an} orange after the picnic.",
-      [
-       "a"
-      ],
-      "🍊"
-     ],
-     [
-      "She brought {a} sweater for the trip.",
-      [
-       "an"
-      ],
-      "🧶"
-     ],
-     [
-      "Look! It’s {an} elephant in the zoo.",
-      [
-       "a"
-      ],
-      "🐘"
-     ]
+     "🍦|It’s hot today. I want to eat an ice cream.",
+     "🧥|In winter, I wear a jacket to stay warm.",
+     "🌷|Spring is an amazing season.",
+     "☂️|He is holding an umbrella in the rainy season.",
+     "🍵|My mom made a hot cup of tea in winter.",
+     "🦅|I saw an eagle flying in the sky.",
+     "🧣|That is a beautiful scarf for autumn.",
+     "🍊|We had an orange after the picnic.",
+     "🧶|She brought a sweater for the trip.",
+     "🐘|Look! It’s an elephant in the zoo."
     ]
    }
   ],
