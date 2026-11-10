@@ -50,13 +50,13 @@ Every lesson has one Class Battle for the live class. It plays on the class TV a
 2. Scan the QR code with your phone, or open `?remote=` plus the code shown on the TV, then enter the teacher PIN. The server checks the PIN. It's `1010` unless `TEACHER_PIN` is set in Vercel.
 3. Choose whole class or 2 to 5 teams, then start.
 
-The rounds come from the lesson's own content, so Teacher Mode edits appear here too. Lessons take turns between games, so each lesson gets a different mix, and **More → Try a different game** swaps the current round for another game with the same kind of learning:
+The rounds come from the lesson's own content, so Teacher Mode edits appear here too. Lessons take turns between games, so each lesson gets a different mix, and **More → Try a different game** swaps the current round for another game with the same kind of learning. Each lesson also has its own battle style (Score Battle, Race to the Finish, Fill the Star Jar or Tug of War for 2 teams) and a background that fits its topic. The teacher can change the style in step 3 of the setup or under More:
 
 | Round | Game | Comes from |
 |---|---|---|
-| Warm-up | Word Flash, Listen & Choose, Memory Match or Missing Letters | Power words (Bangla only where it's on the slides) or the lesson's matching game |
-| Team Battle | Team Quiz, Group Sort, Put It in Order (drag or tap the tiles) or True or False? | One of the lesson's games |
-| Speak | Spin and Speak, Mystery Boxes or Role-play | The speaking prompts |
+| Warm-up | Word Flash, Listen & Choose, Memory Match, Missing Letters or Match Up | Power words (Bangla only where it's on the slides) or the lesson's matching game |
+| Team Battle | Team Quiz, Riddle Time, Group Sort, Complete the Sentence, Put It in Order (drag or tap the tiles) or True or False? | One of the lesson's games |
+| Speak | Spin and Speak, Mystery Boxes, Role-play or Speaking Cards | The speaking prompts |
 
 The phone shows the answer before the class sees it. It also has reveal and next, the timer, 50:50, team points, a random student or team,
 cheers, and restart and end. A game comes back with its scores if the TV page reloads within 4 hours.

@@ -52,13 +52,16 @@ const check = (name, ok, extra = '') => {
         if (['listen', 'letters'].includes(st.kind)) check(`${code} ${st.kind} answer listed`, it.options.includes(it.en) && new Set(it.options).size === it.options.length, JSON.stringify(it));
         if (st.kind === 'letters') check(`${code} letters pattern`, it.pattern.length === it.en.length && it.pattern.some((c) => !c) && !!it.pattern[0], JSON.stringify(it));
         if (st.kind === 'tf') check(`${code} true/false`, ['True', 'False'].includes(it.answer) && (it.answer === 'True') === (it.claim === it.right), JSON.stringify(it));
+        if (['riddle', 'complete', 'matchup'].includes(st.kind)) check(`${code} ${st.kind} answer listed`, it.options.includes(it.answer) && new Set(it.options).size === it.options.length && it.options.length >= 2, JSON.stringify(it));
+        if (st.kind === 'complete') check(`${code} complete has a gap`, typeof it.before === 'string' && typeof it.after === 'string' && !!it.answer, JSON.stringify(it));
+        if (st.kind === 'cards') check(`${code} speak`, it.q && it.frame && it.sample, JSON.stringify(it));
         if (st.kind === 'memory') check(`${code} memory`, it.cards.length === it.pairs.length * 2 && it.pairs.length >= 4, JSON.stringify(it).slice(0, 200));
         if (['wheel', 'boxes', 'role'].includes(st.kind)) check(`${code} speak`, it.q && it.frame && it.sample, JSON.stringify(it));
       }
     }
   }
   console.log('Round types across lessons:', JSON.stringify(seen));
-  for (const k of ['flash', 'listen', 'memory', 'letters', 'quiz', 'sort', 'order', 'tf', 'wheel', 'boxes', 'role']) check(`${k} is used`, seen[k] > 0);
+  for (const k of ['flash', 'listen', 'memory', 'letters', 'matchup', 'quiz', 'riddle', 'sort', 'complete', 'order', 'tf', 'wheel', 'boxes', 'role', 'cards']) check(`${k} is used`, seen[k] > 0);
 
   /* 2. Every lesson plays from lobby to podium on the TV by itself. */
   for (const { code } of plans) {
@@ -177,6 +180,7 @@ const check = (name, ok, extra = '') => {
   await waitTv(() => !!SEJ.classDebug.state.picked);
   check('random student picked', roster.includes((await tvState()).picked.name));
   check('phone offers Try a different game', !!(await phone.$('#rm-change')));
+  check('phone offers battle styles', (await phone.locator('.rm-style').count()) === 4);
   await phone.click('#rm-more-close');
   /* Reactions: on the main phone screen, reaching the TV, and the phone says when the TV has no sound yet. */
   for (const kind of ['clap', 'fanfare', 'wow', 'oops']) check(`${kind} reaction on phone`, !!(await phone.$(`.rm-reaction[data-reaction="${kind}"]`)));
@@ -355,20 +359,46 @@ const check = (name, ok, extra = '') => {
     for (const n of pair) await tv.evaluate((x) => SEJ.classDebug.dispatch({ type: 'flip', n: x }), n);
   }
   check('Memory: all pairs finish the round', await tv.evaluate(() => SEJ.classDebug.state.revealed));
-  for (const kind of ['listen', 'letters', 'tf']) {
+  for (const kind of ['listen', 'letters', 'tf', 'riddle', 'complete', 'matchup']) {
     await openKind(kind);
     const it = await tv.evaluate(() => { const st = SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage]; const x = st.items[0]; return { right: x.answer || x.en, options: x.options }; });
-    check(`${kind}: options on the TV`, (await tv.locator('button.cl-option').count()) === it.options.length);
+    const sel = kind === 'matchup' ? 'button.cl-mu-word' : 'button.cl-option';
+    check(`${kind}: options on the TV`, (await tv.locator(sel).count()) === it.options.length, `${await tv.locator(sel).count()} / ${it.options.length}`);
     await tv.screenshot({ path: `${SHOTS}/tv-${kind}.png` });
-    await tv.locator('button.cl-option', { hasText: new RegExp(`^${it.right}$`) }).first().click().catch(async () => { await tv.evaluate((v) => SEJ.classDebug.dispatch({ type: 'tap', value: v }), it.right); });
+    await tv.locator(sel, { hasText: new RegExp(`^\\s*([A-D]\\s*)?${it.right.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`) }).first().click().catch(async () => { await tv.evaluate((v) => SEJ.classDebug.dispatch({ type: 'tap', value: v }), it.right); });
     check(`${kind}: right answer reveals`, await tv.evaluate(() => SEJ.classDebug.state.revealed));
   }
   /* Try a different game: the round changes to another game of the same kind. */
   const gameBefore = await tv.evaluate(() => SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage].name);
+  const roundBefore = await tv.evaluate(() => SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage].round);
   await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'change' }));
   await tv.waitForTimeout(150);
   const gameAfter = await tv.evaluate(() => ({ name: SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage].name, round: SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage].round, item: SEJ.classDebug.state.item, revealed: SEJ.classDebug.state.revealed }));
-  check('Try a different game changes the game', gameAfter.name !== gameBefore && gameAfter.round === 'Team Battle' && !gameAfter.revealed, `${gameBefore} -> ${JSON.stringify(gameAfter)}`);
+  check('Try a different game changes the game', gameAfter.name !== gameBefore && gameAfter.round === roundBefore && !gameAfter.revealed, `${gameBefore} -> ${JSON.stringify(gameAfter)}`);
+
+  /* Speaking Cards: deal, then the card shows a prompt. */
+  await openKind('cards');
+  await tv.evaluate(() => SEJ.classDebug.dispatch({ type: 'box' }));
+  await tv.waitForTimeout(150);
+  check('Speaking Cards deals a prompt', await tv.evaluate(() => SEJ.classDebug.state.item >= 0 && !!document.querySelector('.cl-speak-q')));
+  await tv.screenshot({ path: `${SHOTS}/tv-cards.png` });
+
+  /* Battle styles: each one draws, points move the runner, jar and rope, and Tug of War uses 2 teams. */
+  for (const style of ['race', 'jar', 'tug', 'score']) {
+    await tv.evaluate((x) => { const d = SEJ.classDebug; d.dispatch({ type: 'style', style: x }); d.state.teams.forEach((t) => { t.score = 0; }); d.dispatch({ type: 'score', team: 0, delta: 1 }); d.dispatch({ type: 'score', team: 0, delta: 1 }); d.dispatch({ type: 'score', team: 0, delta: 1 }); }, style);
+    await tv.waitForTimeout(900);
+    const info = await tv.evaluate(() => ({
+      cls: document.querySelector('.cl-teams').className, teams: SEJ.classDebug.state.teams.length,
+      runner: (document.querySelector('#cl-team-0 .cl-runner') || {}).style, fill: (document.querySelector('#cl-team-0 .cl-jar-fill') || {}).style, knot: (document.querySelector('.cl-knot') || {}).style,
+      overflow: document.documentElement.scrollHeight > innerHeight + 1,
+    }));
+    check(`${style} style draws`, info.cls.includes(`style-${style}`), info.cls);
+    check(`${style} style fits the screen`, !info.overflow);
+    if (style === 'race') check('race runner moves with points', info.runner && info.runner.left === '30%', JSON.stringify(info.runner && info.runner.left));
+    if (style === 'jar') check('jar fills with points', info.fill && /scaleY\(0\.3\)/.test(info.fill.transform), info.fill && info.fill.transform);
+    if (style === 'tug') { check('tug uses 2 teams', info.teams === 2); check('rope moves toward the leader', info.knot && parseFloat(info.knot.left) < 50, info.knot && info.knot.left); }
+    await tv.screenshot({ path: `${SHOTS}/tv-style-${style}.png` });
+  }
 
   /* A lesson without enough Bangla on its slides starts at Team Battle. */
   await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));

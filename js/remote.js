@@ -313,6 +313,7 @@
           state.screen === 'stage' && h('section', { class: 'rm-card' }, h('h2', { text: 'Jump to a round' }), h('div', { class: 'rm-rounds' }, v.rounds.map((r, i) => h('button', {
             class: `rm-btn ${i === state.stage ? 'rm-go' : ''}`, onclick: () => { if (i !== state.stage) { nav('goto', { stage: i }); moreOpen = false; paint(); } },
           }, r)))),
+          h('section', { class: 'rm-card' }, h('h2', { text: 'Battle style' }), styleChooser()),
           h('section', { class: 'rm-card' },
             h('div', { class: 'rm-head' }, h('h2', { text: 'Teams' }), teamChooser()),
             state.mode === 'teams' && h('button', { class: 'rm-link', onclick: namesSheet }, '✏️ Change team names')),
@@ -333,6 +334,13 @@
     }
 
     /* Before the game: three clear steps, then one button. */
+    function styleChooser() {
+      const styles = SEJ.CLASS_STYLES || {};
+      return h('div', { class: 'rm-styles', role: 'group', 'aria-label': 'Battle style' }, Object.entries(styles).map(([id, info]) => h('button', {
+        class: `rm-btn rm-style ${state.style === id ? 'rm-go' : ''}`, 'data-style': id, 'aria-pressed': state.style === id ? 'true' : 'false',
+        onclick: () => { if (state.style !== id) { tapSend({ type: 'style', style: id }); say(info.name); } },
+      }, h('b', { text: info.name }), h('small', { text: id === 'tug' ? 'Uses 2 teams' : info.line }))));
+    }
     function setupScreen() {
       return [
         h('section', { class: 'rm-card rm-step' }, h('h2', {}, h('span', { class: 'rm-step-n', text: '1' }), 'How many teams?'), teamChooser(),
@@ -342,6 +350,7 @@
             h('button', { class: `rm-btn ${state.students ? '' : 'rm-go'}`, id: 'rm-say-aloud', 'aria-pressed': state.students ? 'false' : 'true', onclick: () => { if (state.students) tapSend({ type: 'students' }); } }, h('b', { text: '🗣️ Out loud' }), h('small', { text: 'You give the points' })),
             h('button', { class: `rm-btn ${state.students ? 'rm-go' : ''}`, id: 'rm-students-toggle', 'aria-pressed': state.students ? 'true' : 'false', onclick: () => { if (!state.students) tapSend({ type: 'students' }); } }, h('b', { text: '🙋 On phones' }), h('small', { text: 'Points add up by themselves' }))),
           state.students && h('p', { class: 'rm-note', id: 'rm-students', text: `${Object.keys(state.players || {}).length} joined. They scan the QR on the TV. Code: ${state.join || ''}` })),
+        h('section', { class: 'rm-card rm-step' }, h('h2', {}, h('span', { class: 'rm-step-n', text: '3' }), 'Battle style'), styleChooser()),
       ];
     }
     function playScreen() {
