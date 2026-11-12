@@ -71,12 +71,41 @@
     : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, swapName(x, name)])) : v);
 
   /* Built-in lessons + js/custom-content.js + this browser's edits, exactly as stored (used by the builder). */
+  /* A lesson with the admin's changes: which games are on the map, in what order, edited or created. */
+  SEJ.buildLesson = function (l, o) {
+    /* Every game carries an id that stays the same when games are reordered: d0, d1, d2 for the defaults. */
+    const tag = (g, id) => Object.assign({}, g, { id });
+    const defaults = l.games.map((g, i) => tag(g, `d${i}`));
+    if (!o) return Object.assign({}, l, { games: defaults });
+    const out = Object.assign({}, l, o);
+    if (Array.isArray(o.map)) {
+      const created = o.created || [], edits = o.edits || {};
+      out.games = o.map.map((id) => { const g = id[0] === 'd' ? edits[id] || l.games[Number(id.slice(1))] : created.find((x) => x.id === id); return g && tag(g, id); }).filter(Boolean);
+      if (!out.games.length) out.games = defaults;
+    } else if (Array.isArray(o.games)) out.games = o.games.map((g, i) => tag(g, g.id || `n${i}`));
+    else out.games = defaults;
+    delete out.map; delete out.created; delete out.edits;
+    return out;
+  };
   SEJ.lessonsRaw = function () {
     const published = window.SEJ_CUSTOM || {};
-    return window.SEJ_LESSONS.map((l) => {
-      const o = state.custom[l.code] || published[l.code];
-      return o ? Object.assign({}, l, o) : l;
-    });
+    return window.SEJ_LESSONS.map((l) => SEJ.buildLesson(l, state.custom[l.code] || published[l.code]));
+  };
+  /* Shared admin content from the server. Pages wait for it briefly, then carry on without it. */
+  SEJ.sharedInfo = { shared: false };
+  SEJ.loadShared = function () {
+    if (!/^https?:$/.test(location.protocol)) return Promise.resolve();
+    const ctrl = window.AbortController ? new AbortController() : null;
+    const stop = setTimeout(() => ctrl && ctrl.abort(), 3000);
+    return fetch('api/content', { cache: 'no-store', signal: ctrl && ctrl.signal })
+      .then((r) => r.json().catch(() => null))
+      .then((res) => {
+        if (!res) return;
+        SEJ.sharedInfo = { shared: !!res.shared && !res.error, at: res.at || 0, error: res.error || '' };
+        if (res.content && typeof res.content === 'object') window.SEJ_CUSTOM = res.content;
+      })
+      .catch(() => {})
+      .then(() => clearTimeout(stop));
   };
   SEJ.lessonRaw = (code) => SEJ.lessonsRaw().find((l) => l.code === code);
   /* The same lessons with the child's own name filled in (used for playing). */
@@ -135,6 +164,7 @@
   const on = () => state.sound !== false;
   SEJ.sfx = {
     tap() { if (on()) tone(620, 0, 0.07, { vol: 0.12, to: 760 }); },
+    select() { if (on()) { tone(880, 0, 0.05, { type: 'sine', vol: 0.1, to: 1180 }); tone(1320, 0.04, 0.05, { type: 'sine', vol: 0.05 }); } },
     tick(step = 0) { if (on()) tone(SCALE[Math.min(step, SCALE.length - 1)], 0, 0.14, { vol: 0.18 }); },
     correct(combo = 0) {
       if (!on()) return;
@@ -142,7 +172,16 @@
       [0, 2, 4].forEach((n, i) => tone(SCALE[n + b], i * 0.075, 0.2, { vol: 0.22 }));
       tone(SCALE[4 + b] * 2, 0.22, 0.28, { type: 'sine', vol: 0.12 });
     },
-    wrong() { if (on()) { tone(220, 0, 0.16, { type: 'sine', vol: 0.2, to: 165 }); tone(190, 0.13, 0.2, { type: 'sine', vol: 0.16, to: 130 }); } },
+    /* A soft two-note "uh-oh": clear, but never harsh. */
+    wrong() { if (on()) { tone(330, 0, 0.14, { type: 'sine', vol: 0.2, to: 300 }); tone(247, 0.15, 0.24, { type: 'sine', vol: 0.2, to: 220 }); } },
+    /* A bell-like shimmer after a right answer. */
+    sparkle() { if (on()) [0, 1, 2, 3].forEach((i) => tone(1568 + i * 262, 0.18 + i * 0.05, 0.22, { type: 'sine', vol: 0.07 })); },
+    /* Points landing in the score. */
+    coin() { if (on()) { tone(988, 0.5, 0.07, { type: 'square', vol: 0.06 }); tone(1319, 0.57, 0.22, { type: 'square', vol: 0.06 }); } },
+    /* Three in a row: a rising run. */
+    streak() { if (on()) [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, i * 0.07, 0.2, { type: 'triangle', vol: 0.16 })); },
+    /* A drum roll before the stars. */
+    drumroll(seconds = 0.5) { if (on()) for (let t = 0; t < seconds; t += 0.045) noise(t, 0.04, { vol: 0.05 + t * 0.08, freq: 420, q: 1.4 }); },
     pop() { if (on()) { tone(900, 0, 0.09, { type: 'square', vol: 0.09, to: 240 }); noise(0, 0.07, { vol: 0.12, freq: 3200 }); } },
     whoosh() { if (on()) noise(0, 0.32, { vol: 0.09, freq: 900, q: 0.4 }); },
     star(i = 0) { if (on()) { tone(SCALE[4 + i], 0, 0.3, { vol: 0.24 }); tone(SCALE[6 + i], 0.05, 0.34, { type: 'sine', vol: 0.12 }); } },
@@ -347,7 +386,7 @@
 
   /* ---------- particles ---------- */
   let canvas, g2, parts = [], raf = 0, scale = 1;
-  const COLORS = ['#ffd60a', '#ff2e93', '#00d4ff', '#9ef01a', '#ff7a00', '#9a5cff', '#ffffff'];
+  const COLORS = ['#ead56b', '#d8649c', '#3fb7cf', '#9bc950', '#cf843f', '#a27dde', '#ffffff'];
   function ensureCanvas() {
     if (canvas) return;
     canvas = SEJ.h('canvas', { class: 'fx-canvas', 'aria-hidden': 'true' });
@@ -570,10 +609,10 @@
 
   /* ---------- heroes ---------- */
   SEJ.HEROES = {
-    mathman: { name: 'MathMan', color: '#ff7a00', power: 'Master of math', bn: 'যেকোনো গাণিতিক সমস্যা সমাধান করতে পারে' },
-    bhasha: { name: 'Ms Bhasha', color: '#ff2e93', power: 'Speaks any language', bn: 'যেকোনো ভাষা বুঝতে পারে' },
-    knight: { name: 'Nature Knight', color: '#17c964', power: 'Talks to plants and animals', bn: 'গাছপালার সাথে কথা বলতে পারে' },
-    innovara: { name: 'Innovara', color: '#00b2ff', power: 'Controls any gadget', bn: 'যেকোনো গ্যাজেট কন্ট্রোল করতে পারে' },
+    mathman: { name: 'MathMan', color: '#cf843f', power: 'Master of math', bn: 'যেকোনো গাণিতিক সমস্যা সমাধান করতে পারে' },
+    bhasha: { name: 'Ms Bhasha', color: '#d8649c', power: 'Speaks any language', bn: 'যেকোনো ভাষা বুঝতে পারে' },
+    knight: { name: 'Nature Knight', color: '#3fb170', power: 'Talks to plants and animals', bn: 'গাছপালার সাথে কথা বলতে পারে' },
+    innovara: { name: 'Innovara', color: '#3fa4cf', power: 'Controls any gadget', bn: 'যেকোনো গ্যাজেট কন্ট্রোল করতে পারে' },
   };
   const SHAPES = {
     circle: '<circle cx="50" cy="50" r="42"/>',
@@ -592,6 +631,9 @@
   };
   addEventListener('pointerdown', (e) => { if (e.isPrimary) SEJ.fx.burst(e.clientX, e.clientY, 5); }, { passive: true });
   addEventListener('pointerdown', () => SEJ.voice.flushPending(), { once: true });
+  /* Picking any game piece gives a soft click, before the right or wrong sound. */
+  const PIECES = '.game-screen button:not(.bar-btn):not(.speak-btn):not(:disabled), .cl-option, .cl-mu-word, .cl-rain-word, .cl-mem-card, .cl-tile, .st-option, .st-tile, .st-team-btn';
+  addEventListener('pointerdown', (e) => { const el = e.target.closest && e.target.closest(PIECES); if (el && !el.disabled) { SEJ.sfx.select(); el.classList.add('is-picked'); setTimeout(() => el.classList.remove('is-picked'), 160); } }, { passive: true });
   SEJ.heroImg = (id, cls = '') => SEJ.h('img', { class: 'hero-img ' + cls, src: `assets/heroes/${id}.webp`, alt: SEJ.HEROES[id].name, draggable: 'false' });
   SEJ.heroFace = (id, cls = '') => SEJ.h('span', { class: 'face ' + cls, style: { background: SEJ.HEROES[id].color } },
     SEJ.h('img', { src: `assets/heroes/${id}-face.webp`, alt: '', draggable: 'false' }));

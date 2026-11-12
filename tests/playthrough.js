@@ -21,7 +21,7 @@ fs.mkdirSync(SHOTS, { recursive: true });
   page.on('requestfailed', (r) => problems.push('failed request: ' + r.url()));
 
   await page.goto(`${BASE}/index.html?test=1#/map`);
-  const list = await page.evaluate(() => SEJ.lessons().map((l) => ({ code: l.code, keys: [...l.games.map((_, i) => String(i)), 'talk'], types: [...l.games.map((g) => g.t), 'talk'] })));
+  const list = await page.evaluate(() => SEJ.lessons().map((l) => ({ code: l.code, keys: l.games.map((_, i) => String(i)), types: l.games.map((g) => g.t) })));
   let played = 0;
   const shotTaken = new Set();
 

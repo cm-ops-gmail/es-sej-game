@@ -313,11 +313,11 @@
 
   /* ---------- teams ---------- */
   const TEAM_LOOKS = [
-    { name: 'MathMan', hero: 'mathman', color: '#ff7a00' },
-    { name: 'Bhasha', hero: 'bhasha', color: '#ff2e93' },
-    { name: 'Knight', hero: 'knight', color: '#17c964' },
-    { name: 'Innovara', hero: 'innovara', color: '#00b2ff' },
-    { name: 'Star', hero: '', color: '#7b2ff7' },
+    { name: 'MathMan', hero: 'mathman', color: '#cf843f' },
+    { name: 'Bhasha', hero: 'bhasha', color: '#d8649c' },
+    { name: 'Knight', hero: 'knight', color: '#3fb170' },
+    { name: 'Innovara', hero: 'innovara', color: '#3fa4cf' },
+    { name: 'Star', hero: '', color: '#8d63d2' },
   ];
   const makeTeams = (n, old = []) => TEAM_LOOKS.slice(0, n).map((look, i) => Object.assign({}, look, old[i] ? { name: old[i].name, score: old[i].score } : { score: 0 }));
   const loadRoster = () => {
@@ -1078,7 +1078,7 @@
     function drawWheel(st) {
       const n = st.items.length;
       const slice = 360 / n;
-      const colors = ['#ff2e93', '#00b2ff', '#ff7a00', '#17c964', '#7b2ff7', '#ffd60a'];
+      const colors = ['#d8649c', '#3fa4cf', '#cf843f', '#3fb170', '#8d63d2', '#ead56b'];
       const stops = st.items.map((_, i) => `${s.used.includes(i) && i !== s.item ? '#cfc6e8' : colors[i % colors.length]} ${i * slice}deg ${(i + 1) * slice}deg`).join(',');
       const wheel = h('div', { class: 'cl-wheel', id: 'cl-wheel', style: { background: `conic-gradient(${stops})`, transform: `rotate(${shownDeg}deg)` } },
         st.items.map((_, i) => h('span', { class: 'cl-wheel-n', style: { transform: `rotate(${(i + 0.5) * slice}deg) translateY(-34cqw) rotate(${-(i + 0.5) * slice}deg)` }, text: i + 1 })));
@@ -1096,7 +1096,8 @@
           SEJ.sticker(s.used.includes(i) ? '✨' : '🎁', 'cl-gift-art'), h('b', { text: i + 1 })))));
     }
     function drawRole(st) {
-      const it = st.items[s.item];
+      /* Right after Try a different game, the new round may not have chosen its first card yet. */
+      const it = st.items[Math.max(0, s.item)];
       const [a, b] = [plan.lesson.hero, Object.keys(SEJ.HEROES).find((x) => x !== plan.lesson.hero)];
       return h('div', { class: 'cl-role' },
         h('div', { class: 'cl-actor' }, SEJ.heroImg(a, 'cl-actor-img'), h('span', { class: 'cl-actor-tag', text: 'Student A' })),
@@ -1221,7 +1222,8 @@
         optionButtons(it.options, it.answer));
     }
     function drawPotato(st) {
-      const it = st.items[s.item];
+      /* Right after Try a different game, the new round may not have chosen its first card yet. */
+      const it = st.items[Math.max(0, s.item)];
       if (s.boomed) return h('div', { class: 'cl-box-open' }, h('p', { class: 'cl-box-tag', text: '💥 BOOM! Your turn!' }), speakCard(it));
       return h('div', { class: 'cl-potato' },
         h('span', { class: `cl-bomb ${s.burning ? 'burning' : ''}`, 'aria-hidden': 'true', text: '💣' }),
@@ -1284,7 +1286,8 @@
       if (s.screen !== 'stage') return;
       const st = plan.stages[s.stage], it = s.item >= 0 ? st.items[s.item] : null;
       if (!it) return;
-      const line = st.kind === 'odd' ? 'Which one is the odd one out?' : st.kind === 'rain' ? (it.listen ? it.answer : '') : st.kind === 'potato' ? (s.boomed ? it.q : '') : st.kind === 'quiz' || st.kind === 'tf' || st.kind === 'riddle' || st.kind === 'matchup' ? it.q : st.kind === 'complete' ? `${it.before} blank ${it.after}` : st.kind === 'listen' ? it.en : st.kind === 'sort' ? it.text : st.kind === 'role' ? it.q : '';
+      /* Only listening rounds speak by themselves. Everything else stays quiet, like the reference games. */
+      const line = st.kind === 'listen' ? it.en : st.kind === 'rain' && it.listen ? it.answer : '';
       if (line) say(line);
     }
     function splash(top, title, heroId) {
@@ -1318,18 +1321,17 @@
           const st = plan.stages[s.stage];
           sfx.whoosh(); sfx.fanfare();
           splash(`Round ${s.stage + 1}: ${st.round}`, st.name, plan.lesson.hero);
-          say(st.round);
           voice.prepare(st.items.flatMap((x) => [x.q, x.answer, x.en, x.sample, x.text]));
           later(readItem, 1900);
           break;
         }
         case 'next': sfx.whoosh(); voice.stop(); readItem(); break;
-        case 'line': sfx.pop(); say(plan.stages[s.stage].items[s.item].frame); break;
+        case 'line': sfx.pop(); break;
         case 'plan': plan = SEJ.classPlan(s.lesson, s.seed, s.variants); lastSig = ''; break;
         case 'changed': dispatch({ type: 'enterAgain' }); break;
         case 'flip': sfx.pop(); break;
         case 'style': sfx.whoosh(); sfx.correct(1); fx.pow(STYLE_INFO[s.style].name.replace(/^\S+\s/, '').toUpperCase()); break;
-        case 'pair': sfx.correct(2); fx.pow('PAIR!'); say(e.text); break;
+        case 'pair': sfx.correct(2); fx.pow('PAIR!'); break;
         case 'noPair': sfx.boing(); later(() => dispatch({ type: 'unflip' }), 1300); break;
         case 'replay': readItem(); break;
         case 'tile': sfx.pop(); break;
@@ -1341,13 +1343,12 @@
           later(() => dispatch({ type: 'boom' }), e.ms);
           break;
         }
-        case 'boom': sfx.wrong(); sfx.cheer(); SEJ.buzz([80, 40, 120]); fx.pow('BOOM!'); fx.burst(innerWidth / 2, innerHeight / 2, 50, ['💥', '⭐']); later(() => say(plan.stages[s.stage].items[s.item].q), 700); break;
+        case 'boom': sfx.wrong(); sfx.cheer(); SEJ.buzz([80, 40, 120]); fx.pow('BOOM!'); fx.burst(innerWidth / 2, innerHeight / 2, 50, ['💥', '⭐']); break;
         case 'phone': sfx.correct(1); fx.pow('PHONE READY!'); break;
         case 'open': {
           sfx.pop(); sfx.correct(0);
           const it = plan.stages[s.stage].items[s.item];
           later(() => { fx.burst(innerWidth / 2, innerHeight / 2, 28, ['⭐', '✨']); }, 60);
-          say(it.q);
           break;
         }
         case 'spin': {
@@ -1370,7 +1371,6 @@
           later(() => { const a = $('#cl-answer'); if (a) fx.burstAt(a, 30, ['⭐', '✨']); }, 40);
           const st = plan.stages[s.stage], it = st.items[s.item];
           if (st.kind === 'memory') break;
-          say(st.kind === 'complete' ? `${it.before}${it.answer}${it.after}` : st.kind === 'tf' ? it.right : it.en || it.answer || it.sample || (st.kind === 'sort' ? `${it.text}. ${st.groups[it.group].n}` : ''));
           break;
         }
         case 'place': sfx.pop(); break;
@@ -1422,7 +1422,6 @@
             const winners = s.teams.filter((t) => t.score === top);
             if (top > 0) line = winners.length > 1 ? 'It is a tie! Well played!' : `Team ${winners[0].name} wins! Well done!`;
           }
-          say(line);
           break;
         }
         default: break;

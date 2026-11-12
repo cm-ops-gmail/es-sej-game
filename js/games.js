@@ -56,7 +56,7 @@
         SEJ.ui.soundButton('bar-btn')),
       h('div', { class: 'game-title' },
         h('h1', { text: game.title }),
-        h('p', { class: 'how' }, h('span', { text: game.prompt || meta.en }), ' ', h('span', { class: 'bn', lang: 'bn', text: meta.bn }))),
+        h('p', { class: 'how' }, h('span', { text: game.prompt || meta.en }), ' ', h('span', { class: 'bn', lang: 'bn', text: game.bn || meta.bn }))),
       stage, comboEl);
     root.replaceChildren(screen);
 
@@ -109,13 +109,14 @@
         sfx.tick(step);
         buzz(14);
         fx.burstAt(el, 7);
+        fx.play(el, 'is-hit');
       },
       /* A wrong tap. It is gentle: nothing is lost, and the answer lights up after two misses. */
       miss(el) {
         itemMisses++;
-        sfx.boing();
+        sfx.wrong();
         buzz([80, 50, 80]);
-        fx.play(el, 'shake');
+        fx.play(el, 'is-wrong');
         combo = 0;
         comboEl.classList.remove('on');
         api.cheer(pick(NUDGES), 'down');
@@ -144,24 +145,21 @@
         api.after(620, () => fx.play(scoreBox, 'jelly'));
         api.syncProgress();
         sfx.correct(combo);
-        sfx.cheer();
+        sfx.sparkle();
+        if (first) sfx.coin();
         buzz([30, 30, 60]);
+        fx.play(el, 'is-right');
         fx.burstAt(el, 26, first ? ['⭐', '✨'] : null);
-        fx.play(screen, 'flash');
         api.cheer(combo >= 3 ? `${combo} IN A ROW!` : pick(CHEERS));
         if (combo >= 3) {
           comboEl.textContent = `🔥 ${combo} streak`;
           comboEl.classList.add('on');
           fx.play(comboEl, 'jelly');
-          fx.play(screen, 'quake');
-          if (combo % 3 === 0) { fx.heroFly(heroId); sfx.whoosh(); fx.fireworks(3, 200); }
+          if (combo % 3 === 0) { fx.heroFly(heroId); sfx.streak(); fx.fireworks(2, 260); }
         }
-        if (!next) { if (line) voice.say(line, { max: 2600 }); return; }
-        const started = performance.now();
-        Promise.resolve(line ? voice.say(line, { max: 4200 }) : null).then(() => {
-          const left = Math.max(0, wait - (performance.now() - started));
-          api.after(line ? Math.max(left, 220) : left, next);
-        });
+        /* Like the reference games, a right answer isn't read aloud. Sound and motion celebrate it. */
+        void line;
+        if (next) api.after(wait, next);
       },
       /* Moves on after a question that can't be retried (time ran out, true/false). */
       itemFailed(next, wait = 1500) {
@@ -295,7 +293,7 @@
       curEl = h('div', { class: 'sort-card enter-pop', tabindex: '-1' }, art(cur[2], 'sort-art'), h('span', { text: cur[0] }));
       slot.replaceChildren(curEl);
       const holder = curEl, data = cur;
-      SEJ.tapOrDrag(holder, '[data-bin]', (t) => { if (t) place(+t.dataset.bin, t); else voice.say(data[0]); });
+      SEJ.tapOrDrag(holder, '[data-bin]', (t) => { if (t) place(+t.dataset.bin, t); });
     }
     bins.forEach((b, idx) => b.addEventListener('click', () => place(idx, b)));
     host.target = () => bins[cur[1]];
@@ -559,7 +557,6 @@
         onRight: () => { wrap.classList.add(yes ? 'hug' : 'apart'); },
       });
       host.stage.append(wrap, row);
-      voice.say(b ? `${a}. ${b}.` : a, { max: 2500 });
     });
   }
 
@@ -574,7 +571,6 @@
         bar,
         h('div', { class: 'card flag-card' }, art(emoji), h('p', { class: 'clue-big', text }), speakBtn(text)),
         row);
-      voice.say(text, { max: 4000 });
     });
   }
 
@@ -640,7 +636,6 @@
         });
       }
       host.stage.append(grid);
-      voice.say(q, { max: 4500 });
     });
   }
 
@@ -734,7 +729,6 @@
         const overlay = h('div', { class: 'box-overlay' }, h('div', { class: 'card box-q enter-pop' }, art(emoji), h('p', { class: 'clue-big', text: q }), speakBtn(q), h('div', { class: 'answers answers-2 in-box' }, tiles)));
         host.target = () => tiles.find((t) => t._answer === answer);
         host.stage.append(overlay);
-        voice.say(q, { max: 4000 });
       });
       grid.append(b);
       return b;
@@ -807,7 +801,6 @@
       advance = next;
       promptEl.textContent = item[0];
       fx.play(promptEl, 'jelly');
-      voice.say(item[0].replace(/_+/, ' blank '), { max: 3000 });
       host.after(300, launch);
     });
     setLane(1);
@@ -860,10 +853,14 @@
     });
   }
 
+  /* Shared with js/games2.js, which adds the other Wordwall game types. */
   const ENGINES = { unjumble, sort, anagram: (x) => letterGame(x, false), spell: (x) => letterGame(x, true), blank, match, find, pair, tf, quiz, whack, boxes, plane, talk };
 
   /* Item count, used on cards and by the checks. */
   SEJ.itemCount = (g) => (g.items || g.cards || g.pairs || g.good || []).length;
+
+  SEJ.ENGINES = ENGINES;
+  SEJ.gameKit = { sequence, sample, answerTiles, twoChoice, speakBtn, art, stag, GUMMY, speed, letterGame };
 
   SEJ.playGame = function (root, lesson, slot, game, opts) {
     const host = createHost(root, lesson, slot, game, opts);

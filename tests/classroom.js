@@ -64,7 +64,18 @@ const check = (name, ok, extra = '') => {
     }
   }
   console.log('Round types across lessons:', JSON.stringify(seen));
-  for (const k of ['flash', 'reveal', 'listen', 'memory', 'rain', 'letters', 'matchup', 'quiz', 'riddle', 'odd', 'sort', 'complete', 'order', 'tf', 'wheel', 'potato', 'boxes', 'role', 'cards']) check(`${k} is used`, seen[k] > 0);
+  /* Every game is reachable in some lesson: as its default, or with Try a different game. */
+  const reach = await tv.evaluate(() => {
+    const out = {};
+    SEJ.lessonsRaw().forEach((l) => ['Warm-up', 'Team Battle', 'Speak'].forEach((round) => {
+      for (let v = 0; v < 8; v++) {
+        const st = SEJ.classPlan(l.code, 12345, { [round]: v }).stages.find((x) => x.round === round);
+        if (st && !out[st.kind]) out[st.kind] = { code: l.code, round, v };
+      }
+    }));
+    return out;
+  });
+  for (const k of ['flash', 'reveal', 'listen', 'memory', 'rain', 'letters', 'matchup', 'quiz', 'riddle', 'odd', 'sort', 'complete', 'order', 'tf', 'wheel', 'potato', 'boxes', 'role', 'cards']) check(`${k} is reachable`, !!reach[k]);
 
   /* 2. Every lesson plays from lobby to podium on the TV by itself. */
   for (const { code } of plans) {
@@ -334,15 +345,23 @@ const check = (name, ok, extra = '') => {
   check('right tap reveals', await tv.evaluate(() => SEJ.classDebug.state.revealed));
 
   /* New games: Memory Match by tapping on the TV, Listen & Choose, Missing Letters, True or False, and changing a game. */
-  const byKind = (kind) => plans.find((p) => p.plan.stages.some((x) => x.kind === kind));
+  /* Opens a lesson and, if needed, uses Try a different game until the round shows this game. */
   const openKind = async (kind) => {
-    const p = byKind(kind);
+    const p = reach[kind];
     await tv.evaluate(() => localStorage.removeItem('sej-class-v1'));
     await tv.goto(`${BASE}/index.html?test=1#/class/${p.code}`);
     await tv.reload();
     await tv.waitForSelector('.cl-lobby');
-    await tv.evaluate((k) => { const d = SEJ.classDebug; d.dispatch({ type: 'start' }); d.dispatch({ type: 'goto', stage: d.getPlan().stages.findIndex((x) => x.kind === k) }); SEJ.$$('.cl-splash').forEach((x) => x.remove()); }, kind);
-    await tv.waitForTimeout(150);
+    await tv.evaluate((x) => {
+      const d = SEJ.classDebug;
+      d.dispatch({ type: 'start' });
+      d.dispatch({ type: 'goto', stage: d.round(x.round) });
+      for (let i = 0; i < 8 && d.getPlan().stages[d.state.stage].kind !== x.kind; i++) d.dispatch({ type: 'change' });
+      SEJ.$$('.cl-splash').forEach((e) => e.remove());
+    }, { ...p, kind });
+    await tv.waitForTimeout(250);
+    await tv.evaluate(() => SEJ.$$('.cl-splash').forEach((e) => e.remove()));
+    check(`${kind} opens`, (await tv.evaluate(() => SEJ.classDebug.getPlan().stages[SEJ.classDebug.state.stage].kind)) === kind);
     return p.code;
   };
   await openKind('memory');

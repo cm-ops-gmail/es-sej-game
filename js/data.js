@@ -46,7 +46,8 @@ window.SEJ_LESSONS = [
      "🏙️|I am from Dhaka.",
      "🏫|I study at School.",
      "🤝|Nice to meet you."
-    ]
+    ],
+    "bn": "এই sentence গুলো এলোমেলো করা আছে। তোমাকে এগুলো সাজাতে হবে।"
    },
    {
     "t": "whack",
@@ -68,7 +69,8 @@ window.SEJ_LESSONS = [
      "I don't like you",
      "I’m not listening to you",
      "This class is useless"
-    ]
+    ],
+    "bn": "তোমার শিক্ষককের সাথে যখন দেখা হবে, তখন যে বাক্যগুলো বলবে, সেগুলোর উপর ক্লিক কর।"
    },
    {
     "t": "quiz",
@@ -98,32 +100,9 @@ window.SEJ_LESSONS = [
        "Bye"
       ],
       "🚪"
-     ],
-     [
-      "What is your name?",
-      "Hi, my name is Robin.",
-      [
-       "Where are you from?"
-      ],
-      "📛"
-     ],
-     [
-      "If you want to talk about age, ask...",
-      "How old are you?",
-      [
-       "Where do you live?"
-      ],
-      "🎂"
-     ],
-     [
-      "If they have pets, ask...",
-      "Do you have any pets?",
-      [
-       "Do you have any brothers or sisters?"
-      ],
-      "🐶"
      ]
-    ]
+    ],
+    "bn": "সঠিক উত্তরটিতে ক্লিক কর"
    }
   ],
   "talk": [
@@ -217,10 +196,11 @@ window.SEJ_LESSONS = [
       "শব্দগুলো একে একে সাজাও",
       "🧠"
      ]
-    ]
+    ],
+    "bn": "সঠিক শব্দ তৈরির জন্য অক্ষরগুলোকে সাজাও"
    },
    {
-    "t": "boxes",
+    "t": "quiz",
     "title": "Who Is That Hero?",
     "items": [
      [
@@ -255,47 +235,19 @@ window.SEJ_LESSONS = [
       ],
       "🔬"
      ]
-    ]
+    ],
+    "bn": "সঠিক উত্তরটিতে ক্লিক কর"
    },
    {
-    "t": "tf",
+    "t": "unjumble",
     "title": "Make Questions",
-    "labels": [
-     "Correct",
-     "Not correct"
-    ],
     "items": [
-     [
-      "What Mathman can do?",
-      false,
-      "🔢"
-     ],
-     [
-      "Who can understand and speak any language?",
-      true,
-      "🗣️"
-     ],
-     [
-      "Who talk can to plants and animals?",
-      false,
-      "🌳"
-     ],
-     [
-      "Who can control any technology or gadgets?",
-      true,
-      "🔬"
-     ],
-     [
-      "What your is favorite color?",
-      false,
-      "🎨"
-     ],
-     [
-      "Why are you happy?",
-      true,
-      "😊"
-     ]
-    ]
+     "🔢|What can Mathman do?",
+     "🗣️|Who can understand and speak any language?",
+     "🌳|Who can talk to plants and animals?",
+     "🔬|Who can control any technology or gadgets?"
+    ],
+    "bn": "শব্দগুলোকে ড্র্যাগ করে সাজিয়ে প্রশ্ন বানাও"
    }
   ],
   "talk": [
@@ -428,7 +380,8 @@ window.SEJ_LESSONS = [
       1,
       "🎒"
      ]
-    ]
+    ],
+    "bn": "এখানে বিভিন্ন activities এর নাম দেয়া আছে। তোমাদের এগুলো থেকে solo activity এবং group activity আলাদা করতে হবে।"
    },
    {
     "t": "unjumble",
@@ -439,41 +392,71 @@ window.SEJ_LESSONS = [
      "🧭|Exploring new things makes life fun.",
      "🧭|Adventurous people love trying new hobbies.",
      "🏄|Surfing is fun on big waves."
-    ]
+    ],
+    "bn": "এখানে কিছু sentence এলোমেলো করা আছে। তোমাদের এগুলো সঠিকভাবে সাজাতে হবে।"
    },
    {
-    "t": "find",
+    "t": "boxes",
     "title": "Hobby Mystery Boxes",
     "items": [
      [
       "You can do this quietly at home or in a library.",
-      "Reading"
+      "Reading",
+      [
+       "Swimming"
+      ],
+      "📖"
      ],
      [
       "You can do this with a guitar, piano, or violin.",
-      "Playing music"
+      "Playing music",
+      [
+       "Reading"
+      ],
+      "🎸"
      ],
      [
       "You often need ingredients like vegetables, spices, and sauces.",
-      "Cooking"
+      "Cooking",
+      [
+       "Photography"
+      ],
+      "🍳"
      ],
      [
       "You use pieces like cards, dice, or tokens.",
-      "Board Games"
+      "Board Games",
+      [
+       "Reading"
+      ],
+      "🎲"
      ],
      [
       "You need good lighting and a steady hand.",
-      "Photography"
+      "Photography",
+      [
+       "Fishing"
+      ],
+      "📷"
      ],
      [
       "This activity is done near a lake, river, or the ocean.",
-      "Fishing"
+      "Fishing",
+      [
+       "Gardening"
+      ],
+      "🎣"
      ],
      [
       "You might dig in the soil and water regularly.",
-      "Gardening"
+      "Gardening",
+      [
+       "Cooking"
+      ],
+      "🌱"
      ]
-    ]
+    ],
+    "bn": "প্রতিটি বক্স ট্যাপ কর এবং যেকোন একটি অপশনে ক্লিক কর"
    }
   ],
   "talk": [
@@ -596,93 +579,74 @@ window.SEJ_LESSONS = [
       ],
       "📺"
      ]
-    ]
-   },
-   {
-    "t": "whack",
-    "title": "Morning Time",
-    "prompt": "Tap only the correct sentences!",
-    "good": [
-     "I brush my teeth in the morning.",
-     "I eat my breakfast in the morning.",
-     "I go to the school with my mother.",
-     "I wake up in the morning.",
-     "I get ready for school."
     ],
-    "bad": [
-     "I my brush teeth in the morning.",
-     "I to go the school with my mother.",
-     "I ready get for school."
-    ]
+    "bn": "খালি স্থানে উপযুক্ত শব্দটি টেনে নিয়ে বসাও"
    },
    {
-    "t": "quiz",
-    "title": "When Do You Do It?",
+    "t": "unjumble",
+    "title": "Morning Time",
     "items": [
+     "🦷|I brush my teeth in the morning.",
+     "🍳|I eat my breakfast in the morning.",
+     "🏫|I go to the school with my mother."
+    ],
+    "bn": "এলোমেলো শব্দগুলো পুনরায় সাজিয়ে একটি সঠিক বাক্য তৈরি কর"
+   },
+   {
+    "t": "sort",
+    "title": "When Do You Do It?",
+    "groups": [
+     {
+      "n": "Morning",
+      "e": "🌅"
+     },
+     {
+      "n": "Afternoon",
+      "e": "☀️"
+     },
+     {
+      "n": "Night",
+      "e": "🌙"
+     }
+    ],
+    "cards": [
      [
-      "Where does “Wake up” go?",
-      "Morning",
-      [
-       "Afternoon",
-       "Night"
-      ],
+      "Wake up",
+      0,
       "⏰"
      ],
      [
-      "Where does “Breakfast” go?",
-      "Morning",
-      [
-       "Afternoon",
-       "Night"
-      ],
+      "Breakfast",
+      0,
       "🍳"
      ],
      [
-      "Where does “Brushing teeth” go?",
-      "Morning",
-      [
-       "Afternoon",
-       "Night"
-      ],
+      "Brushing teeth",
+      0,
       "🦷"
      ],
      [
-      "Where does “Lunch” go?",
-      "Afternoon",
-      [
-       "Morning",
-       "Night"
-      ],
+      "Lunch",
+      1,
       "🍛"
      ],
      [
-      "Where does “Play” go?",
-      "Afternoon",
-      [
-       "Morning",
-       "Night"
-      ],
+      "Play",
+      1,
       "⚽"
      ],
      [
-      "Where does “Dinner” go?",
-      "Night",
-      [
-       "Morning",
-       "Afternoon"
-      ],
+      "Dinner",
+      2,
       "🍽️"
      ],
      [
-      "Where does “Sleep” go?",
-      "Night",
-      [
-       "Morning",
-       "Afternoon"
-      ],
+      "Sleep",
+      2,
       "😴"
      ]
-    ]
+    ],
+    "bn": "এখানে বিভিন্ন ধরনের Activity-এর নাম দেওয়া আছে। কোনটি আমরা কোন সময়ে করি সে অনু্যায়ী সাজাও।"
    }
   ],
   "talk": [
@@ -762,38 +726,23 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "match",
+    "t": "find",
     "title": "Kitchen Balloon Pop",
-    "pairs": [
+    "items": [
      [
-      "Measuring cups",
-      "help us measure ingredients"
+      "help us measure ingredients",
+      "Measuring cups"
      ],
      [
-      "Cutting boards",
-      "a surface where we cut vegetables"
+      "a surface where we cut vegetables",
+      "Cutting boards"
      ],
      [
-      "Spoons",
-      "we use for stirring"
-     ],
-     [
-      "Forks",
-      "we use them to eat solid foods like vegetables, meat or biryani"
-     ],
-     [
-      "Knife",
-      "we use it for cutting and slicing"
-     ],
-     [
-      "Breakfast",
-      "the first meal of the day"
-     ],
-     [
-      "Dinner",
-      "the last meal of the day"
+      "we use for stirring",
+      "Spoons"
      ]
-    ]
+    ],
+    "bn": "সঠিক উত্তরটি মিলাও এবং সমস্ত উত্তর চলে না যাওয়া পর্যন্ত পুনরাবৃত্তি কর"
    },
    {
     "t": "pair",
@@ -862,7 +811,8 @@ window.SEJ_LESSONS = [
       "☕",
       "🧈"
      ]
-    ]
+    ],
+    "bn": "কার্ড দুটি একসঙ্গে সম্পর্কিত কিনা তা নির্ধারণ কর"
    },
    {
     "t": "blank",
@@ -903,7 +853,8 @@ window.SEJ_LESSONS = [
       ],
       "📋"
      ]
-    ]
+    ],
+    "bn": "সঠিক শব্দ টেনে এনে খালি স্থানে বসাও"
    }
   ],
   "talk": [
@@ -994,77 +945,44 @@ window.SEJ_LESSONS = [
       "upcoming",
       "যা শিগগিরই হবে",
       "⏭️"
-     ],
-     [
-      "scheduled",
-      "নির্দিষ্ট সময়ে পরিকল্পিত",
-      "📅"
-     ],
-     [
-      "planned",
-      "আগেই ঠিক করা",
-      "📝"
-     ],
-     [
-      "expected",
-      "যা হওয়ার সম্ভাবনা আছে",
-      "🌧️"
      ]
-    ]
+    ],
+    "bn": "গেইমের শুরুতেই তোমাকে একটি শব্দ শুনানো হবে। এবং নিচে স্ক্রিনে কিছু Letters আসবে। Letters গুলোকে Drag করে শব্দটির সঠিক বানান তৈরি কর।"
    },
    {
-    "t": "quiz",
+    "t": "blank",
     "title": "What Will Happen?",
     "items": [
      [
-      "I ___ go to the store tomorrow.",
-      "will",
+      "I {will} go to the store tomorrow.",
       [
        "was"
       ],
       "🏪"
      ],
      [
-      "She will ___ her friend next week.",
-      "visit",
+      "She will {visit} her friend next week.",
       [
        "visited"
       ],
       "👫"
      ],
      [
-      "They are ___ to watch a movie tonight.",
-      "going",
+      "They are {going} to watch a movie tonight.",
       [
        "go"
       ],
       "🎬"
      ],
      [
-      "The exam is ___",
-      "approaching",
+      "The exam is {approaching}",
       [
        "approach"
       ],
       "📝"
-     ],
-     [
-      "First, I will ___ up early at 7 AM.",
-      "wake",
-      [
-       "woke"
-      ],
-      "⏰"
-     ],
-     [
-      "I will ___ very busy this weekend.",
-      "be",
-      [
-       "was"
-      ],
-      "📚"
      ]
-    ]
+    ],
+    "bn": "সঠিক উত্তরটি drag করে শূন্য স্থানে বসাও"
    },
    {
     "t": "plane",
@@ -1110,7 +1028,8 @@ window.SEJ_LESSONS = [
        "gone"
       ]
      ]
-    ]
+    ],
+    "bn": "প্রথমেই স্ক্রিনের নিচে ভেসে ওঠা Sentence টি পড় এবং খালি ঘরে বসবে এমন উত্তরটিতে প্লেনটি উড়িয়ে নিয়ে যাও। আবশ্যই ভুল উত্তরগুলো এড়িয়ে চলবে।"
    }
   ],
   "talk": [
@@ -1234,7 +1153,8 @@ window.SEJ_LESSONS = [
       "পছন্দ করা",
       "⭐"
      ]
-    ]
+    ],
+    "bn": "গেইমের শুরুতেই তোমাকে একটি শব্দ শুনানো হবে। এবং স্ক্রিনে কিছু Letters আসবে। Letters গুলোকে Drag করে শব্দটির সঠিক বানান তৈরি কর।"
    },
    {
     "t": "sort",
@@ -1300,42 +1220,20 @@ window.SEJ_LESSONS = [
       1,
       "🌳"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে ভেসে ওঠা Sentence গুলো মনোযোগ সহকারে পড়ো। এগুলোর মধ্যে কোনটি Opinion এবং কোনটি Statement তা নির্ধারন করে সঠিক গ্রুপে ড্রাগ করে আনো।।"
    },
    {
-    "t": "tf",
+    "t": "unjumble",
     "title": "Disagree Politely",
-    "labels": [
-     "Correct",
-     "Not correct"
-    ],
     "items": [
-     [
-      "I your see point, but I think differently.",
-      false,
-      "🤝"
-     ],
-     [
-      "I understand what you're saying, but can I explain my side?",
-      true,
-      "💡"
-     ],
-     [
-      "I agree, don’t but I respect your opinion.",
-      false,
-      "🙂"
-     ],
-     [
-      "That’s a good idea, but what if we try this instead?",
-      true,
-      "💡"
-     ],
-     [
-      "Let’s a find way that works for both of us.",
-      false,
-      "🤗"
-     ]
-    ]
+     "🤝|I see your point, but I think differently.",
+     "💡|I understand what you're saying, but can I explain my side?",
+     "🙂|I don’t agree, but I respect your opinion.",
+     "💡|That’s a good idea, but what if we try this instead?",
+     "🤗|Let’s find a way that works for both of us."
+    ],
+    "bn": "স্ক্রিনের শব্দগুলোকে ড্র্যাগ করে সঠিকভাবে সাজাও।"
    }
   ],
   "talk": [
@@ -1410,38 +1308,46 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "match",
+    "t": "spell",
     "title": "School Spelling Bee",
-    "pairs": [
+    "items": [
      [
       "curriculum",
-      "পাঠ্যক্রম"
+      "পাঠ্যক্রম",
+      "📚"
      ],
      [
       "discipline",
-      "শৃঙ্খলা"
+      "শৃঙ্খলা",
+      "🧍"
      ],
      [
       "orientation",
-      "পরিচিতি অনুষ্ঠান"
+      "পরিচিতি অনুষ্ঠান",
+      "🎤"
      ],
      [
       "transcript",
-      "সনদপত্র / মার্কশীট"
+      "সনদপত্র / মার্কশীট",
+      "📄"
      ],
      [
       "canteen",
-      "Where we buy food at school"
+      "Where we buy food at school",
+      "🍱"
      ],
      [
       "library",
-      "Quiet and full of books"
+      "Quiet and full of books",
+      "📖"
      ],
      [
       "classroom",
-      "Where we have our lessons"
+      "Where we have our lessons",
+      "🏫"
      ]
-    ]
+    ],
+    "bn": "তোমাকে একটি শব্দ শোনানো হবে। শব্দটি মনোযোগ দিয়ে শোন। এবং স্ক্রিনে থাকা অক্ষরগুলো টেনে নিয়ে এর সঠিক বানানটি সাজিয়ে লিখো।"
    },
    {
     "t": "blank",
@@ -1517,22 +1423,55 @@ window.SEJ_LESSONS = [
       ],
       "🔬"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে একটি খালিঘর সহ বাক্য আসবে। বাক্যটি মনোযোগ সহকারে পড়বে। খালি স্থানে Have অথবা Has টেনে এনে বসিয়ে বাক্যটি সাবমিট করবে।"
    },
    {
-    "t": "whack",
+    "t": "sort",
     "title": "There Is or There Are?",
-    "prompt": "Tap only the There is ones!",
-    "good": [
-     "a library in my school.",
-     "a big playground.",
-     "some water in the bottle."
+    "groups": [
+     {
+      "n": "There is",
+      "e": "1️⃣"
+     },
+     {
+      "n": "There are",
+      "e": "🔢"
+     }
     ],
-    "bad": [
-     "two canteens in my school.",
-     "many classrooms in my school.",
-     "a lot of books in the library."
-    ]
+    "cards": [
+     [
+      "a library in my school.",
+      0,
+      "📚"
+     ],
+     [
+      "a big playground.",
+      0,
+      "⚽"
+     ],
+     [
+      "some water in the bottle.",
+      0,
+      "💧"
+     ],
+     [
+      "two canteens in my school.",
+      1,
+      "🍱"
+     ],
+     [
+      "many classrooms in my school.",
+      1,
+      "🏫"
+     ],
+     [
+      "a lot of books in the library.",
+      1,
+      "📖"
+     ]
+    ],
+    "bn": "স্ক্রিনে কিছু অসম্পূর্ন বাক্য আসবে। বাক্যগুলো পড়ো। কোনটি There is দিয়ে শুরু করবে এবং কোনটি There are দিয়ে শুরু করবে, সেই অনু্যায়ী টেনে এনে দুটি গ্রুপে সাজাও।"
    }
   ],
   "talk": [
@@ -1597,156 +1536,113 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "quiz",
+    "t": "sort",
     "title": "Classroom or Living Room?",
-    "items": [
+    "groups": [
+     {
+      "n": "Classroom Object",
+      "e": "🏫"
+     },
+     {
+      "n": "Living Room Object",
+      "e": "🛋️"
+     }
+    ],
+    "cards": [
      [
-      "Where does “Eraser” go?",
-      "Classroom Object",
-      [
-       "Living Room Object"
-      ],
+      "Eraser",
+      0,
       "🧽"
      ],
      [
-      "Where does “Pen” go?",
-      "Classroom Object",
-      [
-       "Living Room Object"
-      ],
+      "Pen",
+      0,
       "🖊️"
      ],
      [
-      "Where does “Pencil” go?",
-      "Classroom Object",
-      [
-       "Living Room Object"
-      ],
+      "Pencil",
+      0,
       "✏️"
      ],
      [
-      "Where does “Notebook” go?",
-      "Classroom Object",
-      [
-       "Living Room Object"
-      ],
+      "Notebook",
+      0,
       "📓"
      ],
      [
-      "Where does “Whiteboard” go?",
-      "Classroom Object",
-      [
-       "Living Room Object"
-      ],
+      "Whiteboard",
+      0,
       "⬜"
      ],
      [
-      "Where does “Blackboard” go?",
-      "Classroom Object",
-      [
-       "Living Room Object"
-      ],
+      "Blackboard",
+      0,
       "⬛"
      ],
      [
-      "Where does “Sofa” go?",
-      "Living Room Object",
-      [
-       "Classroom Object"
-      ],
+      "Sofa",
+      1,
       "🛋️"
      ],
      [
-      "Where does “Armchair” go?",
-      "Living Room Object",
-      [
-       "Classroom Object"
-      ],
+      "Armchair",
+      1,
       "💺"
      ],
      [
-      "Where does “Tea Table” go?",
-      "Living Room Object",
-      [
-       "Classroom Object"
-      ],
+      "Tea Table",
+      1,
       "☕"
      ],
      [
-      "Where does “TV” go?",
-      "Living Room Object",
-      [
-       "Classroom Object"
-      ],
+      "TV",
+      1,
       "📺"
      ],
      [
-      "Where does “Carpet” go?",
-      "Living Room Object",
-      [
-       "Classroom Object"
-      ],
+      "Carpet",
+      1,
       "🟥"
      ],
      [
-      "Where does “Curtains” go?",
-      "Living Room Object",
-      [
-       "Classroom Object"
-      ],
+      "Curtains",
+      1,
       "🌤️"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে ভেসে থাকা Object গুলোর মধ্যে কোনটি Classroom Object এবং কোনটি Living Room Object তা চিহ্নিত করো। এবং সঠিক গ্রুপে ড্রাগ করে নিয়ে সাজাও।"
    },
    {
-    "t": "boxes",
+    "t": "match",
     "title": "Finish the Sentence",
-    "items": [
+    "pairs": [
      [
-      "writing and drawing",
       "A pencil is used for",
-      [
-       "Pencils come in"
-      ],
-      ""
+      "writing and drawing"
      ],
      [
-      "different sizes and colors",
       "Pencils come in",
-      [
-       "Notebooks can have"
-      ],
-      ""
+      "different sizes and colors"
      ],
      [
-      "and erase mistakes easily",
       "A pencil helps us write",
-      [
-       "A notebook is made of"
-      ],
-      ""
+      "and erase mistakes easily"
      ],
      [
-      "paper and a cover",
       "A notebook is made of",
-      [
-       "A pencil helps us write"
-      ],
-      ""
+      "paper and a cover"
      ],
      [
-      "hardcovers or softcovers",
       "Notebooks can have",
-      [
-       "A pencil is used for"
-      ],
-      ""
+      "hardcovers or softcovers"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে ভেসে থাকা শব্দগুলো পড় এবং ড্রাগ করে এনে Incomplete Sentence গুলোকে Complete করো।"
    },
    {
-    "t": "spell",
+    "t": "anagram",
     "title": "School Bag Scramble",
+    "audio": true,
     "items": [
      [
       "scissors",
@@ -1783,7 +1679,8 @@ window.SEJ_LESSONS = [
       "It marks words in a bright color",
       "🖊️"
      ]
-    ]
+    ],
+    "bn": "শুরুতেই তোমাদের একটি শব্দ শোনানো হবে। শব্দটি মনোযোগ দিয়ে শোনো। এবং স্ক্রিনে ভেসে থাকা অক্ষরগুলো ড্রাগ করে শব্দটির সঠিক বানান করে সাবমিট করো।"
    }
   ],
   "talk": [
@@ -1915,37 +1812,31 @@ window.SEJ_LESSONS = [
       1,
       ""
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে ভেসে থাকা Sentence গুলোর মধ্যে কোনটি Polite Sentence এবং কোনটি Impolite Sentence তা চিহ্নিত করো এবং সেই অনুযায়ী ড্রাগ করে সঠিক গ্রুপে নিয়ে যাও।"
    },
    {
-    "t": "find",
+    "t": "match",
     "title": "Magic Words",
-    "items": [
+    "pairs": [
      [
-      "shows appreciation",
-      "Thank you"
+      "Thank you",
+      "shows appreciation"
      ],
      [
-      "Used to respond politely when someone thanks you",
-      "You're welcome"
+      "You're welcome",
+      "Used to respond politely when someone thanks you"
      ],
      [
-      "Used to make a request politely",
-      "Please"
+      "Please",
+      "Used to make a request politely"
      ],
      [
-      "Used to get attention or apologize politely.",
-      "Excuse me"
-     ],
-     [
-      "Ask for permission politely",
-      "May I"
-     ],
-     [
-      "Advice/Suggestion",
-      "Should"
+      "Excuse me",
+      "Used to get attention or apologize politely."
      ]
-    ]
+    ],
+    "bn": "Key words গুলোকে ড্রাগ and ড্রপ করে এদের অর্থের সাথে মেলাও।"
    },
    {
     "t": "unjumble",
@@ -2037,70 +1928,105 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "whack",
+    "t": "sort",
     "title": "Regular or Irregular?",
-    "prompt": "Tap only the Regular Actions ones!",
-    "good": [
-     "Brushing your teeth",
-     "Eating breakfast",
-     "Going to school",
-     "Completing homework",
-     "Having lunch",
-     "Taking a shower",
-     "Having Dinner"
+    "groups": [
+     {
+      "n": "Regular Actions",
+      "e": "🔁"
+     },
+     {
+      "n": "Irregular Actions",
+      "e": "🎈"
+     }
     ],
-    "bad": [
-     "Attending a birthday party",
-     "Going on a picnic",
-     "Visiting a zoo",
-     "Going to a doctor for checkup",
-     "Going on a forest camping",
-     "Attending a family dinner party",
-     "Going on a vacation"
-    ]
-   },
-   {
-    "t": "tf",
-    "title": "Step by Step",
-    "labels": [
-     "Correct",
-     "Not correct"
-    ],
-    "items": [
+    "cards": [
      [
-      "In morning, the I wake up and brush my teeth.",
-      false,
+      "Brushing your teeth",
+      0,
       "🦷"
      ],
      [
-      "At noon, I have lunch with my classmates.",
-      true,
-      "🏫"
-     ],
-     [
-      "After I lunch, play with my friends.",
-      false,
-      "🍛"
-     ],
-     [
-      "Finally, I go home.",
-      true,
-      "🏠"
-     ],
-     [
-      "Next, eat I my breakfast.",
-      false,
+      "Eating breakfast",
+      0,
       "🍳"
      ],
      [
-      "Then, I go to school with my mother.",
-      true,
+      "Going to school",
+      0,
       "🏫"
+     ],
+     [
+      "Completing homework",
+      0,
+      "📝"
+     ],
+     [
+      "Having lunch",
+      0,
+      "🍛"
+     ],
+     [
+      "Taking a shower",
+      0,
+      "🚿"
+     ],
+     [
+      "Having Dinner",
+      0,
+      "🍽️"
+     ],
+     [
+      "Attending a birthday party",
+      1,
+      "🎂"
+     ],
+     [
+      "Going on a picnic",
+      1,
+      "🧺"
+     ],
+     [
+      "Visiting a zoo",
+      1,
+      "🦁"
+     ],
+     [
+      "Going to a doctor for checkup",
+      1,
+      "🩺"
+     ],
+     [
+      "Going on a forest camping",
+      1,
+      "🏕️"
+     ],
+     [
+      "Attending a family dinner party",
+      1,
+      "🥘"
+     ],
+     [
+      "Going on a vacation",
+      1,
+      "🏖️"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে তোমাদের কিছু Actions দেখানো হবে। Actions গুলোর মধ্যে কোনটি Regular এবং কোনটি Irregular তা আলাদা করে সঠিক গ্রুপে ড্রাগ করে নিয়ে সাজিয়ে সাবমিট করো।"
    },
    {
-    "t": "anagram",
+    "t": "unjumble",
+    "title": "Step by Step",
+    "items": [
+     "🦷|In the morning, I wake up and brush my teeth.",
+     "🏫|At noon, I have lunch with my classmates.",
+     "🍛|After lunch, I play with my friends.",
+     "🏠|Finally, I go home."
+    ],
+    "bn": "স্ক্রিনে কিছু Words এলোমেলো অবস্থায় থাকবে। তোমাকে এগুলো ড্রাগ করে Sentence সাজাতে হবে।"
+   },
+   {
+    "t": "spell",
     "title": "Routine Spelling",
     "items": [
      [
@@ -2128,7 +2054,8 @@ window.SEJ_LESSONS = [
       "To take part in an activity",
       "🏃"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে কিছু এলোমেলো Letter আসবে এবং তোমাকে একটি Word শোনানো হবে। এবার Letter গুলোকে উপরে ড্র্যাগ করে Word-টির Spelling সাজাও। তারপর সাবমিট করো।"
    }
   ],
   "talk": [
@@ -2246,7 +2173,8 @@ window.SEJ_LESSONS = [
       "👫",
       "Hanging Out"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে কিছু ছবি এবং After School Activities-এর নাম আসবে। ছবিগুলো ভালোভাবে দেখো। তারপর Activities গুলোকে ড্র্যাগ করে এনে ছবির সাথে Match Up করো।"
    },
    {
     "t": "unjumble",
@@ -2258,53 +2186,49 @@ window.SEJ_LESSONS = [
      "⚽|Would you like to play football with me?",
      "🌳|How about we go to the park?",
      "🎮|I was wondering if you’d like to play video games with me?"
-    ]
+    ],
+    "bn": "স্ক্রিনে কিছু এলোমেলো Word আসবে। Word গুলো সঠিক ক্রমে ড্র্যাগ করে একটি Sentence সাজাও।"
    },
    {
-    "t": "sort",
+    "t": "tf",
     "title": "Formal or Informal?",
-    "groups": [
-     {
-      "n": "Formal",
-      "e": "✅"
-     },
-     {
-      "n": "Informal",
-      "e": "❌"
-     }
+    "labels": [
+     "Formal",
+     "Informal"
     ],
-    "cards": [
+    "items": [
      [
       "Do you want to read some books?",
-      1,
+      false,
       "📚"
      ],
      [
       "Why don’t we go for a bike ride?",
-      1,
+      false,
       "🚲"
      ],
      [
       "Let’s practice some music!",
-      1,
+      false,
       "🎹"
      ],
      [
       "Would you like to play video games?",
-      0,
+      true,
       "🎮"
      ],
      [
       "How about cleaning the house today?",
-      0,
+      true,
       "🧹"
      ],
      [
       "I was wondering if you’d like to watch TV?",
-      0,
+      true,
       "📺"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে কিছু Invitation Phrase ও Pictures দ্রুতগতিতে আসবে। সময় শেষ হওয়ার আগে Phrase টি Formal নাকি Informal তা Identify করো।"
    }
   ],
   "talk": [
@@ -2389,30 +2313,31 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "find",
+    "t": "match",
     "title": "Room Match",
-    "items": [
+    "pairs": [
      [
-      "We sleep here",
-      "Bedroom"
+      "🛏️ Bedroom",
+      "We sleep here"
      ],
      [
-      "We cook food here",
-      "Kitchen"
+      "🍳 Kitchen",
+      "We cook food here"
      ],
      [
-      "We take a bath here",
-      "Bathroom"
+      "🛁 Bathroom",
+      "We take a bath here"
      ],
      [
-      "We spend time with family here",
-      "Living Room"
+      "🛋️ Living Room",
+      "We spend time with family here"
      ],
      [
-      "We eat with family here",
-      "Dining Room"
+      "🍽️ Dining Room",
+      "We eat with family here"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে, এলোমেলোভাবে একটি বাড়ির বিভিন্ন অংশ এবং সেই অংশে আমরা কি করি তার definition লেখা আসবে। বাড়ির অংশগুলোকে ড্র্যাগ করে definition-এর সাথে মেলাও।"
    },
    {
     "t": "spell",
@@ -2458,7 +2383,8 @@ window.SEJ_LESSONS = [
       "ঐতিহ্যবাহী",
       "🏺"
      ]
-    ]
+    ],
+    "bn": "তোমাকে একটি করে শব্দ শোনানো হবে। এবং স্ক্রিনে কিছু এলোমেলো Letters আসবে। Letter গুলোকে ড্র্যাগ করে শব্দটির বানান সাজিয়ে Submit করবে।"
    },
    {
     "t": "tf",
@@ -2514,7 +2440,8 @@ window.SEJ_LESSONS = [
       false,
       "🛣️"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে কিছু Sentences দ্রুত ভেসে আসবে! সময় শেষ হওয়ার আগে Sentence টি True নাকি False তা নির্ধারণ করে ক্লিক করো।"
    }
   ],
   "talk": [
@@ -2594,7 +2521,7 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "anagram",
+    "t": "spell",
     "title": "Room Word Spelling",
     "items": [
      [
@@ -2642,61 +2569,39 @@ window.SEJ_LESSONS = [
       "সহজ এবং কম জিনিসপত্রে সাজানো",
       "⚪"
      ]
-    ]
+    ],
+    "bn": "তোমাকে একটি করে শব্দ শোনানো হবে। এবং স্ক্রিনে কিছু এলোমেলো Letters আসবে। Letters গুলো ড্র্যাগ করে তোমাকে শব্দটির সঠিক বানান তৈরি করে সাবমিট করতে হবে।"
    },
    {
-    "t": "boxes",
+    "t": "match",
     "title": "Chores Match",
-    "items": [
+    "pairs": [
      [
-      "Washing clothes",
-      "Laundry",
-      [
-       "Dishwashing"
-      ],
-      "🧺"
+      "🧺 Laundry",
+      "Washing clothes"
      ],
      [
-      "Cleaning plates and cups",
-      "Dishwashing",
-      [
-       "Laundry"
-      ],
-      "🍽️"
+      "🍽️ Dishwashing",
+      "Cleaning plates and cups"
      ],
      [
-      "Using a broom to clean floors",
-      "Sweeping",
-      [
-       "Laundry"
-      ],
-      "🧹"
+      "🧹 Sweeping",
+      "Using a broom to clean floors"
      ],
      [
-      "Wiping away dust",
-      "Dusting",
-      [
-       "Laundry"
-      ],
-      "✨"
+      "✨ Dusting",
+      "Wiping away dust"
      ],
      [
-      "Cleaning floors with water",
-      "Mopping",
-      [
-       "Laundry"
-      ],
-      "💧"
+      "💧 Mopping",
+      "Cleaning floors with water"
      ],
      [
-      "Buying food and essentials",
-      "Grocery Shopping",
-      [
-       "Laundry"
-      ],
-      "🛒"
+      "🛒 Grocery Shopping",
+      "Buying food and essentials"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনের একপাশে কিছু Words আসবে এবং অন্যপাশে কিছু ছবি Definition সহ আসবে। তোমাকে Words গুলোকে ড্র্যাগ করে এর Definition এর সাথে মেলাতে হবে।"
    },
    {
     "t": "blank",
@@ -2737,7 +2642,8 @@ window.SEJ_LESSONS = [
       ],
       "🍳"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে একটি করে Sentence আসবে। যেখানে একটি শূন্যস্থান থাকবে। উপরে থাকা ২টি Option থেকে সঠিক Option টি ড্র্যাগ করে এনে বসিয়ে Submit করো।"
    }
   ],
   "talk": [
@@ -2812,34 +2718,41 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "match",
+    "t": "spell",
     "title": "Plan Words Spelling",
-    "pairs": [
+    "items": [
      [
       "join",
-      "যোগ দেওয়া"
+      "যোগ দেওয়া",
+      "🙌"
      ],
      [
       "visit",
-      "দেখা করা"
+      "দেখা করা",
+      "🚪"
      ],
      [
       "celebrate",
-      "উদযাপন করা"
+      "উদযাপন করা",
+      "🎉"
      ],
      [
       "attend",
-      "উপস্থিত থাকা"
+      "উপস্থিত থাকা",
+      "✋"
      ],
      [
       "plan",
-      "পরিকল্পনা করা"
+      "পরিকল্পনা করা",
+      "📝"
      ],
      [
       "explore",
-      "ঘুরে দেখা"
+      "ঘুরে দেখা",
+      "🧭"
      ]
-    ]
+    ],
+    "bn": "প্রথমে তোমাকে একটি Word শোনানো হবে। Word টি মনোযোগ দিয়ে শুনবে। এবার স্ক্রিনের নিচে থাকা এলোমেলো Letter গুলো ড্র্যাগ করে এনে শব্দটির সঠিক বানান সাজাও।"
    },
    {
     "t": "quiz",
@@ -2886,7 +2799,8 @@ window.SEJ_LESSONS = [
       ],
       "📅"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে একটি করে Question আসবে এবং ২টি Answer Option থাকবে। তোমাকে নির্ধারিত সময়ের মধ্যে সঠিক Answer টিতে ক্লিক করে সাবমিট করতে হবে।"
    },
    {
     "t": "unjumble",
@@ -2897,7 +2811,8 @@ window.SEJ_LESSONS = [
      "🧺|Shall we go for a picnic this Saturday?",
      "🎂|Would you like to come with me to the party on Friday?",
      "🎂|I would love to invite you to my birthday party."
-    ]
+    ],
+    "bn": "স্ক্রিনে কিছু Words এলোমেলো থাকবে! তুমি Words গুলোকে ড্র্যাগ করে একটি Sentence সাজাও।"
    }
   ],
   "talk": [
@@ -3015,52 +2930,22 @@ window.SEJ_LESSONS = [
       "একসাথে",
       "🤗"
      ]
-    ]
+    ],
+    "bn": "প্রথমে তোমাকে একটি শব্দ শোনানো হবে এবং স্ক্রিনে কিছু এলোমেলো Letter আসবে। Letter গুলোকে উপরে ড্র্যাগ করে এনে শব্দটির Spelling সাজাও।"
    },
    {
-    "t": "tf",
+    "t": "unjumble",
     "title": "Family Sentences",
-    "labels": [
-     "Correct",
-     "Not correct"
-    ],
     "items": [
-     [
-      "I my love family.",
-      false,
-      "❤️"
-     ],
-     [
-      "My grandfather stays with us.",
-      true,
-      "👴"
-     ],
-     [
-      "I one have elder brother and one younger sister.",
-      false,
-      "👧"
-     ],
-     [
-      "I’m the middle child.",
-      true,
-      "🧒"
-     ],
-     [
-      "We together live in a small apartment in Dhaka.",
-      false,
-      "🏙️"
-     ],
-     [
-      "In our family, we support each other.",
-      true,
-      "❤️"
-     ],
-     [
-      "We a spend lot of quality time together.",
-      false,
-      "🤝"
-     ]
-    ]
+     "❤️|I love my family.",
+     "👴|My grandfather stays with us.",
+     "👧|I have one elder brother and one younger sister.",
+     "🧒|I’m the middle child.",
+     "🏙️|We live together in a small apartment in Dhaka.",
+     "❤️|In our family, we support each other.",
+     "🤝|We spend a lot of quality time together."
+    ],
+    "bn": "স্ক্রিনে কিছু এলোমেলো Word আসবে। Word গুলোকে ড্র্যাগ করে একটি Sentence সাজাও।"
    },
    {
     "t": "blank",
@@ -3101,7 +2986,8 @@ window.SEJ_LESSONS = [
       ],
       "🧹"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে কিছু খালিঘর সহ Sentence আসবে। Sentence এর উপরে দুটি Option থাকবে। তোমাকে সঠিক Option টি ড্র্যাগ করে এনে খালি ঘরে বসিয়ে সাবমিট করতে হবে।"
    }
   ],
   "talk": [
@@ -3186,38 +3072,39 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "find",
+    "t": "match",
     "title": "Toy Words",
-    "items": [
+    "pairs": [
      [
-      "Feels gentle, like a pillow.",
-      "Soft"
+      "Soft",
+      "Feels gentle, like a pillow."
      ],
      [
-      "Full of bright colors, like a rainbow.",
-      "Colorful"
+      "Colorful",
+      "Full of bright colors, like a rainbow."
      ],
      [
-      "Large in size, like an elephant.",
-      "Big"
+      "Big",
+      "Large in size, like an elephant."
      ],
      [
-      "Tiny, like a mouse.",
-      "Small"
+      "Small",
+      "Tiny, like a mouse."
      ],
      [
-      "Makes you happy, like playing games.",
-      "Fun"
+      "Fun",
+      "Makes you happy, like playing games."
      ],
      [
-      "Bright and reflects light, like a mirror.",
-      "Shiny"
+      "Shiny",
+      "Bright and reflects light, like a mirror."
      ],
      [
-      "A strong sound, like thunder.",
-      "Loud"
+      "Loud",
+      "A strong sound, like thunder."
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে কিছু Keywords আসবে এবং পাশাপাশি তাদের Definitions. তোমাকে Keyword গুলো ড্র্যাগ করে এর সঠিক Definition এর পাশে বসাতে হবে।"
    },
    {
     "t": "sort",
@@ -3293,7 +3180,8 @@ window.SEJ_LESSONS = [
       1,
       "🚁"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে ছবিসহ কিছু Item-এর নাম আসবে। এদের মধ্যে কোনগুলো Toys এবং কোনগুলো Machines তা Identify করো। এবার তুমি Item গুলোকে ড্র্যাগ করে নির্ধারিত গ্রুপে নিয়ে যাও।"
    },
    {
     "t": "anagram",
@@ -3325,7 +3213,8 @@ window.SEJ_LESSONS = [
       "সৃষ্টি করা",
       "🎨"
      ]
-    ]
+    ],
+    "bn": "তোমাকে একটি শব্দ শোনানো হবে এবং স্ক্রিনে কিছু Letter থাকবে। Letter গুলোকে শূন্যস্থানে ড্র্যাগ করে, শব্দটির Spelling সাজাও।"
    }
   ],
   "talk": [
@@ -3397,32 +3286,105 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "whack",
+    "t": "sort",
     "title": "Pet or Wild?",
-    "prompt": "Tap only the Pet Animals ones!",
-    "good": [
-     "Dog",
-     "Cat",
-     "Goldfish",
-     "Hamster",
-     "Guinea Pig",
-     "Rabbit",
-     "Parrot",
-     "Canary"
+    "groups": [
+     {
+      "n": "Pet Animals",
+      "e": "🏠"
+     },
+     {
+      "n": "Wild Animals",
+      "e": "🌴"
+     }
     ],
-    "bad": [
-     "Bear",
-     "Giraffe",
-     "Crocodile",
-     "Fox",
-     "Lion",
-     "Tiger",
-     "Rhinoceros",
-     "Hippopotamus"
-    ]
+    "cards": [
+     [
+      "Dog",
+      0,
+      "🐕"
+     ],
+     [
+      "Cat",
+      0,
+      "🐈"
+     ],
+     [
+      "Goldfish",
+      0,
+      "🐠"
+     ],
+     [
+      "Hamster",
+      0,
+      "🐹"
+     ],
+     [
+      "Guinea Pig",
+      0,
+      "🐹"
+     ],
+     [
+      "Rabbit",
+      0,
+      "🐇"
+     ],
+     [
+      "Parrot",
+      0,
+      "🦜"
+     ],
+     [
+      "Canary",
+      0,
+      "🐤"
+     ],
+     [
+      "Bear",
+      1,
+      "🐻"
+     ],
+     [
+      "Giraffe",
+      1,
+      "🦒"
+     ],
+     [
+      "Crocodile",
+      1,
+      "🐊"
+     ],
+     [
+      "Fox",
+      1,
+      "🦊"
+     ],
+     [
+      "Lion",
+      1,
+      "🦁"
+     ],
+     [
+      "Tiger",
+      1,
+      "🐅"
+     ],
+     [
+      "Rhinoceros",
+      1,
+      "🦏"
+     ],
+     [
+      "Hippopotamus",
+      1,
+      "🦛"
+     ]
+    ],
+    "bn": "স্ক্রিনে তোমাদের কিছু Animals দেখানো হবে। এদের মধ্যে কিছু আমরা আমাদের বাড়িতে Pet হিসেবে পালি। কিছু Jungle-এ দেখা যায়। এবার এদের ড্র্যাগ করে আলাদা গ্রুপে ভাগ করো"
    },
    {
-    "t": "boxes",
+    "t": "quiz",
+    "show": true,
     "title": "Guess the Animal!",
     "items": [
      [
@@ -3495,37 +3457,46 @@ window.SEJ_LESSONS = [
       ],
       "🧊"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে একটি করে clue দেখানো হবে, যা দিয়ে একটি প্রাণীকে বোঝানো হবে। এরপর তোমার সামনে চারটি Option থাকবে। নির্ধারিত সময়ের মধ্যে সঠিক Option-এ ক্লিক করবে।"
    },
    {
-    "t": "match",
+    "t": "anagram",
     "title": "Animal Scramble",
-    "pairs": [
+    "audio": true,
+    "items": [
      [
       "hippopotamus",
-      "জলহস্তী"
+      "জলহস্তী",
+      "🦛"
      ],
      [
       "orangutan",
-      "A big orange ape"
+      "A big orange ape",
+      "🦧"
      ],
      [
       "woodpecker",
-      "কাঠঠোকরা"
+      "কাঠঠোকরা",
+      "🐦"
      ],
      [
       "chameleon",
-      "It changes its color"
+      "It changes its color",
+      "🦎"
      ],
      [
       "kangaroo",
-      "It has a pouch for its baby"
+      "It has a pouch for its baby",
+      "🦘"
      ],
      [
       "crocodile",
-      "কুমির"
+      "কুমির",
+      "🐊"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে একটি করে Animal-এর ছবি আসবে এবং তোমাকে এদের নাম শোনানো হবে। নামটি শুনে স্ক্রিনে ভেসে থাকা Letter গুলো ড্র্যাগ করে এর সঠিক বানান তৈরি করো।"
    }
   ],
   "talk": [
@@ -3683,7 +3654,8 @@ window.SEJ_LESSONS = [
       ],
       "🦩"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে খালিঘর সহ একটি করে Sentence আসবে। খালিঘরের উপরে দুটি করে অপশন থাকবে, তোমাকে সঠিক অপশনটি ড্র্যাগ করে খালিঘরে বসিয়ে সাবমিট করতে হবে।"
    },
    {
     "t": "pair",
@@ -3766,10 +3738,12 @@ window.SEJ_LESSONS = [
       "📐",
       "svg:rectangle"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে একসাথে দুটি কার্ড আসবে। একটি কার্ডে Shape এর নাম এবং অপরটিতে একটি খেলনা থাকবে! কার্ড দুটি একই হলে Pair select করবে এবং আলাদা হলে No Pair select করবে"
    },
    {
-    "t": "plane",
+    "t": "quiz",
+    "show": true,
     "title": "Where Is It?",
     "items": [
      [
@@ -3777,50 +3751,63 @@ window.SEJ_LESSONS = [
       "under",
       [
        "on",
-       "above"
-      ]
+       "above",
+       "in"
+      ],
+      "🐕"
      ],
      [
       "She walked ___ the door without knocking.",
       "through",
       [
        "between",
-       "around"
-      ]
+       "around",
+       "under"
+      ],
+      "🚪"
      ],
      [
       "The plane flew ___ the mountains.",
       "across",
       [
        "under",
-       "behind"
-      ]
+       "behind",
+       "into"
+      ],
+      "✈️"
      ],
      [
       "The baby is sleeping ___ the bed.",
       "on",
       [
        "into",
-       "by"
-      ]
+       "by",
+       "over"
+      ],
+      "👶"
      ],
      [
       "We had a picnic ___ the park.",
       "in",
       [
        "under",
-       "over"
-      ]
+       "over",
+       "to"
+      ],
+      "🧺"
      ],
      [
       "The rabbit ran ___ the hole.",
       "into",
       [
        "across",
-       "over"
-      ]
+       "over",
+       "from"
+      ],
+      "🐇"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে একটি করে শূন্যস্থানসহ বাক্য আসবে একই সাথে চারটি অপশন আসবে। তোমাকে নির্দিষ্ট সময়ের মধ্যে শূন্যস্থানের জন্য সঠিক অপশনটি সিলেক্ট করতে হবে।"
    }
   ],
   "talk": [
@@ -3966,115 +3953,82 @@ window.SEJ_LESSONS = [
       ],
       "🎒"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে একটি করে প্রশ্ন আসবে সাথে চারটি অপশন থাকবে। তোমাকে নির্দিষ্ট সময়ের মধ্যে সঠিক অপশনটি Select করতে হবে।"
    },
    {
-    "t": "find",
+    "t": "match",
     "title": "Who Am I? Clothes",
-    "items": [
+    "pairs": [
      [
-      "I keep your feet warm in the winter. You wear me with socks.",
-      "Boots"
+      "🥾 Boots",
+      "I keep your feet warm in the winter. You wear me with socks."
      ],
      [
-      "I protect your head from the sun during hot summer days.",
-      "Cap"
+      "🧢 Cap",
+      "I protect your head from the sun during hot summer days."
      ],
      [
-      "I’m a traditional dress worn by boys during festivals",
-      "Panjabi"
+      "👘 Panjabi",
+      "I’m a traditional dress worn by boys during festivals"
      ],
      [
-      "You wear me when it's raining and I help keep you dry.",
-      "Raincoat"
+      "🧥 Raincoat",
+      "You wear me when it's raining and I help keep you dry."
      ],
      [
-      "I’m worn on your eyes to protect them from sunlight",
-      "Sunglasses"
+      "🕶️ Sunglasses",
+      "I’m worn on your eyes to protect them from sunlight"
      ],
      [
-      "I’m worn by swimmers and I help you move easily in the water",
-      "Swimsuit"
+      "🩱 Swimsuit",
+      "I’m worn by swimmers and I help you move easily in the water"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে ছবিসহ কিছু পোশাকের নাম আসবে, যা আমরা পরিধান করি। তুমি ছবিগুলোকে ড্র্যাগ করে এনে এর সঠিক Definition-এর ঠিক উপরে বসিয়ে সাবমিট করবে।"
    },
    {
-    "t": "boxes",
+    "t": "match",
     "title": "What Should You Wear?",
-    "items": [
+    "pairs": [
      [
-      "You should wear a raincoat.",
-      "Rainy",
-      [
-       "Cold"
-      ],
-      "🌧️"
+      "🌧️ Rainy",
+      "You should wear a raincoat."
      ],
      [
-      "You should wear sunglasses.",
-      "Sunny",
-      [
-       "Snowy"
-      ],
-      "☀️"
+      "☀️ Sunny",
+      "You should wear sunglasses."
      ],
      [
-      "You must wear a jacket.",
-      "Cold",
-      [
-       "Rainy"
-      ],
-      "🥶"
+      "🥶 Cold",
+      "You must wear a jacket."
      ],
      [
-      "You can wear light cotton clothes.",
-      "Hot",
-      [
-       "Sunny"
-      ],
-      "🔥"
+      "🔥 Hot",
+      "You can wear light cotton clothes."
      ],
      [
-      "You should take a swimsuit.",
-      "Beach",
-      [
-       "Hiking"
-      ],
-      "🏖️"
+      "🏖️ Beach",
+      "You should take a swimsuit."
      ],
      [
-      "You must wear boots and gloves.",
-      "Snowy",
-      [
-       "Rainy"
-      ],
-      "❄️"
+      "❄️ Snowy",
+      "You must wear boots and gloves."
      ],
      [
-      "You have to wear your uniform.",
-      "School",
-      [
-       "Rainy"
-      ],
-      "🏫"
+      "🏫 School",
+      "You have to wear your uniform."
      ],
      [
-      "You can wear whatever you want.",
-      "Home",
-      [
-       "School"
-      ],
-      "🏠"
+      "🏠 Home",
+      "You can wear whatever you want."
      ],
      [
-      "You should wear comfortable shoes.",
-      "Hiking",
-      [
-       "Cold"
-      ],
-      "🥾"
+      "🥾 Hiking",
+      "You should wear comfortable shoes."
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে Keywords হিসেবে কিছু Weather এর নাম আসবে। তোমার কাজ হলো প্রতিটি আবহাওয়ার শব্দের সঙ্গে সবচেয়ে উপযুক্ত পোশাক পরার পরামর্শটি ড্র্যাগ করে মিলিয়ে দেওয়া।"
    }
   ],
   "talk": [
@@ -4144,8 +4098,9 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "spell",
+    "t": "anagram",
     "title": "Make a Word",
+    "audio": true,
     "items": [
      [
       "straight",
@@ -4227,7 +4182,8 @@ window.SEJ_LESSONS = [
       "পশ্চিম",
       "🌇"
      ]
-    ]
+    ],
+    "bn": "তোমাকে একটি শব্দ শোনানো হবে এবং স্ক্রিনে কিছু এলোমেলো Letters আসবে। শব্দটি শোনো, এবার Letter গুলোকে ড্র্যাগ করে শব্দটি সাজাও।"
    },
    {
     "t": "match",
@@ -4273,7 +4229,8 @@ window.SEJ_LESSONS = [
       "🟡 Traffic Light (Yellow)",
       "Slow down the car"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে ছবিসহ কিছু Street Signs আসবে পাশাপাশি এদের Definition আসবে। Sign-গুলোকে ড্র্যাগ করে এদের Definition এর উপরে বসাও।"
    },
    {
     "t": "tf",
@@ -4354,7 +4311,8 @@ window.SEJ_LESSONS = [
       false,
       "↩️"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে দ্রুত গতিতে কিছু Statements আসবে। Statement-গুলো চলে যাওয়ার আগে, এগুলো True নাকি False তা Identify করো।"
    }
   ],
   "talk": [
@@ -4551,7 +4509,8 @@ window.SEJ_LESSONS = [
       1,
       "❤️"
      ]
-    ]
+    ],
+    "bn": "তুমি স্ক্রিনে অনেকগুলো Sentence দেখতে পাবে। Sentence-গুলো Past নাকি Present Tense-এ আছে তা নির্ধারণ করে ড্র্যাগ করে সঠিক গ্রুপে রাখো।"
    },
    {
     "t": "blank",
@@ -4641,7 +4600,8 @@ window.SEJ_LESSONS = [
       ],
       "💡"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে খালিঘর সহ কিছু বাক্য আসবে। বাক্যগুলোর ফাঁকা স্থানে সঠিক Tense অনুযায়ী সঠিক শব্দটি ড্র্যাগ করে এনে বসিয়ে সাবমিট করো।!"
    },
    {
     "t": "unjumble",
@@ -4657,7 +4617,8 @@ window.SEJ_LESSONS = [
      "🪔|We celebrated Durga Puja at my cousin’s house.",
      "🍛|I ate delicious biryani.",
      "🎁|My friend gave me a gift."
-    ]
+    ],
+    "bn": "স্ক্রিনে কিছু এলোমেলো শব্দ আসবে। এই শব্দগুলোকে ড্র্যাগ করে বাক্য সাজাও।"
    }
   ],
   "talk": [
@@ -4775,114 +4736,195 @@ window.SEJ_LESSONS = [
       "I move on water",
       "🚢"
      ]
-    ]
-   },
-   {
-    "t": "whack",
-    "title": "Where Does It Go?",
-    "prompt": "Tap only the In the air ones!",
-    "good": [
-     "Airplane",
-     "Helicopter",
-     "Hot Air Balloon",
-     "Spaceship",
-     "Rocket",
-     "Glider",
-     "Jet Plane",
-     "Military Fighter Jet",
-     "Zeppelin / Airship",
-     "Hang Glider"
     ],
-    "bad": [
-     "Bus",
-     "Car",
-     "Rickshaw",
-     "CNG",
-     "Bicycle",
-     "Truck",
-     "Mini-Bus",
-     "Motorbike",
-     "Covered Van",
-     "Jeep"
-    ]
+    "bn": "স্ক্রিনে একটি করে ছবি আসবে এবং তোমাকে একটি করে শব্দ শোনানো হবে। এবার স্ক্রিনের নিচে কিছু এলোমেলো Letters আসবে, এগুলোকে সাজিয়ে Vehicles নাম তৈরি করো।"
    },
    {
-    "t": "quiz",
+    "t": "sort",
+    "title": "Where Does It Go?",
+    "groups": [
+     {
+      "n": "In the air",
+      "e": "☁️"
+     },
+     {
+      "n": "On the road",
+      "e": "🛣️"
+     }
+    ],
+    "cards": [
+     [
+      "Airplane",
+      0,
+      "✈️"
+     ],
+     [
+      "Helicopter",
+      0,
+      "🚁"
+     ],
+     [
+      "Hot Air Balloon",
+      0,
+      "🎈"
+     ],
+     [
+      "Spaceship",
+      0,
+      "🛸"
+     ],
+     [
+      "Rocket",
+      0,
+      "🚀"
+     ],
+     [
+      "Glider",
+      0,
+      "🛩️"
+     ],
+     [
+      "Jet Plane",
+      0,
+      "✈️"
+     ],
+     [
+      "Military Fighter Jet",
+      0,
+      "🛩️"
+     ],
+     [
+      "Zeppelin / Airship",
+      0,
+      "🎈"
+     ],
+     [
+      "Hang Glider",
+      0,
+      "🪂"
+     ],
+     [
+      "Bus",
+      1,
+      "🚌"
+     ],
+     [
+      "Car",
+      1,
+      "🚗"
+     ],
+     [
+      "Rickshaw",
+      1,
+      "🛺"
+     ],
+     [
+      "CNG",
+      1,
+      "🛺"
+     ],
+     [
+      "Bicycle",
+      1,
+      "🚲"
+     ],
+     [
+      "Truck",
+      1,
+      "🚚"
+     ],
+     [
+      "Mini-Bus",
+      1,
+      "🚐"
+     ],
+     [
+      "Motorbike",
+      1,
+      "🏍️"
+     ],
+     [
+      "Covered Van",
+      1,
+      "🚛"
+     ],
+     [
+      "Jeep",
+      1,
+      "🚙"
+     ]
+    ],
+    "bn": "স্ক্রিনে কিছু Vehicles এর নাম সহ ছবি আসবে। এদের মধ্যে কোনগুলো আকাশে চলাচল করে এবং কোনগুলো রাস্তায় চলাচল করে তা আলাদা করে নির্দিষ্ট গ্রুপে ড্র্যাগ করে নিয়ে যাও।"
+   },
+   {
+    "t": "blank",
     "title": "Complete the Blanks",
     "items": [
      [
-      "A bus is ___ the school.",
-      "in front of",
+      "A bus is {in front of} the school.",
       [
        "on"
       ],
       "🚌"
      ],
      [
-      "The car is ___ the garage.",
-      "in",
+      "The car is {in} the garage.",
       [
        "of"
       ],
       "🚗"
      ],
      [
-      "The bicycle is ___ the tree.",
-      "behind",
+      "The bicycle is {behind} the tree.",
       [
        "inside"
       ],
       "🚲"
      ],
      [
-      "The motorbike is ___ two trucks.",
-      "between",
+      "The motorbike is {between} two trucks.",
       [
        "on"
       ],
       "🏍️"
      ],
      [
-      "The plane is flying ___ the city.",
-      "over",
+      "The plane is flying {over} the city.",
       [
        "under"
       ],
       "✈️"
      ],
      [
-      "The rickshaw is ___ the bridge.",
-      "under",
+      "The rickshaw is {under} the bridge.",
       [
        "inside"
       ],
       "🛺"
      ],
      [
-      "The boat is ___ the shore.",
-      "near",
+      "The boat is {near} the shore.",
       [
        "in"
       ],
       "🚤"
      ],
      [
-      "The train is ___ the tracks.",
-      "on",
+      "The train is {on} the tracks.",
       [
        "of"
       ],
       "🚆"
      ],
      [
-      "The van is ___ the bus stop.",
-      "beside",
+      "The van is {beside} the bus stop.",
       [
        "on"
       ],
       "🚐"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে শূন্যস্থান সহ কিছু বাক্য এবং দুটি করে Option আসবে। সঠিক Option-টি ড্র্যাগ করে নিয়ে শূন্যস্থানে বসিয়ে সাবমিট করো।"
    }
   ],
   "talk": [
@@ -4967,7 +5009,8 @@ window.SEJ_LESSONS = [
   ],
   "games": [
    {
-    "t": "plane",
+    "t": "quiz",
+    "show": true,
     "title": "Season Quiz Show",
     "items": [
      [
@@ -4975,78 +5018,98 @@ window.SEJ_LESSONS = [
       "Rainy Season",
       [
        "Summer",
-       "Winter"
-      ]
+       "Winter",
+       "Spring"
+      ],
+      "🧥"
      ],
      [
       "What is the weather like in winter?",
       "Very cold",
       [
        "Hot and sunny",
-       "Wet and rainy"
-      ]
+       "Wet and rainy",
+       "Cool and fresh"
+      ],
+      "❄️"
      ],
      [
       "What do people do in the rainy season?",
       "Jump in puddles",
       [
        "Go swimming",
-       "Sit by the fire"
-      ]
+       "Sit by the fire",
+       "Go on picnics"
+      ],
+      "🌧️"
      ],
      [
       "What do people wear in summer?",
       "T-shirts and caps",
       [
        "Woolen jackets",
-       "Raincoats"
-      ]
+       "Raincoats",
+       "Gloves"
+      ],
+      "☀️"
      ],
      [
       "Which season is known for blooming flowers?",
       "Spring",
       [
        "Autumn",
-       "Summer"
-      ]
+       "Summer",
+       "Late Autumn"
+      ],
+      "🌷"
      ],
      [
       "What do people like to drink in winter?",
       "Hot chocolate",
       [
        "Cold drinks",
-       "Lemonade"
-      ]
+       "Lemonade",
+       "Juice"
+      ],
+      "☕"
      ],
      [
       "Which season has cool and windy weather with falling leaves?",
       "Autumn",
       [
        "Spring",
-       "Winter"
-      ]
+       "Winter",
+       "Summer"
+      ],
+      "🍂"
      ],
      [
       "Which season comes before winter and feels chilly?",
       "Late Autumn",
       [
        "Autumn",
-       "Spring"
-      ]
+       "Spring",
+       "Summer"
+      ],
+      "🍁"
      ],
      [
       "When do people wear jackets and scarves?",
       "Winter",
       [
        "Autumn",
-       "Summer"
-      ]
+       "Summer",
+       "Rainy Season"
+      ],
+      "🧣"
      ]
-    ]
+    ],
+    "bn": "স্ক্রিনে Option-সহ কিছু Quiz আসবে। তোমাকে সঠিক অপশনটি সিলেক্ট করতে হবে।"
    },
    {
-    "t": "spell",
+    "t": "anagram",
     "title": "Spell the Season",
+    "audio": true,
     "items": [
      [
       "spring",
@@ -5103,23 +5166,85 @@ window.SEJ_LESSONS = [
       "আবহাওয়া",
       "🌦️"
      ]
-    ]
+    ],
+    "bn": "তোমাকে একটি করে শব্দ শোনানো হবে এবং স্ক্রিনে কিছু ছবির পাশাপাশি কিছু এলোমেলো Letters আসবে। প্রতিটি শব্দ শুনে, Letters-গুলো ড্র্যাগ করে এর বানান সাজাও।"
    },
    {
-    "t": "unjumble",
+    "t": "blank",
     "title": "A or An?",
     "items": [
-     "🍦|It’s hot today. I want to eat an ice cream.",
-     "🧥|In winter, I wear a jacket to stay warm.",
-     "🌷|Spring is an amazing season.",
-     "☂️|He is holding an umbrella in the rainy season.",
-     "🍵|My mom made a hot cup of tea in winter.",
-     "🦅|I saw an eagle flying in the sky.",
-     "🧣|That is a beautiful scarf for autumn.",
-     "🍊|We had an orange after the picnic.",
-     "🧶|She brought a sweater for the trip.",
-     "🐘|Look! It’s an elephant in the zoo."
-    ]
+     [
+      "It’s hot today. I want to eat {an} ice cream.",
+      [
+       "a"
+      ],
+      "🍦"
+     ],
+     [
+      "In winter, I wear {a} jacket to stay warm.",
+      [
+       "an"
+      ],
+      "🧥"
+     ],
+     [
+      "Spring is {an} amazing season.",
+      [
+       "a"
+      ],
+      "🌷"
+     ],
+     [
+      "He is holding {an} umbrella in the rainy season.",
+      [
+       "a"
+      ],
+      "☂️"
+     ],
+     [
+      "My mom made {a} hot cup of tea in winter.",
+      [
+       "an"
+      ],
+      "🍵"
+     ],
+     [
+      "I saw {an} eagle flying in the sky.",
+      [
+       "a"
+      ],
+      "🦅"
+     ],
+     [
+      "That is {a} beautiful scarf for autumn.",
+      [
+       "an"
+      ],
+      "🧣"
+     ],
+     [
+      "We had {an} orange after the picnic.",
+      [
+       "a"
+      ],
+      "🍊"
+     ],
+     [
+      "She brought {a} sweater for the trip.",
+      [
+       "an"
+      ],
+      "🧶"
+     ],
+     [
+      "Look! It’s {an} elephant in the zoo.",
+      [
+       "a"
+      ],
+      "🐘"
+     ]
+    ],
+    "bn": "স্ক্রিনে শূন্যস্থান সহ কিছু বাক্য আসবে। শূন্যস্থানে সঠিক Article-টি ড্র্যাগ করে এনে বসিয়ে সাবমিট করো।"
    }
   ],
   "talk": [

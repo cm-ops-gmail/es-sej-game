@@ -43,7 +43,7 @@
 
   function slotsFor(lesson) {
     const slots = lesson.games.map((g, i) => ({ key: String(i), game: g }));
-    if (lesson.talk && lesson.talk.length) slots.push({ key: 'talk', game: { t: 'talk', title: 'Speak Like a Hero', items: lesson.talk } });
+    /* Each lesson has exactly its 3 reference games. Speaking prompts are used in Class Battle. */
     return slots;
   }
   function lessonStars(lesson) {
@@ -65,7 +65,6 @@
       if (!name) { fx.play(form, 'shake'); input.focus(); return; }
       sfx.correct(2);
       fx.burstAt(form, 30, ['⭐', '✨']);
-      voice.say(`Nice to meet you, ${name}!`);
       go('#/welcome/hero');
     } },
       h('p', { class: 'onb-step', text: 'Step 1 of 2' }),
@@ -87,7 +86,7 @@
   function heroStep(changeMode) {
     const s = store.state;
     let chosen = s.hero;
-    const input = changeMode ? h('input', { class: 'onb-input onb-input-small', id: 'player-name', maxlength: '14', placeholder: 'Type your name', value: s.name || '', autocomplete: 'off', 'aria-label': 'Your name' }) : null;
+    const input = changeMode && !SEJ.batch.on ? h('input', { class: 'onb-input onb-input-small', id: 'player-name', maxlength: '14', placeholder: 'Type your name', value: s.name || '', autocomplete: 'off', 'aria-label': 'Your name' }) : null;
     const start = () => {
       if (input) SEJ.setName(input.value);
       store.state.hero = chosen;
@@ -97,7 +96,6 @@
       fx.confetti(110);
       fx.fireworks(5);
       SEJ.music.start();
-      if (!changeMode && store.state.name) voice.say(`Let's go, ${store.state.name}!`);
       go('#/map');
     };
     const cards = Object.entries(SEJ.HEROES).map(([id, hero], i) => {
@@ -110,7 +108,6 @@
           card.setAttribute('aria-pressed', 'true');
           sfx.correct(1);
           fx.burstAt(card, 24, ['⭐', '✨']);
-          voice.say(`Hello! I am ${hero.name}.`);
           SEJ.music.start();
         },
       }, h('span', { class: 'hero-stage' }, SEJ.heroImg(id)), h('strong', { text: hero.name }), h('small', { lang: 'bn', text: hero.bn }));
@@ -123,7 +120,7 @@
       h('div', { class: 'onb-actions' },
         input,
         h('button', { class: 'cta gummy g-green cta-big', onclick: start }, 'Let’s Go! 🚀'),
-        !changeMode && h('button', { class: 'link-skip link-skip-light', type: 'button', onclick: () => go('#/welcome') }, '← Change my name'))));
+        !changeMode && !SEJ.batch.on && h('button', { class: 'link-skip link-skip-light', type: 'button', onclick: () => go('#/welcome') }, '← Change my name'))));
   }
 
   /* ---------- quest map ---------- */
@@ -136,7 +133,6 @@
       if (!name) { fx.play(form, 'shake'); input.focus(); return; }
       sfx.fanfare();
       fx.confetti(70);
-      voice.say(`Hello, ${name}!`);
       route();
     } }, input, h('button', { class: `gummy g-green name-go${big ? ' name-go-big' : ''}`, type: 'submit', 'aria-label': 'Save my name' }, big ? 'That’s me! ✓' : '✓'));
     return form;
@@ -149,7 +145,9 @@
       h('span', { class: 'spacer' }),
       h('div', { class: 'star-total', 'aria-label': `${store.totalStars()} stars collected` }, h('span', { class: 'spin-star', 'aria-hidden': 'true', text: '⭐' }), h('b', { text: store.totalStars() })),
       SEJ.ui.soundButton(),
-      h('a', { class: 'bar-btn', href: '#/teacher', 'aria-label': 'Teacher mode', title: 'Teacher mode' }, '🛠️'),
+      SEJ.batch.on
+        ? h('a', { class: 'bar-btn board-btn', href: '#/board', id: 'board-btn', 'aria-label': 'Leaderboard', title: 'Leaderboard' }, '🏆')
+        : h('a', { class: 'bar-btn admin-btn', href: '#/admin', id: 'admin-btn' }, 'Admin'),
       s.name
         ? h('a', { class: 'player', href: '#/heroes', 'aria-label': `${s.name}. Change your name or hero` }, SEJ.heroFace(s.hero), h('span', { class: 'player-name', text: s.name }))
         : h('a', { class: 'player', href: '#/heroes', 'aria-label': 'Change your hero' }, SEJ.heroFace(s.hero)));
@@ -157,7 +155,7 @@
 
   function map() {
     const lessons = SEJ.lessons();
-    const nextUp = lessons.find((l) => lessonStars(l).played < lessonStars(l).slots);
+    const nextUp = lessons.find((l) => SEJ.batch.isOpen(l.code) && lessonStars(l).played < lessonStars(l).slots);
     const hero = store.state.hero;
     const body = h('main', { class: 'map-body' });
     body.append(h('section', { class: 'map-hero' },
@@ -165,7 +163,7 @@
       h('div', { class: 'map-hero-inner' },
         h('h1', { class: 'logo-word big' }, 'Hero Quest'),
         store.state.name
-          ? h('p', { class: 'tagline' }, `Hello, ${store.state.name}! Ready to be an English superhero?`)
+          ? h('p', { class: 'tagline' }, SEJ.batch.joined && SEJ.batch.name ? `Hello, ${store.state.name}! Welcome to ${SEJ.batch.name}.` : `Hello, ${store.state.name}! Ready to be an English superhero?`)
           : h('div', { class: 'name-card enter-pop' }, h('p', { class: 'name-q' }, 'What’s your name? ', h('small', { lang: 'bn', text: 'তোমার নাম লেখো' })), nameForm('name-form-big', true)),
         h('div', { class: 'squad', 'aria-hidden': 'true' }, ['knight', 'bhasha', 'mathman', 'innovara'].map((id, i) => SEJ.heroImg(id, `squad-hero sq${i}`))))));
     UNITS.forEach((u) => {
@@ -180,13 +178,14 @@
       inUnit.forEach((l, i) => {
         const st = lessonStars(l);
         const isNext = nextUp && nextUp.code === l.code;
-        path.append(h('a', {
-          class: `node pos${i % 4} ${st.played === st.slots ? 'complete' : ''} ${isNext ? 'next' : ''}`,
-          href: `#/lesson/${l.code}`,
-          'aria-label': `Lesson ${l.code}: ${l.title}. ${st.got} of ${st.max} stars`,
+        const locked = !SEJ.batch.isOpen(l.code);
+        path.append(h(locked ? 'div' : 'a', {
+          class: `node pos${i % 4} ${st.played === st.slots ? 'complete' : ''} ${isNext ? 'next' : ''} ${locked ? 'locked' : ''}`,
+          href: locked ? null : `#/lesson/${l.code}`,
+          'aria-label': locked ? `Lesson ${l.code}: ${l.title}. Locked. Your teacher will open it.` : `Lesson ${l.code}: ${l.title}. ${st.got} of ${st.max} stars`,
           'data-code': l.code,
         },
-        h('span', { class: 'node-circle' }, SEJ.sticker(l.emoji, 'node-art'), isNext && h('span', { class: 'node-flag' }, SEJ.heroImg(hero, 'node-hero'), h('span', { class: 'play-tag', text: 'PLAY!' }))),
+        h('span', { class: 'node-circle' }, SEJ.sticker(l.emoji, 'node-art'), locked && h('span', { class: 'node-lock', 'aria-hidden': 'true', text: '🔒' }), isNext && h('span', { class: 'node-flag' }, SEJ.heroImg(hero, 'node-hero'), h('span', { class: 'play-tag', text: 'PLAY!' }))),
         h('span', { class: 'node-label' }, h('small', { text: `Lesson ${l.code}` }), h('strong', { text: l.title })),
         h('span', { class: 'node-progress' }, '⭐ ', `${st.got}/${st.max}`)));
       });
@@ -216,6 +215,8 @@
       const previous = cleanupRoute;
       cleanupRoute = () => { io.disconnect(); previous(); };
     }
+    /* The teacher may have unlocked a lesson since the last visit. */
+    if (SEJ.batch.on) SEJ.batch.load().then((changed) => { if (changed && $('.map-page')) route(); });
     const n = $('.node.next');
     if (n && store.totalStars() > 0) n.scrollIntoView({ block: 'center' });
   }
@@ -287,7 +288,7 @@
   /* ---------- playing and results ---------- */
   function play(code, key) {
     const l = SEJ.lesson(code);
-    if (!l) return go('#/map');
+    if (!l || !SEJ.batch.isOpen(code)) return go('#/map');
     const slots = slotsFor(l);
     const slot = slots.find((s) => s.key === key);
     if (!slot) return go(`#/lesson/${code}`);
@@ -315,6 +316,17 @@
     const heading = big ? 'MISSION COMPLETE!' : titles[res.stars];
     const line = big ? `You finished ${l.title}!` : res.stars === 3 ? 'Perfect hero moves!' : res.stars === 2 ? 'You are getting so good!' : 'Play again to win more stars!';
     const scoreNum = h('b', { text: '0' });
+    /* In a batch, the first try at each game goes on the leaderboard. */
+    const slotGame = (slots.find((s) => s.key === key) || {}).game || {};
+    const gameId = slotGame.id || `d${key}`;
+    const boardLine = SEJ.batch.joined ? h('p', { class: 'result-board', id: 'result-board', role: 'status', text: SEJ.batch.isDone(l.code, gameId) ? '🔁 Practice try. Your first score is on the leaderboard.' : '🏆 Sending your score to the leaderboard…' }) : null;
+    if (SEJ.batch.joined && !SEJ.batch.isDone(l.code, gameId)) {
+      SEJ.batch.submit(l.code, gameId, slotGame.title || '', res).then((r) => {
+        if (!boardLine.isConnected) return;
+        boardLine.textContent = r.counted ? '🏆 Your score is on the leaderboard!' : r.counted === false ? '🔁 Practice try. Your first score is on the leaderboard.' : r.error === 'locked' ? '🔒 This lesson is locked, so this score wasn’t counted.' : '⚠️ No internet, so this score wasn’t sent. Play again when you’re online.';
+        if (r.counted) { boardLine.classList.add('counted'); fx.play(boardLine, 'jelly'); }
+      });
+    }
     root().replaceChildren(h('div', { class: `results ${big ? 'mission-done' : ''}` },
       h('div', { class: 'rays', 'aria-hidden': 'true' }),
       h('div', { class: 'result-card enter-pop', role: 'status' },
@@ -326,13 +338,16 @@
           h('span', { class: 'stat' }, '⭐ ', scoreNum, ' points'),
           h('span', { class: 'stat' }, '🔥 ', h('b', { text: res.best }), ' streak'),
           h('span', { class: 'stat' }, '🎯 ', h('b', { text: `${res.perfect}/${res.total}` }), ' first try')),
+        boardLine,
         h('div', { class: 'result-actions' },
           next
             ? h('a', { class: 'cta gummy g-green cta-big', href: `#/play/${l.code}/${next.key}`, id: 'next-game' }, 'Next Game ▶')
             : h('a', { class: 'cta gummy g-green cta-big', href: `#/lesson/${l.code}`, id: 'next-game' }, 'Finish 🎉'),
           h('button', { class: 'soft-btn', onclick: () => play(l.code, key) }, '↻ Play again'),
+          SEJ.batch.joined && h('a', { class: 'soft-btn', href: '#/board', id: 'see-board' }, '🏆 Leaderboard'),
           h('a', { class: 'soft-btn', href: `#/lesson/${l.code}` }, '🗺️ All missions')))));
-    /* Stars stamp on one at a time, then the crowd cheers. */
+    /* A drum roll, then stars stamp on one at a time, then the crowd cheers. */
+    sfx.drumroll(0.45);
     const speed = SEJ.testMode ? 0.02 : 1;
     const t0 = performance.now();
     const count = (t) => {
@@ -356,7 +371,6 @@
       SEJ.buzz([60, 50, 60, 50, 140]);
       fx.confetti(big ? 280 : res.stars === 3 ? 180 : 100);
       fx.fireworks(big ? 10 : res.stars === 3 ? 6 : 2);
-      voice.say(big ? `Mission complete${name ? ', ' + name : ''}! You are a hero!` : `${heading} ${name ? 'Well done, ' + name + '!' : ''}`);
     }, (500 + res.stars * 420) * speed);
   }
 
@@ -374,16 +388,21 @@
     if (page === 'class') { cleanupRoute = SEJ.classPage(root(), a); return; }
     if (page === 'remote') { cleanupRoute = SEJ.remotePage(root(), a); return; }
     if (page === 'join') { cleanupRoute = SEJ.studentPage(root(), a); return; }
-    if (page === 'teacher') return SEJ.builder.render(root(), a);
+    if (page === 'teacher') { history.replaceState(null, '', `#/admin${a ? `/${a}` : ''}`); return SEJ.builder.render(root(), a); }
+    if (page === 'admin') return SEJ.builder.render(root(), a, b);
+    if (page === 'board') { cleanupRoute = SEJ.boardPage(root(), a); return; }
+    /* A student who opened a batch link says who they are first: name and student ID. */
+    const afterJoin = () => { if (store.state.onboarded) go('#/map'); else go('#/welcome/hero'); route(); };
+    if (page === 'enter' || (SEJ.batch.on && (SEJ.batch.missing || !SEJ.batch.joined) && !['heroes'].includes(page))) return SEJ.batchJoinPage(root(), afterJoin);
     if (page === 'heroes') return heroStep(true);
-    if (page === 'welcome') return a === 'hero' ? heroStep(false) : nameStep();
+    if (page === 'welcome') return a === 'hero' ? heroStep(false) : SEJ.batch.on ? SEJ.batchJoinPage(root(), afterJoin) : nameStep();
     /* The home page greets a first-time visitor with name, then hero, then the map.
        Direct game and lesson links skip this and open straight away. */
     if ((!page || page === 'map') && !(store.state.onboarded || store.state.name)) {
       history.replaceState(null, '', location.pathname + location.search + '#/welcome');
       return nameStep();
     }
-    if (page === 'lesson') return lessonPage(a);
+    if (page === 'lesson') return SEJ.batch.isOpen(a) ? lessonPage(a) : (history.replaceState(null, '', '#/map'), map());
     if (page === 'play') return play(a, b);
     return map();
   }
@@ -397,6 +416,12 @@
     const battle = q.get('class');
     const remote = q.get('remote');
     const join = q.get('join');
+    const batch = q.get('batch');
+    if (batch && SEJ.batch.use(batch)) {
+      /* A batch link: remember the batch and show a clean address. */
+      history.replaceState(null, '', location.pathname + (q.get('test') ? '?test=1' : '') + (location.hash || '#/map'));
+      return;
+    }
     if (!game && !lesson && !battle && remote === null && join === null) return;
     const keep = q.get('test') ? '?test=1' : '';
     let target = battle ? `#/class/${battle}` : remote !== null ? `#/remote/${remote}` : join !== null ? `#/join/${join}` : `#/lesson/${lesson}`;
@@ -410,5 +435,5 @@
   addEventListener('hashchange', route);
   /* Browsers only allow sound after a first tap. */
   addEventListener('pointerdown', () => { SEJ.music.sync(); }, { once: true });
-  document.addEventListener('DOMContentLoaded', () => { openShortLink(); route(); });
+  document.addEventListener('DOMContentLoaded', () => { openShortLink(); Promise.all([SEJ.loadShared(), SEJ.batch.load()]).then(route); });
 })();
