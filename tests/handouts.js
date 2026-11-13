@@ -121,6 +121,24 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   check('a single game has its own handout', (await p.locator('.ho-card').count()) >= 3 && !/Power word/.test(await p.textContent('.ho-pages')));
   await p.keyboard.press('Escape');
 
+  /* Every game type gives something to print, and sound games print the word as a puzzle. */
+  const kinds = await p.evaluate(() => {
+    const bad = [];
+    for (const [, list] of SEJ.CATALOG) for (const [name, t, o] of list) {
+      const g = SEJ.parseGame(t, name, SEJ.formats[t].sample, o || {});
+      const cards = SEJ.slides.cardsOf(g);
+      if (!cards.length || cards.some((c) => !c.q)) bad.push(name);
+    }
+    const lesson = SEJ_LESSONS.find((l) => l.code === '4.1');
+    const listen = SEJ.slides.cardsOf(lesson.games[2]);
+    const spell = SEJ.slides.cardsOf(SEJ_LESSONS.find((l) => l.code === '1.6').games[0]);
+    return { bad, listen: listen[0], spell: spell[0], order: SEJ.slides.cardsOf(SEJ.parseGame('rank', 'r', SEJ.formats.rank.sample, {}))[0] };
+  });
+  check('all 34 game types give cards for handouts and slides', kinds.bad.length === 0, kinds.bad.join());
+  check('a listening game prints mixed-up letters to write out', /^([A-Z] )+[A-Z]/.test(kinds.listen.q.replace(/^\S+\s\s/, '')) && kinds.listen.a.length > 1 && /Unscramble/.test(kinds.listen.head), JSON.stringify(kinds.listen));
+  check('a spelling game prints the word with gaps', /_/.test(kinds.spell.q) && /missing letters/.test(kinds.spell.head), JSON.stringify(kinds.spell));
+  check('an ordering game prints the items mixed up, with the order as the answer', / \/ /.test(kinds.order.q) && /^1\. /.test(kinds.order.a));
+
   /* phone width: the preview shrinks to fit */
   await p.setViewportSize({ width: 390, height: 780 });
   await p.click('#lesson-handouts');

@@ -400,6 +400,10 @@
     const hash = location.hash.replace(/^#\/?/, '');
     const [page, a, b] = hash.split('/');
     window.scrollTo(0, 0);
+    /* A batch student always has the leaderboard in reach, on the map and in every lesson. */
+    const oldFab = document.getElementById('board-fab');
+    if (oldFab) oldFab.remove();
+    if (SEJ.batch.joined && store.state.onboarded && (!page || page === 'map' || page === 'lesson')) document.body.append(h('a', { class: 'board-fab', href: '#/board', id: 'board-fab' }, h('span', { 'aria-hidden': 'true', text: '🏆' }), 'Leaderboard'));
     /* Class Battle runs without background music: the teacher is talking. */
     SEJ.noMusic = page === 'class' || page === 'remote' || page === 'join';
     if (page !== 'play') SEJ.music.setTheme('map');

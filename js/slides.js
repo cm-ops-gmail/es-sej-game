@@ -106,14 +106,26 @@
     const t = game.t, items = game.items || [];
     const qa = (q, a, extra = {}) => Object.assign({ q: clean(q), a: clean(a), note: noteFor(game, clean(q)) || noteFor(game, clean(a)) }, extra);
     if (['quiz', 'boxes', 'plane', 'maze', 'winlose'].includes(t)) return items.map((i) => qa(i[0], i[1], { options: shuffle([i[1], ...i[2]]) }));
-    if (t === 'imagequiz') return items.map((i) => qa(/^https?:/.test(i[0]) ? 'What is in the picture?' : `What is this?  ${i[0]}`, i[1], { options: shuffle([i[1], ...i[2]]), note: noteFor(game, i[1]) }));
+    if (t === 'imagequiz') return items.map((i) => qa(SEJ.isPic(i[0]) ? 'What is in the picture?' : `What is this?  ${i[0]}`, i[1], { options: shuffle([i[1], ...i[2]]), note: noteFor(game, i[1]), pic: SEJ.isPic(i[0]) ? i[0] : '' }));
     if (t === 'blank') return items.map((i) => { const m = i[0].match(/\{(.+?)\}/); return qa(i[0].replace(m[0], '______'), i[0].replace(m[0], m[1]), { options: shuffle([m[1], ...i[1]]), note: noteFor(game, i[0]) }); });
     if (t === 'unjumble' || t === 'magnets') return items.map((s) => { const x = String(s).split('|').pop().trim(); return qa(shuffle(x.split(/\s+/)).join('   /   '), x, { head: 'Put the words in order', note: noteFor(game, x) }); });
     if (t === 'sort' || t === 'speedsort') return game.cards.map((c) => qa(c[0], game.groups[c[1]].n, { head: 'Which group?', options: game.groups.map((g) => g.n) }));
-    if (t === 'match' || t === 'pairs' || t === 'flash' || t === 'fliptiles') return (game.pairs || items).map((p) => qa(SEJ.clean(p[0]) || p[0], p[1], { head: 'What matches this?' }));
+    if (t === 'match' || t === 'pairs' || t === 'flash' || t === 'fliptiles') return (game.pairs || items).map((p) => { const pic = [p[0], p[2]].find(SEJ.isPic) || ''; return qa(SEJ.isPic(p[0]) ? 'What is in the picture?' : SEJ.clean(p[0]) || p[0], p[1], { head: 'What matches this?', pic }); });
     if (t === 'find' || t === 'type' || t === 'fruit') return items.map((i) => qa(i[0], i[1]));
     if (t === 'balloonpop' || t === 'crossword' || t === 'wordsearch') return items.filter((i) => i[1]).map((i) => qa(i[1], i[0], { head: 'Which word is it?' }));
-    if (t === 'anagram' || t === 'spell' || t === 'hangman') return items.map((i) => qa(i[1] || 'Spell the word', i[0], { head: `Spell the word  ${i[2] || ''}` }));
+    /* Spelling and listening games can't play a sound on paper, so the word is printed as a puzzle to write out:
+       mixed-up letters for an anagram, the word with gaps for spelling. The clue or meaning is printed beside it. */
+    if (t === 'anagram' || t === 'spell' || t === 'hangman') return items.map((i) => {
+      const word = clean(i[0]), letters = word.replace(/\s+/g, '').split('');
+      let mixed = shuffle(letters);
+      for (let n = 0; n < 5 && mixed.join('') === letters.join('') && letters.length > 1; n++) mixed = shuffle(letters);
+      const gaps = word.split('').map((ch, k) => (ch === ' ' ? '  ' : k === 0 || (k % 3 === 2 && word.length > 5) ? ch : '_')).join(' ');
+      const clue = clean(i[1]) ? `   (${clean(i[1])})` : '';
+      return qa(`${i[2] && !SEJ.isPic(i[2]) ? `${i[2]}  ` : ''}${t === 'anagram' ? mixed.join(' ').toUpperCase() : gaps}${clue}`, word, { head: t === 'anagram' ? 'Unscramble the letters and write the word' : 'Write the missing letters', note: noteFor(game, word) });
+    });
+    if (t === 'whack') return shuffle(game.good.map((x) => [x, true]).concat(game.bad.map((x) => [x, false]))).map(([x, ok]) => qa(x, ok ? 'Yes' : 'No', { head: game.prompt || 'Is it right?', options: ['Yes', 'No'] }));
+    if (t === 'rank') return [qa(shuffle(items.map((i) => i[0])).join('   /   '), items.map((i, n) => `${n + 1}. ${i[0]}`).join('    '), { head: game.prompt || 'Put these in the right order' })];
+    if (t === 'memorize' || t === 'labelled') return items.map((i) => ({ q: clean(`${i[1] && typeof i[1] === 'string' && !SEJ.isPic(i[1]) ? i[1] : ''} ${i[0]}`), a: '', note: '', head: t === 'labelled' ? 'A part of the picture' : 'Remember this' }));
     if (t === 'tf') { const l = game.labels || ['True', 'False']; return items.map((i) => qa(i[0], i[1] ? l[0] : l[1], { options: l, note: i[3] || noteFor(game, i[0]) })); }
     if (t === 'pair') return items.map((i) => qa(`${i[3] || ''} ${i[0]}   +   ${i[1]} ${i[4] || ''}`, i[2] ? 'Pair' : 'No pair', { head: 'Do they go together?', options: ['Pair', 'No pair'], note: noteFor(game, i[0]) }));
     if (t === 'talk') return items.map((i) => qa(i[0], i[2], { footer: i[1] }));

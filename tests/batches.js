@@ -59,6 +59,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   await s1.waitForSelector('.map-page');
   check('map shows 23 locked lessons', (await s1.locator('.node.locked').count()) === 23, await s1.locator('.node.locked').count());
   check('batch students see a leaderboard button, not Admin', !!(await s1.$('#board-btn')) && !(await s1.$('#admin-btn')));
+  check('a Leaderboard button stays on screen for batch students', await s1.locator('#board-fab').isVisible() && /Leaderboard/.test(await s1.textContent('#board-fab')));
   await s1.screenshot({ path: `${OUT}/student-map-locked.png` });
   await s1.goto(`${BASE}/index.html?test=1#/lesson/1.2`);
   await s1.waitForSelector('.map-page');
@@ -125,6 +126,56 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   await guest.goto(`${BASE}/index.html?test=1&board=${code}`);
   await guest.waitForSelector('.lb-step');
   check('a leaderboard link opens the batch leaderboard for anyone', (await guest.textContent('.lb-batch')) === 'SEJ Batch 12' && /Quest map/.test(await guest.textContent('.back-link')) && !/batch=|board=/.test(guest.url()));
+
+  /* The plain site address: default games only, and nothing reaches a leaderboard. */
+  await admin.request.post(`${BASE}/api/content`, { data: { side: 'save', pin: '1010', code: '1.1', change: { map: ['d0', 'd1', 'd2', 'nx1'], created: [{ id: 'nx1', t: 'quiz', title: 'Batch Only Quiz', items: [['Which is a fruit?', 'Mango', ['Chair', 'Pen'], ''], ['Which can fly?', 'Bird', ['Fish', 'Cat'], '']] }], edits: {} } } });
+  const plain = await open(390, 780);
+  await plain.addInitScript(() => { if (!localStorage.getItem('sej-hero-quest-v1')) localStorage.setItem('sej-hero-quest-v1', JSON.stringify({ name: 'Visitor', hero: 'knight', onboarded: true, sound: false, music: false, stars: {}, custom: {} })); });
+  await plain.goto(`${BASE}/index.html?test=1#/lesson/1.1`);
+  await plain.waitForSelector('.game-card');
+  check('the plain site shows only the 3 default games', (await plain.locator('.game-card').count()) === 3 && !/Batch Only Quiz/.test(await plain.textContent('.game-list')));
+  check('the plain site has no leaderboard button', !(await plain.$('#board-fab')) && !(await plain.$('#board-btn')));
+  await plain.goto(`${BASE}/index.html?test=1#/play/1.1/0`);
+  await playToEnd(plain, false);
+  check('a game on the plain site doesn’t talk about a leaderboard', !(await plain.$('#result-board')));
+  const after = await (await plain.request.get(`${BASE}/api/batch?code=${code}&side=board&x=9`)).json();
+  check('and it adds nothing to the batch leaderboard', after.rows.length === 5 && !after.rows.some((r) => r.name === 'Visitor'));
+  await s1.goto(`${BASE}/index.html?test=1#/lesson/1.1`);
+  await s1.reload();
+  await s1.waitForSelector('.game-card');
+  check('a batch student sees the admin’s created game', (await s1.locator('.game-card').count()) === 4 && /Batch Only Quiz/.test(await s1.textContent('.game-list')));
+  await admin.request.post(`${BASE}/api/content`, { data: { side: 'save', pin: '1010', code: '1.1', change: null } });
+
+  /* The admin can also change the open site's games, separately from the batch games. */
+  await admin.goto(`${BASE}/index.html?test=1#/admin/1.2`);
+  await admin.waitForSelector('#scope-base');
+  check('the admin starts on the batch games', /batch games/.test(await admin.textContent('#scope-badge')));
+  await admin.click('#scope-base');
+  await admin.waitForFunction(() => /open site/.test(document.querySelector('#scope-badge').textContent));
+  await admin.locator('.b-section[aria-label="On the map"] .b-game').first().getByText('➖ Remove').click();
+  await admin.waitForFunction(() => document.querySelectorAll('.b-section[aria-label="On the map"] .b-game').length === 2, null, { timeout: 8000 });
+  const saved = await (await admin.request.get(`${BASE}/api/content?x=1`)).json();
+  check('open site changes are saved apart from batch changes', !!saved.content['base:1.2'] && !saved.content['1.2'], Object.keys(saved.content).join());
+  await plain.goto(`${BASE}/index.html?test=1#/lesson/1.2`);
+  await plain.reload();
+  await plain.waitForSelector('.game-card');
+  check('the plain site shows the admin’s open site games', (await plain.locator('.game-card').count()) === 2);
+  await s1.goto(`${BASE}/index.html?test=1#/lesson/1.2`);
+  await s1.reload();
+  await s1.waitForSelector('.game-card');
+  check('batch students are not affected by open site changes', (await s1.locator('.game-card').count()) === 3);
+  await admin.goto(`${BASE}/index.html?test=1#/play/1.2/0`);
+  await admin.waitForSelector('.game-screen');
+  const previewBase = await admin.textContent('.game-title h1');
+  await admin.goto(`${BASE}/index.html?test=1#/admin/1.2`);
+  await admin.waitForSelector('#scope-batch');
+  await admin.click('#scope-batch');
+  await admin.waitForFunction(() => document.querySelectorAll('.b-section[aria-label="On the map"] .b-game').length === 3, null, { timeout: 8000 });
+  check('switching back shows the batch games untouched', /batch games/.test(await admin.textContent('#scope-badge')));
+  await admin.goto(`${BASE}/index.html?test=1#/play/1.2/0`);
+  await admin.waitForSelector('.game-screen');
+  check('the admin previews whichever set is being edited', (await admin.textContent('.game-title h1')) !== previewBase, previewBase);
+  await admin.request.post(`${BASE}/api/content`, { data: { side: 'save', pin: '1010', code: 'base:1.2', change: null } });
 
   /* ---------- a second batch has its own leaderboard ---------- */
   const made = await (await admin.request.post(`${BASE}/api/batch`, { data: { side: 'create', pin: '1010', name: 'Batch B' } })).json();

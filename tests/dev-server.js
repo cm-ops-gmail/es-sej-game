@@ -18,7 +18,7 @@ let dropRate = Number(process.env.RELAY_DROP) || 0;
   }
   if (process.env.REAL_SHEET !== '1') process.env.SEJ_MEMORY_STORE = '1';
   const apis = {};
-  for (const name of ['room', 'content', 'batch']) apis[`/api/${name}`] = (await import(path.join(ROOT, `api/${name}.mjs`))).default;
+  for (const name of ['room', 'content', 'batch', 'image']) apis[`/api/${name}`] = (await import(path.join(ROOT, `api/${name}.mjs`))).default;
   http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${PORT}`);
     if (url.pathname === '/__drop') {
@@ -34,7 +34,7 @@ let dropRate = Number(process.env.RELAY_DROP) || 0;
       const reply = await api.fetch(new Request(url, { method: req.method, headers: req.headers, body: hasBody ? Buffer.concat(chunks) : undefined }));
       res.statusCode = reply.status;
       reply.headers.forEach((v, k) => res.setHeader(k, v));
-      return res.end(await reply.text());
+      return res.end(Buffer.from(await reply.arrayBuffer()));
     }
     const rel = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname);
     const file = path.normalize(path.join(ROOT, rel));

@@ -205,7 +205,12 @@
   /* All lessons' changes: what is shared, with anything saved on this device on top. */
   const allChanges = () => Object.assign({}, window.SEJ_CUSTOM || {}, store.state.custom);
   const SHEET_HELP = 'The Google Sheet isn’t shared with the app yet. Share it with the service account as Editor.';
-  async function saveLessonChange(code, change) {
+  /* Two sets of games: "batch" is what students see through a batch link, "base" is the plain site address. */
+  const scope = () => SEJ.adminScope();
+  const setScope = (v) => { try { sessionStorage.setItem('sej-admin-scope', v); } catch (e) { /* not kept */ } };
+  const keyOf = (code) => (scope() === 'base' ? `base:${code}` : code);
+  async function saveLessonChange(lessonCode, change) {
+    const code = keyOf(lessonCode);
     const shared = SEJ.sharedInfo && SEJ.sharedInfo.shared;
     if (shared) {
       const r = await fetch('api/content', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ side: 'save', pin: getPin(), code, change }) });
@@ -227,7 +232,7 @@
   /* A lesson's admin view: default games, created games, and which are on the map. */
   function lessonState(code) {
     const base = window.SEJ_LESSONS.find((l) => l.code === code);
-    const o = allChanges()[code] || {};
+    const o = allChanges()[keyOf(code)] || {};
     const created = (o.created || []).slice();
     const edits = Object.assign({}, o.edits || {});
     let map;
@@ -407,7 +412,7 @@
       h('summary', {}, `Unit ${u.n}`, h('span', { text: u.title })),
       window.SEJ_LESSONS.filter((l) => l.unit === u.n).map((l) => h('a', {
         class: `b-lesson ${here === 'lessons' && l.code === code ? 'on' : ''}`, href: `#/admin/${l.code}`, 'data-find': `${l.code} ${l.title}`.toLowerCase(),
-      }, h('span', { class: 'cms-code', text: l.code }), h('span', { class: 'cms-lesson-name', text: l.title }), changes[l.code] ? h('em', { text: 'edited' }) : null))));
+      }, h('span', { class: 'cms-code', text: l.code }), h('span', { class: 'cms-lesson-name', text: l.title }), changes[keyOf(l.code)] ? h('em', { text: 'edited' }) : null))));
     const find = h('input', { class: 'cms-find', type: 'search', placeholder: 'Find a lesson…', 'aria-label': 'Find a lesson', oninput: (e) => {
       const q = e.target.value.trim().toLowerCase();
       units.forEach((u) => {
@@ -423,6 +428,11 @@
       h('nav', { class: 'cms-menu-list', 'aria-label': 'Admin sections' },
         item('home', '#/admin', '▦', 'Overview', 'tab-home'),
         item('batches', '#/admin/batches', '👥', 'Batches', 'tab-batches')),
+      h('div', { class: 'cms-scope', role: 'group', 'aria-label': 'Which games to edit' },
+        h('p', { class: 'cms-group', text: 'Games for' }),
+        h('div', { class: 'cms-seg' },
+          ...[['batch', 'Batches', 'Games students see through a batch link. Scores go to the batch leaderboard.'], ['base', 'Open site', 'Games on the plain site address, for anyone. No leaderboard.']].map(([v, label, tip]) => h('button', { class: `cms-seg-btn ${scope() === v ? 'on' : ''}`, id: `scope-${v}`, 'aria-pressed': String(scope() === v), title: tip, onclick: () => { if (scope() === v) return; setScope(v); toast(v === 'base' ? 'Now editing the open site games (the plain address).' : 'Now editing the batch games.'); window.dispatchEvent(new HashChangeEvent('hashchange')); } }, label))),
+        h('small', { class: 'cms-scope-note', text: scope() === 'base' ? 'The plain site address. No leaderboard.' : 'Batch links. Scores count.' })),
       h('p', { class: 'cms-group', text: 'Lessons' }),
       find,
       h('nav', { class: 'b-side', 'aria-label': 'Lessons' }, units),
@@ -438,6 +448,7 @@
           h('button', { class: 'cms-burger', 'aria-label': 'Menu', onclick: () => el.classList.toggle('nav-open') }, '☰'),
           h('nav', { class: 'cms-crumbs', 'aria-label': 'Breadcrumb' }, [['Admin', '#/admin'], ...crumbs].map((c, i, all) => [i ? h('span', { class: 'cms-sep', 'aria-hidden': 'true', text: '›' }) : null, c[1] && i < all.length - 1 ? h('a', { href: c[1] }, c[0]) : h('b', { text: c[0] })])),
           h('span', { class: 'spacer' }),
+          h('span', { class: `cms-badge scope-badge ${scope() === 'base' ? 'warn' : ''}`, id: 'scope-badge', text: scope() === 'base' ? 'Editing: open site games' : 'Editing: batch games' }),
           saveState()),
         main),
       h('div', { class: 'cms-scrim', onclick: () => el.classList.remove('nav-open') }));
@@ -452,7 +463,7 @@
     const changes = allChanges();
     const rows = window.SEJ_LESSONS.map((l) => {
       const st = lessonState(l.code);
-      return { l, on: st.map.length, made: st.created.length, edited: !!changes[l.code] };
+      return { l, on: st.map.length, made: st.created.length, edited: !!changes[keyOf(l.code)] };
     });
     const stat = (n, label) => h('div', { class: 'cms-stat' }, h('b', { text: n }), h('span', { text: label }));
     const body = h('tbody', {}, rows.map((r) => h('tr', { 'data-find': `${r.l.code} ${r.l.title} unit ${r.l.unit}`.toLowerCase(), onclick: () => { location.hash = `#/admin/${r.l.code}`; } },
@@ -617,7 +628,63 @@
       toast(check() ? 'Arranged for this game. Read it through, then save.' : 'Arranged, but something still needs fixing. See the message below.');
       return true;
     };
-    area.addEventListener('paste', () => setTimeout(() => arrange(false), 0));
+    /* Pictures: paste one (from a document or a screenshot), drop it, or choose a file. The picture is made small,
+       saved in the Google Sheet, and a short code (img:…) is put in the text where the picture should be. */
+    const pics = h('div', { class: 'b-pics', hidden: true });
+    const paintPics = () => {
+      const codes = [...new Set(area.value.match(/img:[a-z0-9]{10}/g) || [])];
+      pics.hidden = !codes.length;
+      pics.replaceChildren(...codes.map((c) => h('span', { class: 'b-pic' }, h('img', { src: SEJ.picSrc(c), alt: '' }), h('code', { text: c }))));
+    };
+    const insert = (text) => { const s = area.selectionStart, e = area.selectionEnd; area.value = area.value.slice(0, s) + text + area.value.slice(e); area.selectionStart = area.selectionEnd = s + text.length; };
+    const shrink = (src) => new Promise((ok, bad) => {
+      const img = new Image();
+      img.onload = () => {
+        let side = 480, q = 0.82, out = '';
+        for (let n = 0; n < 7; n++) {
+          const k = Math.min(1, side / Math.max(img.width, img.height));
+          const c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+          const g = c.getContext('2d');
+          g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+          g.drawImage(img, 0, 0, c.width, c.height);
+          out = c.toDataURL('image/jpeg', q);
+          if (out.length < 170000) break;
+          side *= 0.8; q -= 0.08;
+        }
+        ok(out);
+      };
+      img.onerror = () => bad(new Error('That picture couldn’t be read.'));
+      img.src = typeof src === 'string' ? src : URL.createObjectURL(src);
+    });
+    const addPictures = async (list) => {
+      toast(list.length > 1 ? `Adding ${list.length} pictures…` : 'Adding the picture…');
+      let added = 0;
+      for (const item of list) {
+        try {
+          const data = await shrink(item);
+          const r = await fetch('api/image', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pin: getPin(), data }) });
+          const j = await r.json().catch(() => ({}));
+          if (!j.id) throw new Error(r.status === 501 ? 'Pictures need the Google Sheet settings in Vercel.' : r.status === 401 ? 'Please log in again.' : 'The picture couldn’t be saved. Try again.');
+          insert(`${added ? '\n' : ''}img:${j.id}`);
+          added++;
+        } catch (e) { toast(e.message, true); }
+      }
+      if (added) { toast(added > 1 ? `${added} pictures added. Each img: code stands for one picture.` : 'Picture added. The img: code stands for the picture.'); paintPics(); check(); area.focus(); }
+    };
+    area.addEventListener('paste', (e) => {
+      const cd = e.clipboardData;
+      const files = cd ? [...cd.files].filter((f) => /^image\//.test(f.type)) : [];
+      const inDoc = cd ? [...cd.getData('text/html').matchAll(/<img[^>]+src=["'](data:image\/[^"']+)["']/g)].map((m) => m[1]) : [];
+      if (files.length || inDoc.length) {
+        if (!cd.getData('text/plain').trim()) e.preventDefault();
+        setTimeout(() => addPictures(files.length ? files : inDoc), 0);
+      }
+      setTimeout(() => arrange(false), 0);
+    });
+    area.addEventListener('dragover', (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+    area.addEventListener('drop', (e) => { const files = [...(e.dataTransfer ? e.dataTransfer.files : [])].filter((f) => /^image\//.test(f.type)); if (files.length) { e.preventDefault(); addPictures(files); } });
+    area.addEventListener('input', paintPics);
     area.addEventListener('input', check);
     title.addEventListener('input', check);
     /* Saves, then returns where the game now is on the map (or -1). */
@@ -648,7 +715,11 @@
         game.t === 'quiz' && h('label', { class: 'b-check' }, show, ' Gameshow mode: timer and power-ups'),
         game.t === 'anagram' && h('label', { class: 'b-check' }, audioOpt, ' Read each word aloud'),
         h('div', { class: 'b-paste' },
-          h('label', { class: 'b-label' }, 'Content: one item per line', area),
+          h('div', { class: 'b-content' }, h('label', { class: 'b-label' }, 'Content: one item per line', area),
+            h('div', { class: 'b-pic-row' },
+              h('label', { class: 'soft-btn' }, '🖼️ Add a picture', h('input', { type: 'file', accept: 'image/*', multiple: true, class: 'visually-hidden', id: 'pic-file', onchange: (e) => { const f = [...e.target.files]; e.target.value = ''; if (f.length) addPictures(f); } })),
+              h('small', { class: 'b-note', text: 'Or paste a picture from a document, or drop it on the box. Use its img: code where the format asks for an emoji or picture.' })),
+            pics),
           h('aside', { class: 'b-help' },
             h('b', { text: 'How to write it' }), h('pre', { text: f.help }),
             h('b', { text: 'Example' }), h('pre', { class: 'b-sample', text: f.sample }),
@@ -672,6 +743,7 @@
             else { toast('Saved. It isn’t on the map, so add it to the map to play it.'); render(root); }
           } }, '▶ Save and play'))));
     check();
+    paintPics();
   }
 
   SEJ.builder = { render: (root, a, b) => (a ? render(root, a, b) : home(root)) };

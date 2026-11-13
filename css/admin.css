@@ -218,3 +218,21 @@
 .admin-login .cta:hover { background: #2e2e2e; }
 .admin-login .cta:disabled { opacity: .6; }
 .admin-login .pin-cancel { justify-self: center; }
+
+/* ---------- pictures in the editor ---------- */
+.cms .b-content { display: grid; gap: 8px; min-width: 0; }
+.cms .b-pic-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cms .b-pics { display: flex; flex-wrap: wrap; gap: 8px; }
+.cms .b-pic { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; border: 1px solid var(--border); border-radius: var(--radius-md); background: #fff; }
+.cms .b-pic img { width: 40px; height: 40px; border-radius: var(--radius-sm); object-fit: cover; background: var(--muted); }
+.cms .b-pic code { font-family: var(--mono); font-size: 12px; color: var(--muted-foreground); }
+
+/* ---------- which set of games is being edited ---------- */
+.cms-scope { padding: 0 2px 4px; }
+.cms-scope .cms-group { margin: 10px 6px 6px; }
+.cms-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border-radius: var(--radius-md); background: #ececec; }
+.cms-seg-btn { min-height: 30px; padding: 4px 8px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--muted-foreground); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; }
+.cms-seg-btn.on { background: #fff; color: var(--foreground); box-shadow: 0 1px 2px rgba(0, 0, 0, .1); }
+.cms-scope-note { display: block; margin: 6px 6px 0; color: var(--muted-foreground); font-size: 12px; }
+.scope-badge { flex: none; }
+@media (max-width: 900px) { .scope-badge { display: none; } }

@@ -87,9 +87,17 @@
     delete out.map; delete out.created; delete out.edits;
     return out;
   };
+  /* Who sees the batch games? Students inside a batch, and Class Battle. The plain site address shows its own
+     set (the default games unless the admin changed them), and nothing played there reaches a leaderboard. */
+  SEJ.usesAdminGames = () => !!(SEJ.batch && SEJ.batch.on) || /^#\/?(class|remote|join)\b/.test(location.hash);
+  /* The admin keeps two sets of games: one for batches, one for the plain site address ("base:" keys).
+     While logged in, the admin sees whichever set they are editing. */
+  SEJ.adminScope = () => { try { return sessionStorage.getItem('sej-admin-scope') === 'base' ? 'base' : 'batch'; } catch (e) { return 'batch'; } };
+  SEJ.gameScope = () => (SEJ.isAdmin() && !/^#\/?(class|remote|join)\b/.test(location.hash) ? SEJ.adminScope() : SEJ.usesAdminGames() ? 'batch' : 'base');
   SEJ.lessonsRaw = function () {
+    const pre = SEJ.gameScope() === 'base' ? 'base:' : '';
     const published = window.SEJ_CUSTOM || {};
-    return window.SEJ_LESSONS.map((l) => SEJ.buildLesson(l, state.custom[l.code] || published[l.code]));
+    return window.SEJ_LESSONS.map((l) => SEJ.buildLesson(l, state.custom[pre + l.code] || published[pre + l.code]));
   };
   /* Shared admin content from the server. Pages wait for it briefly, then carry on without it. */
   SEJ.sharedInfo = { shared: false };
@@ -693,9 +701,14 @@
     trapezium: '<path d="M26 22 H74 L96 78 H4Z"/>',
   };
   /* An emoji or simple shape drawn with a white sticker edge. */
+  /* A picture is a web link, or "img:ID" for one pasted into the game editor and kept in the Google Sheet. */
+  SEJ.isAdmin = () => { try { return !!sessionStorage.getItem('sej-admin-pin'); } catch (e) { return false; } };
+  SEJ.isPic = (x) => /^(https?:\/\/|img:[a-z0-9]{10}$)/.test(String(x || '').trim());
+  SEJ.picSrc = (x) => { const s = String(x || '').trim(); return s.startsWith('img:') ? `api/image?id=${s.slice(4)}` : s; };
   SEJ.sticker = function (art, cls = '') {
     const el = SEJ.h('span', { class: 'sticker ' + cls, 'aria-hidden': 'true' });
-    if (String(art).startsWith('svg:')) el.innerHTML = `<svg viewBox="0 0 100 100" class="shape-svg">${SHAPES[art.slice(4)] || ''}</svg>`;
+    if (SEJ.isPic(art)) el.append(SEJ.h('img', { class: 'sticker-pic', src: SEJ.picSrc(art), alt: '', draggable: 'false' }));
+    else if (String(art).startsWith('svg:')) el.innerHTML = `<svg viewBox="0 0 100 100" class="shape-svg">${SHAPES[art.slice(4)] || ''}</svg>`;
     else el.textContent = art;
     return el;
   };

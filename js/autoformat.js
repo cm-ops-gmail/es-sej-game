@@ -52,7 +52,7 @@
   }
   const rowsOf = (lines) => lines.filter((l) => l.trim()).map((l) => { const [main, note] = cut(l); return { cells: cellsOf(main), note, raw: tidy(l) }; }).filter((r) => r.cells[0] || r.cells.length > 1);
   const line = (cells, note) => `${cells.map((x) => tidy(x)).join(' | ').replace(/(?: \| )+$/, '')}${note ? ` >> ${note}` : ''}`;
-  const popEmoji = (list) => (list.length > 1 && EMOJI.test(list[list.length - 1]) ? list.pop() : '');
+  const popEmoji = (list) => (list.length > 1 && (EMOJI.test(list[list.length - 1]) || /^img:[a-z0-9]{10}$/.test(list[list.length - 1])) ? list.pop() : '');
   const splitList = (s) => { const a = s.split(/\s*;\s*/).filter(Boolean); return a.length > 1 ? a : s.split(/\s*,\s*|\s+\/\s+/).filter(Boolean); };
 
   /* ---------- multiple-choice blocks ---------- */
@@ -324,7 +324,7 @@
     live.forEach((l) => {
       const s = l.trim();
       if (s[0] === '#') { pic = tidy(s.slice(1)); return; }
-      if (!pic && (/^https?:\/\/\S+$/.test(s) || EMOJI.test(s))) { pic = s; return; }
+      if (!pic && (/^(https?:\/\/\S+|img:[a-z0-9]{10})$/.test(s) || EMOJI.test(s))) { pic = s; return; }
       rows.push(...listed(rowsOf([l])));
     });
     const need = rows.filter((r) => !(Number(r.cells[1]) >= 0 && r.cells[1] !== '' && Number(r.cells[2]) >= 0 && r.cells[2] !== undefined && r.cells[2] !== ''));

@@ -30,14 +30,12 @@
       const lines = [];
       const sentence = g.t === 'unjumble' || g.t === 'magnets' || g.t === 'blank';
       for (const c of cards) {
-        const fact = sentence ? c.a : c.a ? `${c.q}  →  ${c.a}` : c.q;
+        const word = g.t === 'anagram' || g.t === 'spell' || g.t === 'hangman';
+        const fact = sentence || word ? c.a : g.t === 'whack' ? (c.a === 'Yes' ? `✅  ${c.q}` : '') : c.a ? `${c.q}  →  ${c.a}` : c.q;
         lines.push({ full: fact, ask: c.q });
         if (c.note) tip(c.note, fact);
-        d.cards.push({ q: sentence && g.t !== 'blank' ? c.q : c.q, a: c.a, head: c.head || '', options: c.options, note: c.note || '', game: g.title });
+        d.cards.push({ q: c.q, a: c.a, head: c.head || '', options: c.options, note: c.note || '', pic: c.pic || '', game: g.title });
       }
-      if (g.t === 'whack') lines.push(...g.good.map((x) => ({ full: `✅  ${x}`, ask: x })), ...g.bad.map((x) => ({ full: '', ask: x })));
-      if (g.t === 'rank') lines.push({ full: g.items.map((i, n) => `${n + 1}. ${i[0]}`).join('   '), ask: SEJ.shuffle(g.items.map((i) => i[0])).join('   /   ') });
-      if (g.t === 'memorize' || g.t === 'labelled') lines.push(...g.items.map((i) => { const t = clean(`${i[1] && !/^https?:/.test(i[1]) && g.t === 'memorize' ? i[1] : ''} ${i[0]}`); return { full: t, ask: t }; }));
       (g.notes || []).forEach((n) => tip(n[1]));
       if (lines.length) d.facts.push({ title: g.title, lines: lines.slice(0, 12) });
     }
@@ -96,6 +94,7 @@
       const text = back ? c.a || ' ' : c.q;
       return h('div', { class: `ho-card ${back ? 'is-back' : ''}` },
         h('span', { class: 'ho-card-tag', text: back ? `Answer ${n}` : `${n}${c.head ? `  ·  ${c.head}` : ''}` }),
+        !back && c.pic ? h('img', { class: 'ho-pic', src: SEJ.picSrc(c.pic), alt: '', crossorigin: 'anonymous' }) : null,
         h('p', { class: 'ho-card-text', style: { fontSize: `${size(text)}px` }, text }),
         back && c.note ? h('p', { class: 'ho-card-note', text: `💡 ${c.note}` }) : null,
         !back && opt.choices && !onCard && c.options && c.options.length > 1 ? h('p', { class: 'ho-card-choices', text: c.options.map(clean).join('   ·   ') }) : null,
@@ -143,7 +142,7 @@
   }
 
   function sheet(host, d, opt) {
-    const qs = d.cards.filter((c) => c.q && c.a).slice(0, 40);
+    const qs = d.cards.filter((c) => c.q).slice(0, 40);
     if (!qs.length) return false;
     const blocks = [h('div', { class: 'ho-who' }, h('span', { text: 'Name: ____________________' }), h('span', { text: 'ID: ____________' }), h('span', { text: 'Date: ____________' })),
       h('p', { class: 'ho-hint', text: opt.choices ? '✏️ Circle the right answer, or write it on the line.' : '✏️ Write the answer on the line.' })];
@@ -151,13 +150,14 @@
       h('span', { class: 'ho-q-n', text: i + 1 }),
       h('div', { class: 'ho-q-body' },
         c.head && h('small', { text: c.head }),
+        c.pic && h('img', { class: 'ho-pic', src: SEJ.picSrc(c.pic), alt: '', crossorigin: 'anonymous' }),
         h('p', { text: c.q }),
         opt.choices && c.options && c.options.length > 1
           ? h('div', { class: 'ho-opts' }, c.options.map((o, k) => h('span', {}, h('b', { text: 'abcdef'[k] || '•' }), clean(o))))
           : h('div', { class: 'ho-line' })))));
     if (opt.key) {
       blocks.push(h('div', { class: 'ho-break' }), heading('✅', 'Answer key (for the teacher)'));
-      for (let i = 0; i < qs.length; i += 2) blocks.push(h('div', { class: 'ho-keys' }, qs.slice(i, i + 2).map((c, k) => h('p', {}, h('b', { text: `${i + k + 1}. ` }), c.a))));
+      for (let i = 0; i < qs.length; i += 2) blocks.push(h('div', { class: 'ho-keys' }, qs.slice(i, i + 2).map((c, k) => h('p', {}, h('b', { text: `${i + k + 1}. ` }), c.a || 'Your own answer'))));
     }
     flow(host, d, 'sheet', blocks);
     return true;
@@ -169,7 +169,7 @@
     await loadLib();
     const pages = [...host.querySelectorAll('.ho-page')];
     if (!pages.length) throw new Error('There is nothing to save yet.');
-    const opt = { margin: 0, filename: `${name.replace(/[^\w .-]+/g, ' ').replace(/\s+/g, ' ').trim() || 'handout'}.pdf`, image: { type: 'jpeg', quality: pages.length > 16 ? 0.86 : 0.93 }, html2canvas: { scale: pages.length > 16 ? 1.5 : 2, backgroundColor: '#ffffff', logging: false }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+    const opt = { margin: 0, filename: `${name.replace(/[^\w .-]+/g, ' ').replace(/\s+/g, ' ').trim() || 'handout'}.pdf`, image: { type: 'jpeg', quality: pages.length > 16 ? 0.86 : 0.93 }, html2canvas: { scale: pages.length > 16 ? 1.5 : 2, backgroundColor: '#ffffff', logging: false, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
     let job = window.html2pdf().set(opt).from(pages[0]).toPdf();
     pages.slice(1).forEach((p, i) => {
       job = job.get('pdf').then((pdf) => { onStep(i + 2, pages.length); pdf.addPage(); }).from(p).toContainer().toCanvas().toPdf();

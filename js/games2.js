@@ -5,9 +5,9 @@
   const { h, shuffle, pick, sfx, fx, voice } = SEJ;
   const { sequence, sample, answerTiles, speakBtn, art, GUMMY, speed } = SEJ.gameKit;
   const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  const isPic = (x) => /^https?:\/\//.test(x || '');
+  const isPic = SEJ.isPic;
   /* A picture can be an emoji or an https link to an image. */
-  const picture = (x, cls = 'big-art') => (isPic(x) ? h('img', { class: `pic ${cls}`, src: x, alt: '', draggable: 'false' }) : art(x, cls));
+  const picture = (x, cls = 'big-art') => (isPic(x) ? h('img', { class: `pic ${cls}`, src: SEJ.picSrc(x), alt: '', draggable: 'false' }) : art(x, cls));
   const done = (host) => host.finish();
 
   Object.assign(SEJ.TEMPLATES, {
