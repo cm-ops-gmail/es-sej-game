@@ -23,3 +23,16 @@ These are the only places the content differs. Please check the first section.
 - Mystery Boxes: as in Wordwall, each box holds a question with two answers.
 - Speaking prompts: these are not part of the lesson's games. Class Battle uses them in its Speak round. Questions and sample answers use slide sentences where the slides have them. Some questions are short tasks for the teacher to read out, such as "Be the waiter.", and some samples fill a slide pattern, such as "My school’s name is ___."
 - Power words: the Bangla comes from the slides wherever the slides give it. 36 of the 173 meanings aren't on the slides, mostly in lessons 1.1, 2.3, 4.2, 4.4 and 4.6. They appear on the lesson page but never in Class Battle. Those lessons skip the Word Flash warm-up and start at Team Battle.
+
+## Check against the updated curriculum sheet (13 Nov 2026)
+Checked against `SEJ Live Batch_Programme Design (1).xlsx`, Curriculum tab.
+- All 72 game links, lesson-plan links and slide links are the same as before.
+- All 72 Wordwall games were downloaded again: content, instructions and game type are unchanged, so no lesson game needed changing.
+- The "Games Types" column is now filled for every lesson. Its note is shown under each default game in the admin panel.
+- Four notes in that column don't describe the game the link opens. The site follows the linked game:
+  - 3.3 game 3: sheet says "Choose the correct answer"; the link is an Unjumble ("3.3 Unjumble Words").
+  - 3.4 game 2: sheet says "Match with the definitions"; the link is an Unjumble ("3.4 Unjumble").
+  - 3.4 game 3: sheet says "Unjumble"; the link is a Complete the sentence ("3.4 Choose the correct answer").
+  - 4.4 game 3: sheet says "Choose the correct answer"; the link is a Match up ("Weather Guild lines").
+- The Wordwall title of 3.2 game 1 reads "3.3 Spell the Word" (a typo in the title only).
+- "Workbook Link" and "Parents Guide Link" columns exist but are empty.

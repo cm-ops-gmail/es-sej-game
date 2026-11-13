@@ -165,3 +165,7 @@ Tick **Use my own content** to paste lines instead (`Question | Answer | wrong |
 Admin → Batches → **🔧 Check the database** creates any missing tab in the Google Sheet, repairs header rows (data is never overwritten), freezes and styles the headers, writes a `SEJ_Guide` tab and shows row counts. The same check runs by itself when the server starts. From a terminal: `node tests/sheet-setup.mjs`.
 
 Tests: `node tests/handouts.js` (handouts), `node tests/demo-real.js` (a full demo on the real sheet; needs `REAL_SHEET=1 node tests/dev-server.js 8125`).
+
+## Admin panel look
+
+The admin panel is laid out like a CMS and follows the 10 Minute School design system (`@tenminuteschool/design-system`): its colour and radius tokens, a sidebar with search, breadcrumbs, an overview table of all lessons, bordered cards, outline buttons and one dark primary button. The system ships as React components, and this site has no build step, so the tokens and component styles are re-created in `css/admin.css` (scoped to the admin; game screens are unchanged).

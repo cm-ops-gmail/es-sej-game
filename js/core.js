@@ -629,7 +629,8 @@
     else el.textContent = art;
     return el;
   };
-  addEventListener('pointerdown', (e) => { if (e.isPrimary) SEJ.fx.burst(e.clientX, e.clientY, 5); }, { passive: true });
+  /* Tap sparkles are for the children's screens; the admin panel stays calm. */
+  addEventListener('pointerdown', (e) => { if (e.isPrimary && !(e.target.closest && e.target.closest('.builder, .admin-login, .ho-overlay'))) SEJ.fx.burst(e.clientX, e.clientY, 5); }, { passive: true });
   addEventListener('pointerdown', () => SEJ.voice.flushPending(), { once: true });
   /* Picking any game piece gives a soft click, before the right or wrong sound. */
   const PIECES = '.game-screen button:not(.bar-btn):not(.speak-btn):not(:disabled), .cl-option, .cl-mu-word, .cl-rain-word, .cl-mem-card, .cl-tile, .st-option, .st-tile, .st-team-btn';

@@ -278,7 +278,7 @@
       let res = {};
       try { const r = await fetch('api/content', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ side: 'login', pin: entry }) }); res = Object.assign({ status: r.status }, await r.json().catch(() => ({}))); } catch (e) { res = { offline: true }; }
       busy = false;
-      if (res.ok) { setPin(entry); sfx.correct(1); next(); return; }
+      if (res.ok) { setPin(entry); sfx.tap(); next(); return; }
       entry = '';
       show();
       sfx.wrong();
@@ -315,18 +315,12 @@
       render(root);
     };
 
-    const side = h('nav', { class: 'b-side', 'aria-label': 'Lessons' }, SEJ.UNITS.map((u) => [
-      h('h3', { text: `Unit ${u.n}: ${u.title}` }),
-      window.SEJ_LESSONS.filter((l) => l.unit === u.n).map((l) => h('a', {
-        class: `b-lesson ${l.code === code ? 'on' : ''}`, href: `#/admin/${l.code}`,
-      }, h('span', { 'aria-hidden': 'true', text: l.emoji }), `${l.code} ${l.title}`, changes[l.code] ? h('em', { text: 'changed' }) : null)),
-    ]));
-
     const row = (id, g, actions) => {
       const t = SEJ.TEMPLATES[g.t] || { icon: '🎮', name: g.t };
       return h('article', { class: 'b-game', 'data-id': id },
         h('span', { class: 'b-icon', 'aria-hidden': 'true', text: t.icon }),
         h('div', { class: 'b-game-body' }, h('strong', { text: g.title }), h('small', { text: `${wwName(g)} · ${SEJ.itemCount(g)} items` })),
+        h('span', { class: 'cms-badge', text: wwName(g) }),
         h('div', { class: 'b-actions' }, actions));
     };
     const onMap = st.map.map((id, i) => {
@@ -345,12 +339,15 @@
     const defaults = st.base.games.map((g0, i) => {
       const id = `d${i}`, g = gameOf(st, id), on = st.map.includes(id);
       const ref = links.games && links.games[i];
-      return row(id, g, [
+      const el = row(id, g, [
         on ? h('span', { class: 'b-tag on', text: '✓ On the map' }) : h('button', { class: 'soft-btn ok', onclick: () => { st.map.push(id); commit('Added to the map'); } }, '➕ Add to map'),
         ref && h('a', { class: 'soft-btn', href: ref, target: '_blank', rel: 'noopener' }, 'Reference ↗'),
         h('button', { class: 'soft-btn', onclick: () => editor(root, st, id, g) }, '✏️ Edit'),
         st.edits[id] && twoTap('↩ Undo edits', 'Tap again', () => { delete st.edits[id]; commit('Back to the original'); }),
       ]);
+      /* What the curriculum sheet calls this game. */
+      if (links.types && links.types[i]) el.querySelector('.b-game-body').append(h('small', { class: 'b-sheet-type', text: `Curriculum sheet: ${links.types[i]}` }));
+      return el;
     });
     const created = st.created.map((g) => {
       const on = st.map.includes(g.id);
@@ -361,55 +358,122 @@
       ]);
     });
 
-    root.replaceChildren(h('div', { class: 'builder' },
-      h('header', { class: 'b-top' },
-        ...adminTop('lessons')),
-      h('div', { class: 'b-layout' }, side,
-        h('main', { class: 'b-main' },
-          h('section', { class: 'b-head' },
+    const onMapGames = () => st.map.map((id) => gameOf(st, id)).filter(Boolean);
+    const card = (label, title, note, body, extra) => h('section', { class: 'b-section cms-card', 'aria-label': label },
+      h('div', { class: 'cms-card-head' }, h('div', {}, h('h3', { text: title }), h('p', { class: 'b-note', text: note })), extra), body);
+    shell(root, 'lessons', [['Lessons', '#/admin'], [`${code} ${st.base.title}`]],
+      h('main', { class: 'b-main' },
+        h('section', { class: 'b-head cms-page-head' },
+          h('div', {},
             h('h2', {}, h('span', { 'aria-hidden': 'true', text: `${st.base.emoji} ` }), `${code} ${st.base.title}`),
-            h('p', { text: st.base.mission.en }),
-            h('div', { class: 'b-links' },
-              links.deck && h('a', { href: links.deck, target: '_blank', rel: 'noopener' }, 'Slides ↗'),
-              links.plan && h('a', { href: links.plan, target: '_blank', rel: 'noopener' }, 'Lesson plan ↗'),
-              h('a', { href: `?class=${code}`, target: '_blank', rel: 'noopener' }, '🏆 Class Battle ↗'),
-              h('button', { class: 'link-btn', id: 'lesson-slides', title: 'A PowerPoint with every game on the map: each question, then its answer', onclick: () => makeSlides(() => SEJ.slides.lesson(st.base, st.map.map((id) => gameOf(st, id)).filter(Boolean))) }, '📑 Download slides'),
-              h('button', { class: 'link-btn', id: 'lesson-handouts', title: 'Flashcards, quick tips and a practice sheet for students, as a PDF', onclick: () => SEJ.handouts.open(st.base, st.map.map((id) => gameOf(st, id)).filter(Boolean), true) }, '🖨️ Handouts (PDF)'),
-              h('label', { class: 'link-btn', title: 'Turn a Word file into slides in the same template' }, '📄 Word file to slides', h('input', { type: 'file', accept: '.docx', class: 'visually-hidden', id: 'docx-file', onchange: (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) makeSlides(() => SEJ.slides.docx(f)); } })),
-              changeOf(st) && twoTap('↩ Reset this lesson to its default games', 'Tap again to reset everything in this lesson', async () => {
-                try { await saveLessonChange(code, null); toast('Lesson reset'); } catch (e) { toast(e.message, true); }
-                render(root);
-              }, 'link-btn'))),
-          h('button', { class: 'cta create-btn', id: 'create-game', onclick: () => { sfx.tap(); location.hash = `#/admin/${code}/new`; } }, '➕ Create game'),
-          h('section', { class: 'b-section', 'aria-label': 'On the map' }, h('h3', { text: `On the map (${st.map.length})` }), h('p', { class: 'b-note', text: 'Students play these, in this order.' }), onMap),
-          h('section', { class: 'b-section', 'aria-label': 'Default games' }, h('h3', { text: 'Default games' }), h('p', { class: 'b-note', text: 'The games from the curriculum sheet.' }), defaults),
-          h('section', { class: 'b-section', 'aria-label': 'Created games' }, h('h3', { text: `Created games (${st.created.length})` }), created.length ? created : h('p', { class: 'b-note', text: 'Nothing created yet. Press Create game.' })),
-          st.base.talk && h('section', { class: 'b-section', 'aria-label': 'Speaking prompts' }, h('h3', { text: 'Speaking prompts' }), h('p', { class: 'b-note', text: 'Used in Class Battle’s Speak round.' }),
-            row('talk', { t: 'talk', title: 'Speaking prompts', items: st.talk || st.base.talk }, [h('button', { class: 'soft-btn', onclick: () => editor(root, st, 'talk', { t: 'talk', title: 'Speaking prompts', items: st.talk || st.base.talk }) }, '✏️ Edit')]))))));
+            h('p', { text: st.base.mission.en })),
+          h('button', { class: 'cta create-btn', id: 'create-game', onclick: () => { sfx.tap(); location.hash = `#/admin/${code}/new`; } }, '+ Create game')),
+        h('div', { class: 'b-links cms-tools' },
+          h('button', { class: 'link-btn', id: 'lesson-slides', title: 'A PowerPoint with every game on the map: each question, then its answer', onclick: () => makeSlides(() => SEJ.slides.lesson(st.base, onMapGames())) }, '📑 Download slides'),
+          h('button', { class: 'link-btn', id: 'lesson-handouts', title: 'Flashcards, quick tips and a practice sheet for students, as a PDF', onclick: () => SEJ.handouts.open(st.base, onMapGames(), true) }, '🖨️ Handouts (PDF)'),
+          h('label', { class: 'link-btn', title: 'Turn a Word file into slides in the same template' }, '📄 Word file to slides', h('input', { type: 'file', accept: '.docx', class: 'visually-hidden', id: 'docx-file', onchange: (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) makeSlides(() => SEJ.slides.docx(f)); } })),
+          h('a', { class: 'link-btn', href: `?class=${code}`, target: '_blank', rel: 'noopener' }, '🏆 Class Battle ↗'),
+          links.deck && h('a', { class: 'link-btn', href: links.deck, target: '_blank', rel: 'noopener' }, 'Class slides ↗'),
+          links.plan && h('a', { class: 'link-btn', href: links.plan, target: '_blank', rel: 'noopener' }, 'Lesson plan ↗'),
+          changeOf(st) && twoTap('↩ Reset this lesson to its default games', 'Tap again to reset everything in this lesson', async () => {
+            try { await saveLessonChange(code, null); toast('Lesson reset'); } catch (e) { toast(e.message, true); }
+            render(root);
+          }, 'link-btn danger')),
+        card('On the map', `On the map (${st.map.length})`, 'Students play these, in this order.', onMap),
+        card('Default games', 'Default games', 'The games from the curriculum sheet.', defaults),
+        card('Created games', `Created games (${st.created.length})`, 'Games you made for this lesson.', created.length ? created : h('p', { class: 'cms-empty', text: 'Nothing created yet. Press Create game.' })),
+        st.base.talk && card('Speaking prompts', 'Speaking prompts', 'Used in Class Battle’s Speak round.',
+          row('talk', { t: 'talk', title: 'Speaking prompts', items: st.talk || st.base.talk }, [h('button', { class: 'soft-btn', onclick: () => editor(root, st, 'talk', { t: 'talk', title: 'Speaking prompts', items: st.talk || st.base.talk }) }, '✏️ Edit')]))));
   }
 
-  /* The top of every admin screen: where you are, and where saves go. */
-  function adminTop(here) {
+  /* ---------- the CMS frame: sidebar, breadcrumb and where saves go ---------- */
+  function saveState() {
     const info = SEJ.sharedInfo || {};
-    const state = info.shared ? ['ok', '☁️ Saves for everyone', 'Changes are saved in the Google Sheet for every student.']
-      : info.error === 'sheet not shared' ? ['warn', '⚠️ Google Sheet not shared', SHEET_HELP]
-        : ['warn', '💻 Saves on this device only', 'Add the Google Sheet settings in Vercel to share changes with every student.'];
-    return [
-      h('a', { class: 'soft-btn', href: '#/map' }, '← Map'),
-      h('h1', { text: '🛠️ Admin panel' }),
-      h('nav', { class: 'b-tabs', 'aria-label': 'Admin sections' },
-        h('a', { class: `b-tab ${here === 'lessons' ? 'on' : ''}`, href: `#/admin/${code}`, id: 'tab-lessons' }, '📚 Lessons'),
-        h('a', { class: `b-tab ${here === 'batches' ? 'on' : ''}`, href: '#/admin/batches', id: 'tab-batches' }, '👥 Batches')),
-      h('span', { class: `b-save-state ${state[0]}`, title: state[2] }, state[1]),
-      h('span', { class: 'spacer' }),
-      h('button', { class: 'soft-btn', onclick: () => { setPin(''); location.hash = '#/map'; } }, 'Log out'),
-    ];
+    const state = info.shared ? ['ok', 'Saves for everyone', 'Changes are saved in the Google Sheet for every student.']
+      : info.error === 'sheet not shared' ? ['warn', 'Google Sheet not shared', SHEET_HELP]
+        : ['warn', 'Saves on this device only', 'Add the Google Sheet settings in Vercel to share changes with every student.'];
+    return h('span', { class: `b-save-state ${state[0]}`, title: state[2] }, h('i', { 'aria-hidden': 'true' }), state[1]);
+  }
+  function sidebar(here) {
+    const changes = allChanges();
+    const units = SEJ.UNITS.map((u) => h('details', { class: 'cms-unit', ...(here === 'lessons' && window.SEJ_LESSONS.some((l) => l.unit === u.n && l.code === code) ? { open: '' } : {}) },
+      h('summary', {}, `Unit ${u.n}`, h('span', { text: u.title })),
+      window.SEJ_LESSONS.filter((l) => l.unit === u.n).map((l) => h('a', {
+        class: `b-lesson ${here === 'lessons' && l.code === code ? 'on' : ''}`, href: `#/admin/${l.code}`, 'data-find': `${l.code} ${l.title}`.toLowerCase(),
+      }, h('span', { class: 'cms-code', text: l.code }), h('span', { class: 'cms-lesson-name', text: l.title }), changes[l.code] ? h('em', { text: 'edited' }) : null))));
+    const find = h('input', { class: 'cms-find', type: 'search', placeholder: 'Find a lesson…', 'aria-label': 'Find a lesson', oninput: (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      units.forEach((u) => {
+        let any = false;
+        u.querySelectorAll('.b-lesson').forEach((a) => { const hit = !q || a.dataset.find.includes(q); a.hidden = !hit; any = any || hit; });
+        u.hidden = !any;
+        if (q) u.open = true;
+      });
+    } });
+    const item = (key, href, icon, label, id) => h('a', { class: `cms-nav ${here === key ? 'on' : ''}`, href, id }, h('span', { 'aria-hidden': 'true', text: icon }), label);
+    return h('aside', { class: 'cms-side' },
+      h('a', { class: 'cms-brand', href: '#/admin' }, h('img', { src: 'assets/slides/sej.png', alt: '' }), h('div', {}, h('strong', { text: 'Hero Quest' }), h('small', { text: 'Content manager' }))),
+      h('nav', { class: 'cms-menu-list', 'aria-label': 'Admin sections' },
+        item('home', '#/admin', '▦', 'Overview', 'tab-home'),
+        item('batches', '#/admin/batches', '👥', 'Batches', 'tab-batches')),
+      h('p', { class: 'cms-group', text: 'Lessons' }),
+      find,
+      h('nav', { class: 'b-side', 'aria-label': 'Lessons' }, units),
+      h('div', { class: 'cms-side-foot' },
+        h('a', { class: 'cms-nav', href: '#/map' }, h('span', { 'aria-hidden': 'true', text: '↗' }), 'View the site'),
+        h('button', { class: 'cms-nav', onclick: () => { setPin(''); location.hash = '#/map'; } }, h('span', { 'aria-hidden': 'true', text: '⎋' }), 'Log out')));
+  }
+  function shell(root, here, crumbs, main) {
+    const el = h('div', { class: 'builder cms' },
+      sidebar(here),
+      h('div', { class: 'cms-main' },
+        h('header', { class: 'b-top' },
+          h('button', { class: 'cms-burger', 'aria-label': 'Menu', onclick: () => el.classList.toggle('nav-open') }, '☰'),
+          h('nav', { class: 'cms-crumbs', 'aria-label': 'Breadcrumb' }, [['Admin', '#/admin'], ...crumbs].map((c, i, all) => [i ? h('span', { class: 'cms-sep', 'aria-hidden': 'true', text: '›' }) : null, c[1] && i < all.length - 1 ? h('a', { href: c[1] }, c[0]) : h('b', { text: c[0] })])),
+          h('span', { class: 'spacer' }),
+          saveState()),
+        main),
+      h('div', { class: 'cms-scrim', onclick: () => el.classList.remove('nav-open') }));
+    root.replaceChildren(el);
+    const on = el.querySelector('.b-lesson.on');
+    if (on) on.scrollIntoView({ block: 'nearest' });
+  }
+
+  /* ---------- Overview: every lesson at a glance ---------- */
+  function home(root) {
+    if (!getPin()) return login(root, () => home(root));
+    const changes = allChanges();
+    const rows = window.SEJ_LESSONS.map((l) => {
+      const st = lessonState(l.code);
+      return { l, on: st.map.length, made: st.created.length, edited: !!changes[l.code] };
+    });
+    const stat = (n, label) => h('div', { class: 'cms-stat' }, h('b', { text: n }), h('span', { text: label }));
+    const body = h('tbody', {}, rows.map((r) => h('tr', { 'data-find': `${r.l.code} ${r.l.title} unit ${r.l.unit}`.toLowerCase(), onclick: () => { location.hash = `#/admin/${r.l.code}`; } },
+      h('td', {}, h('span', { class: 'cms-code', text: r.l.code })),
+      h('td', {}, h('a', { href: `#/admin/${r.l.code}` }, h('span', { 'aria-hidden': 'true', text: `${r.l.emoji} ` }), r.l.title)),
+      h('td', { text: `Unit ${r.l.unit}` }),
+      h('td', { text: r.on }),
+      h('td', { text: r.made || '–' }),
+      h('td', {}, h('span', { class: `cms-badge ${r.edited ? 'warn' : ''}`, text: r.edited ? 'Edited' : 'Default' })),
+      h('td', {}, h('a', { class: 'soft-btn', href: `#/admin/${r.l.code}` }, 'Manage')))));
+    const find = h('input', { class: 'b-input cms-search', type: 'search', placeholder: 'Search lessons…', 'aria-label': 'Search lessons', oninput: (e) => { const q = e.target.value.trim().toLowerCase(); body.querySelectorAll('tr').forEach((tr) => { tr.hidden = !!q && !tr.dataset.find.includes(q); }); } });
+    shell(root, 'home', [['Overview']],
+      h('main', { class: 'b-main' },
+        h('section', { class: 'cms-page-head' }, h('div', {}, h('h2', { text: 'Overview' }), h('p', { text: 'Pick a lesson to choose its games, create new ones, or make slides and handouts.' })),
+          h('a', { class: 'cta create-btn', href: '#/admin/batches' }, 'Manage batches')),
+        h('div', { class: 'cms-stats' },
+          stat(rows.length, 'Lessons'), stat(rows.reduce((n, r) => n + r.on, 0), 'Games on the map'),
+          stat(rows.reduce((n, r) => n + r.made, 0), 'Games you created'), stat(rows.filter((r) => r.edited).length, 'Lessons edited')),
+        h('section', { class: 'cms-card' },
+          h('div', { class: 'cms-card-head' }, h('div', {}, h('h3', { text: 'Lessons' }), h('p', { class: 'b-note', text: 'All 24 lessons of the SEJ Live Batch.' })), find),
+          h('div', { class: 'cms-table-wrap' }, h('table', { class: 'cms-table', id: 'lesson-table' },
+            h('thead', {}, h('tr', {}, ['Code', 'Lesson', 'Unit', 'On the map', 'Created', 'Status', ''].map((t) => h('th', { text: t })))), body)))));
   }
 
   /* ---------- Batches: a link, unlocked lessons and a leaderboard for each group of students ---------- */
   async function batches(root) {
     const wrap = h('main', { class: 'b-picker' }, h('p', { class: 'b-note', text: 'Loading batches…' }));
-    root.replaceChildren(h('div', { class: 'builder' }, h('header', { class: 'b-top' }, ...adminTop('batches')), wrap));
+    shell(root, 'batches', [['Batches']], wrap);
     const call = (body) => SEJ.batch.admin(getPin(), body).catch(() => ({ status: 0 }));
     const res = await call({ side: 'list' });
     if (res.status === 401) { setPin(''); return render(root, 'batches'); }
@@ -427,7 +491,7 @@
       if (!r.ok) return toast('Couldn’t create the batch. Try again.', true);
       toast('Batch created. Copy its link for your students.');
       batches(root);
-    } }, name, h('button', { class: 'cta create-btn', id: 'batch-create', type: 'submit' }, '➕ Create batch link'));
+    } }, name, h('button', { class: 'cta create-btn', id: 'batch-create', type: 'submit' }, '+ Create batch link'));
     const card = (b) => {
       const open = new Set(b.open);
       const count = h('small', { text: '' });
@@ -460,7 +524,7 @@
         h('div', { class: 'b-links' }, h('button', { class: 'link-btn', onclick: () => setAll(true) }, 'Unlock all'), h('button', { class: 'link-btn', onclick: () => setAll(false) }, 'Lock all')));
     };
     wrap.replaceChildren(
-      h('p', { class: 'b-note', text: 'Each batch gets its own link and its own leaderboard. Students open the link, type their name and student ID, and play the lessons you unlock. Only their first try at each game counts.' }),
+      h('section', { class: 'cms-page-head' }, h('div', {}, h('h2', { text: 'Batches' }), h('p', { text: 'Each batch gets its own link and its own leaderboard. Students open the link, type their name and student ID, and play the lessons you unlock. Only their first try at each game counts.' }))),
       create,
       ...(res.batches.length ? res.batches.map(card) : [h('p', { class: 'b-note', text: 'No batches yet. Create the first one above.' })]),
       dbCheck());
@@ -484,18 +548,16 @@
   /* ---------- Create game: choose a Wordwall game type ---------- */
   function picker(root) {
     const st = lessonState(code);
-    root.replaceChildren(h('div', { class: 'builder' },
-      h('header', { class: 'b-top' },
-        h('a', { class: 'soft-btn', href: `#/admin/${code}` }, '← Back'),
-        h('h1', { text: `➕ Create a game for ${code} ${st.base.title}` })),
+    shell(root, 'lessons', [['Lessons', '#/admin'], [`${code} ${st.base.title}`, `#/admin/${code}`], ['Create game']],
       h('main', { class: 'b-picker' },
-        h('p', { class: 'b-note', text: 'Choose a game type. Next you paste the content, and you’ll see an example of how to write it.' }),
+        h('section', { class: 'cms-page-head' }, h('div', {}, h('h2', { text: 'Step 1 of 2: choose a game type' }), h('p', { text: 'Next you paste the content, and you’ll see an example of how to write it.' })),
+          h('a', { class: 'soft-btn', href: `#/admin/${code}` }, '← Back')),
         CATALOG.map(([group, list]) => h('section', { class: 'b-type-group' }, h('h3', { text: group }), h('div', { class: 'b-templates' },
           list.map(([name, t, options]) => {
             const meta = SEJ.TEMPLATES[t];
             return h('button', { class: 'template-btn', 'data-type': name, onclick: () => { sfx.tap(); editor(root, st, 'new', Object.assign({ t, title: '' }, options || {})); } },
               h('span', { 'aria-hidden': 'true', text: meta.icon }), h('b', { text: name }), h('small', { text: meta.en }));
-          })))))));
+          }))))));
   }
 
   /* ---------- paste content ---------- */
@@ -569,12 +631,10 @@
       return st.map.indexOf(isNew ? g.id : id);
     };
     const wwType = wwName(game);
-    root.replaceChildren(h('div', { class: 'builder' },
-      h('header', { class: 'b-top' },
-        h('button', { class: 'soft-btn', onclick: () => render(root) }, '← Cancel'),
-        h('h1', { text: `${t.icon} ${isNew ? 'New' : 'Edit'}: ${wwType}` })),
+    shell(root, 'lessons', [['Lessons', '#/admin'], [`${code} ${st.base.title}`, `#/admin/${code}`], [isNew ? 'Create game' : 'Edit game']],
       h('main', { class: 'b-editor' },
-        h('p', { class: 'b-crumb', text: `Lesson ${code}: ${st.base.title} · plays as ${t.name}` }),
+        h('section', { class: 'cms-page-head' }, h('div', {}, h('h2', { text: `${t.icon} ${isNew ? 'Step 2 of 2: ' : 'Edit: '}${wwType}` }), h('p', { class: 'b-crumb', text: `Lesson ${code}: ${st.base.title} · plays as ${t.name}` })),
+          h('button', { class: 'soft-btn', onclick: () => render(root) }, '← Cancel')),
         h('label', { class: 'b-label' }, 'Title', title),
         id !== 'talk' && h('label', { class: 'b-label' }, 'Instruction in Bangla (optional)', bn),
         game.t === 'quiz' && h('label', { class: 'b-check' }, show, ' Gameshow mode: timer and power-ups'),
@@ -602,9 +662,9 @@
             if (at === null) return;
             if (at >= 0) location.hash = `#/play/${code}/${at}`;
             else { toast('Saved. It isn’t on the map, so add it to the map to play it.'); render(root); }
-          } }, '▶ Save and play')))));
+          } }, '▶ Save and play'))));
     check();
   }
 
-  SEJ.builder = { render };
+  SEJ.builder = { render: (root, a, b) => (a ? render(root, a, b) : home(root)) };
 })();

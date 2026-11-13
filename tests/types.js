@@ -71,7 +71,15 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   await p.waitForFunction(() => /Wrong PIN/.test(document.querySelector('.pin-msg').textContent));
   check('wrong admin PIN is refused', !(await p.$('#create-game')));
   for (const d of '1010') await p.click(`.pin-key[data-key="${d}"]`);
+  await p.waitForSelector('#lesson-table');
+  check('admin opens on an overview of all 24 lessons', (await p.locator('#lesson-table tbody tr').count()) === 24);
+  await p.fill('.cms-search', 'action');
+  check('lessons can be searched', (await p.locator('#lesson-table tbody tr:visible').count()) === 1);
+  await p.fill('.cms-search', '');
+  await p.screenshot({ path: `${SHOTS}/admin-overview.png`, fullPage: true });
+  await p.locator('#lesson-table tbody tr').first().locator('td').nth(1).click();
   await p.waitForSelector('#create-game');
+  check('the sidebar marks the open lesson', (await p.locator('.b-lesson.on').count()) === 1);
   check('admin panel shows default games', (await p.locator('.b-section[aria-label="Default games"] .b-game').count()) === 3);
   check('panel saves for everyone', /everyone/.test(await p.textContent('.b-save-state')));
   await p.screenshot({ path: `${SHOTS}/admin-panel.png`, fullPage: true });

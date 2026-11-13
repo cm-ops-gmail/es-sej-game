@@ -1,4 +1,4 @@
-/* Source links copied from the "Curriculum & Content" tab of the curriculum workbook. */
+/* Source links copied from the "Curriculum & Content" tab of the curriculum workbook. "types" are the notes in the sheet's Games Types column. */
 window.SEJ_LINKS = {
  "1.1": {
   "plan": "https://docs.google.com/document/d/1AHaoxedxQXEAD4QuxvUrtraADQ7ehCc_a7WJbiqdI2M/edit?usp=sharing",
@@ -8,6 +8,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/85176/225/721",
    "https://wordwall.net/play/86087/464/971",
    "https://wordwall.net/play/86088/654/308"
+  ],
+  "types": [
+   "Sentence Rejumble",
+   "Choose the right option clicking pop up characters",
+   "Quiz (Q&A)"
   ]
  },
  "1.2": {
@@ -18,6 +23,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/86153/652/755",
    "https://wordwall.net/play/86083/729/535",
    "https://wordwall.net/play/86157/209/303"
+  ],
+  "types": [
+   "Unscramble the words",
+   "Choose from two options",
+   "Rewrite the sentence"
   ]
  },
  "1.3": {
@@ -28,6 +38,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/85764/143/248",
    "https://wordwall.net/play/85765/537/925",
    "https://wordwall.net/play/85766/416/222"
+  ],
+  "types": [
+   "Seperate Activity from list",
+   "Sentence Unjumble",
+   "Unfold Box"
   ]
  },
  "1.4": {
@@ -38,6 +53,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/86079/973/756",
    "https://wordwall.net/play/86075/652/652",
    "https://wordwall.net/play/86026/234/808"
+  ],
+  "types": [
+   "Choose proper word for the blank",
+   "Sentence rejumble",
+   "Activity Sorting"
   ]
  },
  "1.5": {
@@ -48,6 +68,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/86094/945/947",
    "https://wordwall.net/play/86093/893/535",
    "https://wordwall.net/play/86163/296/421"
+  ],
+  "types": [
+   "Match the words",
+   "Match the images",
+   "Fill in the blanks"
   ]
  },
  "1.6": {
@@ -58,6 +83,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/86216/759/779",
    "https://wordwall.net/play/86217/832/359",
    "https://wordwall.net/play/86218/098/294"
+  ],
+  "types": [
+   "Spell the word",
+   "Fill in the blanks",
+   "Flying aeroplane choose the correct word from floating cloud"
   ]
  },
  "1.7": {
@@ -68,6 +98,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/86219/854/722",
    "https://wordwall.net/play/86227/301/334",
    "https://wordwall.net/play/86240/782/870"
+  ],
+  "types": [
+   "Spellings",
+   "Opinion vs Statement (Seperate the two types from multiple sentences)",
+   "Sentence rejumble"
   ]
  },
  "2.1": {
@@ -78,6 +113,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/86439/657/349",
    "https://wordwall.net/play/86440/934/625",
    "https://wordwall.net/play/86441/981/642"
+  ],
+  "types": [
+   "Spelling",
+   "Fill in the blanks",
+   "Complete the sentence"
   ]
  },
  "2.2": {
@@ -88,6 +128,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/86879/999/266",
    "https://wordwall.net/play/86881/842/849",
    "https://wordwall.net/play/86885/410/600"
+  ],
+  "types": [
+   "Put object image in the blank box",
+   "Complete the sentence",
+   "Spelling"
   ]
  },
  "2.3": {
@@ -98,6 +143,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/86886/850/742",
    "https://wordwall.net/play/86888/207/606",
    "https://wordwall.net/play/86889/102/765"
+  ],
+  "types": [
+   "Sentence choosing for different segment",
+   "Sentence choosing for different segment",
+   "Sentence choosing for different segment"
   ]
  },
  "2.4": {
@@ -108,6 +158,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/87327/458/873",
    "https://wordwall.net/play/87329/456/438",
    "https://wordwall.net/play/87334/006/274"
+  ],
+  "types": [
+   "Activity Seperation choose from images",
+   "Sequencing Words",
+   "Spell the word"
   ]
  },
  "2.5": {
@@ -118,6 +173,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/87559/360/994",
    "https://wordwall.net/play/87562/309/398",
    "https://wordwall.net/play/87568/395/961"
+  ],
+  "types": [
+   "Action choosing for different segment",
+   "Unjumble the Invitation Phrases",
+   "Identifying formal vs informal"
   ]
  },
  "3.1": {
@@ -128,6 +188,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/87844/508/202",
    "https://wordwall.net/play/87845/813/981",
    "https://wordwall.net/play/88278/583/726"
+  ],
+  "types": [
+   "Match with definition",
+   "Spelling",
+   "True False"
   ]
  },
  "3.2": {
@@ -138,6 +203,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/88279/400/355",
    "https://wordwall.net/play/88280/407/478",
    "https://wordwall.net/play/88280/918/154"
+  ],
+  "types": [
+   "Spelling",
+   "Match the Keywords",
+   "Complete the sentence"
   ]
  },
  "3.3": {
@@ -148,6 +218,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/88370/668/328",
    "https://wordwall.net/play/88375/221/460",
    "https://wordwall.net/play/88376/718/447"
+  ],
+  "types": [
+   "Spelling",
+   "Choose the correct one",
+   "Choose the correct answer"
   ]
  },
  "3.4": {
@@ -158,6 +233,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/88378/277/708",
    "https://wordwall.net/play/88449/157/907",
    "https://wordwall.net/play/88449/767/651"
+  ],
+  "types": [
+   "Spelling",
+   "Match with the definitions",
+   "Unjumble"
   ]
  },
  "4.1": {
@@ -168,6 +248,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/88452/087/838",
    "https://wordwall.net/play/88461/604/116",
    "https://wordwall.net/play/88462/287/676"
+  ],
+  "types": [
+   "Match Keyword and definition",
+   "Identify and Sorting object",
+   "Listen and Spell"
   ]
  },
  "4.2": {
@@ -178,6 +263,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/88849/697/850",
    "https://wordwall.net/play/89132/885/140",
    "https://wordwall.net/play/89139/046/161"
+  ],
+  "types": [
+   "Animal sorting Choosing from Image",
+   "Guess the animal",
+   "Spelling"
   ]
  },
  "4.3": {
@@ -188,6 +278,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/89214/611/566",
    "https://wordwall.net/play/90069/557/736",
    "https://wordwall.net/play/90209/136/833"
+  ],
+  "types": [
+   "Sentence choosing through colour picking",
+   "Matching image",
+   "Quiz show"
   ]
  },
  "4.4": {
@@ -198,6 +293,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/90213/241/590",
    "https://wordwall.net/play/90215/366/853",
    "https://wordwall.net/play/90216/575/312"
+  ],
+  "types": [
+   "Choose The Odd One Out",
+   "Matching Images",
+   "Choose the correct answer"
   ]
  },
  "4.5": {
@@ -208,6 +308,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/90488/145/356",
    "https://wordwall.net/play/90490/656/691",
    "https://wordwall.net/play/90491/766/224"
+  ],
+  "types": [
+   "Make a word",
+   "Match up",
+   "Error ditactor (True or False)"
   ]
  },
  "4.6": {
@@ -218,6 +323,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/90558/303/606",
    "https://wordwall.net/play/90559/386/415",
    "https://wordwall.net/play/90560/757/351"
+  ],
+  "types": [
+   "Tense understanding through sentence comparison",
+   "Find the missing word",
+   "Fix the error in the sentence"
   ]
  },
  "4.7": {
@@ -228,6 +338,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/90877/354/186",
    "https://wordwall.net/play/90876/532/696",
    "https://wordwall.net/play/90878/374/249"
+  ],
+  "types": [
+   "Name the Vehicles",
+   "Choosing vehicle type",
+   "Fill in the blanks"
   ]
  },
  "4.8": {
@@ -238,6 +353,11 @@ window.SEJ_LINKS = {
    "https://wordwall.net/play/90879/394/725",
    "https://wordwall.net/play/90880/940/293",
    "https://wordwall.net/play/90884/747/645"
+  ],
+  "types": [
+   "Quiz on seasons",
+   "Spell the word",
+   "Choose the  proper article"
   ]
  }
 };
