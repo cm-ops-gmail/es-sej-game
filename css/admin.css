@@ -236,3 +236,7 @@
 .cms-scope-note { display: block; margin: 6px 6px 0; color: var(--muted-foreground); font-size: 12px; }
 .scope-badge { flex: none; }
 @media (max-width: 900px) { .scope-badge { display: none; } }
+
+/* ---------- changes stuck on this device ---------- */
+.cms-device { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border: 1px solid var(--warn-border); border-radius: var(--radius); background: var(--warn-bg); color: var(--warn); font-size: 14px; font-weight: 500; }
+.cms-device span { flex: 1 1 260px; }

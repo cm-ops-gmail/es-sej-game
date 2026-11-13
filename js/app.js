@@ -462,6 +462,8 @@
   }
   store.save();
   addEventListener('hashchange', route);
+  /* The shared games arrived after the page was drawn: redraw where it is safe (never in the middle of a game). */
+  addEventListener('sej-shared', () => { const page = location.hash.replace(/^#\/?/, '').split('/')[0]; if (['', 'map', 'lesson'].includes(page)) route(); });
   /* Browsers only allow sound after a first tap. */
   addEventListener('pointerdown', () => { SEJ.music.sync(); }, { once: true });
   document.addEventListener('DOMContentLoaded', () => { openShortLink(); Promise.all([SEJ.loadShared(), SEJ.batch.load()]).then(route); });

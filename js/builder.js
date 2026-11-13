@@ -211,9 +211,14 @@
   const keyOf = (code) => (scope() === 'base' ? `base:${code}` : code);
   async function saveLessonChange(lessonCode, change) {
     const code = keyOf(lessonCode);
+    if (!SEJ.sharedInfo.shared && /^https?:$/.test(location.protocol)) await SEJ.connectShared();
     const shared = SEJ.sharedInfo && SEJ.sharedInfo.shared;
+    /* A server that didn't answer is not the same as no database: never save on this device by accident,
+       because students would never see it. */
+    if (!shared && SEJ.sharedInfo.unreachable) throw new Error('Can’t reach the server, so nothing was saved. Check the internet and try again.');
     if (shared) {
-      const r = await fetch('api/content', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ side: 'save', pin: getPin(), code, change }) });
+      const r = await fetch('api/content', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ side: 'save', pin: getPin(), code, change }) }).catch(() => null);
+      if (!r) throw new Error('Can’t reach the server, so nothing was saved. Check the internet and try again.');
       const res = await r.json().catch(() => ({}));
       if (r.status === 401) { setPin(''); throw new Error('Please log in again.'); }
       if (!r.ok) throw new Error(res.error === 'sheet not shared' ? SHEET_HELP : res.error === 'too large' ? 'This lesson has too much content to save. Remove a game or shorten one.' : 'The save didn’t reach the server. Check the internet and try again.');
@@ -310,6 +315,7 @@
   let code = '1.1';
   function render(root, lessonCode, screen) {
     if (!getPin()) return login(root, () => render(root, lessonCode, screen));
+    if (waitForSheet(root, () => render(root, lessonCode, screen))) return;
     if (lessonCode && lessonCode !== 'batches') code = lessonCode;
     if (!window.SEJ_LESSONS.some((l) => l.code === code)) code = '1.1';
     if (lessonCode === 'batches') return batches(root);
@@ -398,6 +404,40 @@
           row('talk', { t: 'talk', title: 'Speaking prompts', items: st.talk || st.base.talk }, [h('button', { class: 'soft-btn', onclick: () => editor(root, st, 'talk', { t: 'talk', title: 'Speaking prompts', items: st.talk || st.base.talk }) }, '✏️ Edit')]))));
   }
 
+  /* Before showing any game, make sure the shared games have been read. Otherwise an edit could be built from the
+     default games and overwrite what is saved. Returns true while it is still connecting. */
+  let connecting = false, connectTried = false;
+  function waitForSheet(root, again) {
+    if (SEJ.sharedInfo.shared || connectTried || !/^https?:$/.test(location.protocol)) return false;
+    if (!connecting) {
+      connecting = true;
+      root.replaceChildren(h('div', { class: 'admin-login' }, h('div', { class: 'pin-card pass-card' }, h('h1', { class: 'pin-title', text: 'Connecting…' }), h('p', { class: 'pin-msg', role: 'status', text: 'Getting the games from the Google Sheet. This can take a few seconds.' }))));
+      SEJ.connectShared().then(() => { connecting = false; connectTried = true; again(); });
+    }
+    return true;
+  }
+  /* Changes made on this device while the sheet wasn't connected. Students can't see them. */
+  function deviceBanner(again) {
+    const keys = Object.keys(store.state.custom || {});
+    if (!keys.length || !SEJ.sharedInfo.shared) return null;
+    const act = async (publish) => {
+      try {
+        for (const k of keys) {
+          if (publish) await fetch('api/content', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ side: 'save', pin: getPin(), code: k, change: store.state.custom[k] }) }).then((r) => { if (!r.ok) throw new Error('save failed'); });
+          delete store.state.custom[k];
+        }
+        store.save();
+        await SEJ.loadShared();
+        toast(publish ? 'Published. Students see these games now.' : 'Device changes removed.');
+      } catch (e) { toast('That didn’t work. Try again.', true); }
+      again();
+    };
+    return h('div', { class: 'cms-device', id: 'device-banner' },
+      h('span', { text: `⚠️ This device holds ${keys.length} lesson ${keys.length === 1 ? 'change' : 'changes'} that students can’t see.` }),
+      h('button', { class: 'soft-btn', id: 'device-publish', onclick: () => act(true) }, 'Publish to students'),
+      h('button', { class: 'soft-btn', id: 'device-discard', onclick: () => act(false) }, 'Discard'));
+  }
+
   /* ---------- the CMS frame: sidebar, breadcrumb and where saves go ---------- */
   function saveState() {
     const info = SEJ.sharedInfo || {};
@@ -441,6 +481,8 @@
         h('button', { class: 'cms-nav', onclick: () => { setPin(''); location.hash = '#/map'; } }, h('span', { 'aria-hidden': 'true', text: '⎋' }), 'Log out')));
   }
   function shell(root, here, crumbs, main) {
+    const banner = deviceBanner(() => render(root));
+    if (banner && main && main.firstChild) main.insertBefore(banner, main.firstChild);
     const el = h('div', { class: 'builder cms' },
       sidebar(here),
       h('div', { class: 'cms-main' },
@@ -460,6 +502,7 @@
   /* ---------- Overview: every lesson at a glance ---------- */
   function home(root) {
     if (!getPin()) return login(root, () => home(root));
+    if (waitForSheet(root, () => home(root))) return;
     const changes = allChanges();
     const rows = window.SEJ_LESSONS.map((l) => {
       const st = lessonState(l.code);

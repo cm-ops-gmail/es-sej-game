@@ -101,19 +101,36 @@
   };
   /* Shared admin content from the server. Pages wait for it briefly, then carry on without it. */
   SEJ.sharedInfo = { shared: false };
-  SEJ.loadShared = function () {
-    if (!/^https?:$/.test(location.protocol)) return Promise.resolve();
+  /* One try at reading the shared games. Resolves true when the server answered properly.
+     unreachable = the server didn't answer (slow start, no internet); it is not the same as "no database set up". */
+  const fetchShared = (ms) => {
     const ctrl = window.AbortController ? new AbortController() : null;
-    const stop = setTimeout(() => ctrl && ctrl.abort(), 3000);
+    const stop = setTimeout(() => ctrl && ctrl.abort(), ms);
     return fetch('api/content', { cache: 'no-store', signal: ctrl && ctrl.signal })
       .then((r) => r.json().catch(() => null))
       .then((res) => {
-        if (!res) return;
-        SEJ.sharedInfo = { shared: !!res.shared && !res.error, at: res.at || 0, error: res.error || '' };
+        if (!res) throw new Error('empty');
+        SEJ.sharedInfo = { shared: !!res.shared && !res.error, at: res.at || 0, error: res.error || '', unreachable: !!res.error && res.error !== 'sheet not shared' };
         if (res.content && typeof res.content === 'object') window.SEJ_CUSTOM = res.content;
+        return !SEJ.sharedInfo.unreachable;
       })
-      .catch(() => {})
-      .then(() => clearTimeout(stop));
+      .catch(() => { SEJ.sharedInfo = Object.assign({}, SEJ.sharedInfo, { shared: false, unreachable: true }); return false; })
+      .then((ok) => { clearTimeout(stop); return ok; });
+  };
+  /* Students: wait up to 3 seconds, then carry on, and keep trying in the background. When the games arrive the
+     map or lesson page redraws, so a slow start never leaves a student on stale games. */
+  SEJ.loadShared = function () {
+    if (!/^https?:$/.test(location.protocol)) return Promise.resolve();
+    const retry = (n) => { if (n > 5) return; setTimeout(() => fetchShared(20000).then((ok) => { if (ok) window.dispatchEvent(new Event('sej-shared')); else retry(n + 1); }), 1200 * n); };
+    return fetchShared(3000).then((ok) => { if (!ok) retry(1); });
+  };
+  /* The admin: wait properly (a cold start can take several seconds) so an edit is never built from stale games. */
+  SEJ.connectShared = async function () {
+    for (let n = 0; n < 3 && !SEJ.sharedInfo.shared; n++) {
+      if (await fetchShared(20000) || (SEJ.sharedInfo.error === 'sheet not shared')) break;
+      await new Promise((r) => setTimeout(r, 800));
+    }
+    return SEJ.sharedInfo.shared;
   };
   SEJ.lessonRaw = (code) => SEJ.lessonsRaw().find((l) => l.code === code);
   /* The same lessons with the child's own name filled in (used for playing). */
