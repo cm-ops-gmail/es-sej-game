@@ -31,15 +31,15 @@
       const sentence = g.t === 'unjumble' || g.t === 'magnets' || g.t === 'blank';
       for (const c of cards) {
         const fact = sentence ? c.a : c.a ? `${c.q}  →  ${c.a}` : c.q;
-        lines.push(fact);
+        lines.push({ full: fact, ask: c.q });
         if (c.note) tip(c.note, fact);
         d.cards.push({ q: sentence && g.t !== 'blank' ? c.q : c.q, a: c.a, head: c.head || '', options: c.options, note: c.note || '', game: g.title });
       }
-      if (g.t === 'whack') lines.push(...g.good.map((x) => `✅  ${x}`));
-      if (g.t === 'rank') lines.push(g.items.map((i, n) => `${n + 1}. ${i[0]}`).join('   '));
-      if (g.t === 'memorize' || g.t === 'labelled') lines.push(...g.items.map((i) => clean(`${i[1] && !/^https?:/.test(i[1]) && g.t === 'memorize' ? i[1] : ''} ${i[0]}`)));
+      if (g.t === 'whack') lines.push(...g.good.map((x) => ({ full: `✅  ${x}`, ask: x })), ...g.bad.map((x) => ({ full: '', ask: x })));
+      if (g.t === 'rank') lines.push({ full: g.items.map((i, n) => `${n + 1}. ${i[0]}`).join('   '), ask: SEJ.shuffle(g.items.map((i) => i[0])).join('   /   ') });
+      if (g.t === 'memorize' || g.t === 'labelled') lines.push(...g.items.map((i) => { const t = clean(`${i[1] && !/^https?:/.test(i[1]) && g.t === 'memorize' ? i[1] : ''} ${i[0]}`); return { full: t, ask: t }; }));
       (g.notes || []).forEach((n) => tip(n[1]));
-      if (lines.length) d.facts.push({ title: g.title, lines: lines.slice(0, 10) });
+      if (lines.length) d.facts.push({ title: g.title, lines: lines.slice(0, 12) });
     }
     return d;
   }
@@ -54,7 +54,7 @@
         if (note) d.tips.push({ tip: note, about: `${parts[0]}  →  ${parts[1]}` });
       } else if (parts[0]) d.tips.push({ tip: parts[0], about: '' });
     }
-    if (d.cards.length) d.facts.push({ title: 'Remember these', lines: d.cards.slice(0, 14).map((c) => `${c.q}  →  ${c.a}`) });
+    if (d.cards.length) d.facts.push({ title: 'Remember these', lines: d.cards.slice(0, 14).map((c) => ({ full: `${c.q}  →  ${c.a}`, ask: c.q })) });
     return d;
   }
 
@@ -91,20 +91,22 @@
   function flashcards(host, d, opt) {
     const all = d.words.map(([en, bn]) => ({ q: en, a: bn, head: 'Power word' })).concat(d.cards).filter((c) => c.q).slice(0, 96);
     if (!all.length) return false;
+    const twoSided = opt.answers === 'back', onCard = opt.answers === 'card';
     const face = (c, n, back) => {
       const text = back ? c.a || ' ' : c.q;
       return h('div', { class: `ho-card ${back ? 'is-back' : ''}` },
         h('span', { class: 'ho-card-tag', text: back ? `Answer ${n}` : `${n}${c.head ? `  ·  ${c.head}` : ''}` }),
         h('p', { class: 'ho-card-text', style: { fontSize: `${size(text)}px` }, text }),
         back && c.note ? h('p', { class: 'ho-card-note', text: `💡 ${c.note}` }) : null,
-        !back && !opt.twoSided && c.a ? h('p', { class: 'ho-card-answer' }, h('span', { text: 'Answer: ' }), c.a) : null);
+        !back && opt.choices && !onCard && c.options && c.options.length > 1 ? h('p', { class: 'ho-card-choices', text: c.options.map(clean).join('   ·   ') }) : null,
+        !back && onCard && c.a ? h('p', { class: 'ho-card-answer' }, h('span', { text: 'Answer: ' }), c.a) : null);
     };
+    const hint = twoSided ? '✂️ Print on both sides (flip on the long edge), then cut along the dotted lines.' : onCard ? '✂️ Cut along the dotted lines. Fold the answer back to test yourself.' : '✂️ Cut along the dotted lines. Pick a card and say the answer!';
     for (let i = 0; i < all.length; i += 8) {
       const set = all.slice(i, i + 8);
       const front = mount(host, newPage(d, 'cards'));
-      front.body.append(h('p', { class: 'ho-hint', text: opt.twoSided ? '✂️ Print on both sides (flip on the long edge), then cut along the dotted lines.' : '✂️ Cut along the dotted lines. Fold the answer back to test yourself.' }),
-        h('div', { class: 'ho-grid' }, set.map((c, k) => face(c, i + k + 1, false))));
-      if (opt.twoSided) {
+      front.body.append(h('p', { class: 'ho-hint', text: hint }), h('div', { class: 'ho-grid' }, set.map((c, k) => face(c, i + k + 1, false))));
+      if (twoSided) {
         const back = mount(host, newPage(d, 'cards'));
         back.body.append(h('p', { class: 'ho-hint', text: 'Answers: this page is the back of the page before it.' }),
           h('div', { class: 'ho-grid ho-mirror' }, set.map((c, k) => face(c, i + k + 1, true))));
@@ -113,8 +115,9 @@
     return true;
   }
 
-  function tips(host, d) {
+  function tips(host, d, opt) {
     const blocks = [];
+    const show = opt.answers !== 'none';
     if (d.mission) blocks.push(h('div', { class: 'ho-mission' }, h('strong', { text: '🎯 Today’s goal' }), h('p', { text: d.mission.en }), d.mission.bn && h('p', { class: 'ho-bn', lang: 'bn', text: d.mission.bn })));
     if (d.words.length) {
       blocks.push(heading('⭐', 'Power words'));
@@ -122,15 +125,17 @@
     }
     if (d.tips.length) {
       blocks.push(heading('💡', 'Quick tips'));
-      d.tips.forEach((t) => blocks.push(h('div', { class: 'ho-tip' }, h('p', { text: t.tip }), t.about && h('small', { text: t.about }))));
+      d.tips.forEach((t) => blocks.push(h('div', { class: 'ho-tip' }, h('p', { text: t.tip }), show && t.about && h('small', { text: t.about }))));
     }
     d.facts.forEach((f) => {
+      const lines = f.lines.map((l) => (show ? l.full : l.ask)).filter(Boolean);
+      if (!lines.length) return;
       blocks.push(heading('📌', f.title));
-      f.lines.forEach((line) => blocks.push(h('p', { class: 'ho-fact', text: line })));
+      (show ? lines : SEJ.shuffle(lines)).forEach((line) => blocks.push(h('p', { class: 'ho-fact', text: line })));
     });
     if (d.talk.length) {
-      blocks.push(heading('🗣️', 'Say it at home'));
-      d.talk.forEach((t) => blocks.push(h('div', { class: 'ho-talk' }, h('strong', { text: clean(t[0]) }), h('span', { text: clean(t[2] || t[1]) }))));
+      blocks.push(heading('🗣️', show ? 'Say it at home' : 'Ask and answer'));
+      d.talk.forEach((t) => blocks.push(h('div', { class: 'ho-talk' }, h('strong', { text: clean(t[0]) }), h('span', { text: clean(show ? t[2] || t[1] : t[1] || '') }))));
     }
     if (!blocks.length) return false;
     flow(host, d, 'tips', blocks);
@@ -141,13 +146,13 @@
     const qs = d.cards.filter((c) => c.q && c.a).slice(0, 40);
     if (!qs.length) return false;
     const blocks = [h('div', { class: 'ho-who' }, h('span', { text: 'Name: ____________________' }), h('span', { text: 'ID: ____________' }), h('span', { text: 'Date: ____________' })),
-      h('p', { class: 'ho-hint', text: '✏️ Circle the right answer, or write it on the line.' })];
+      h('p', { class: 'ho-hint', text: opt.choices ? '✏️ Circle the right answer, or write it on the line.' : '✏️ Write the answer on the line.' })];
     qs.forEach((c, i) => blocks.push(h('div', { class: 'ho-q' },
       h('span', { class: 'ho-q-n', text: i + 1 }),
       h('div', { class: 'ho-q-body' },
         c.head && h('small', { text: c.head }),
         h('p', { text: c.q }),
-        c.options && c.options.length > 1
+        opt.choices && c.options && c.options.length > 1
           ? h('div', { class: 'ho-opts' }, c.options.map((o, k) => h('span', {}, h('b', { text: 'abcdef'[k] || '•' }), clean(o))))
           : h('div', { class: 'ho-line' })))));
     if (opt.key) {
@@ -164,7 +169,7 @@
     await loadLib();
     const pages = [...host.querySelectorAll('.ho-page')];
     if (!pages.length) throw new Error('There is nothing to save yet.');
-    const opt = { margin: 0, filename: `${name.replace(/[^\w .-]+/g, ' ').replace(/\s+/g, ' ').trim() || 'handout'}.pdf`, image: { type: 'jpeg', quality: 0.93 }, html2canvas: { scale: 2, backgroundColor: '#ffffff', logging: false }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+    const opt = { margin: 0, filename: `${name.replace(/[^\w .-]+/g, ' ').replace(/\s+/g, ' ').trim() || 'handout'}.pdf`, image: { type: 'jpeg', quality: pages.length > 16 ? 0.86 : 0.93 }, html2canvas: { scale: pages.length > 16 ? 1.5 : 2, backgroundColor: '#ffffff', logging: false }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
     let job = window.html2pdf().set(opt).from(pages[0]).toPdf();
     pages.slice(1).forEach((p, i) => {
       job = job.get('pdf').then((pdf) => { onStep(i + 2, pages.length); pdf.addPage(); }).from(p).toContainer().toCanvas().toPdf();
@@ -174,14 +179,24 @@
   }
 
   /* ---------- the handout maker ---------- */
-  function open(lesson, games, whole = true) {
-    const state = { kind: 'cards', twoSided: false, key: true, own: false, text: '' };
-    const base = { title: whole ? `${lesson.emoji || ''} ${lesson.title}`.trim() : games[0].title, sub: whole ? `Lesson ${lesson.code}` : `Lesson ${lesson.code}  ·  ${lesson.title}`, mission: whole ? lesson.mission : null };
+  /* unit: every lesson of the same unit as { lesson, games }, so one handout can cover several lessons. */
+  function open(lesson, games, whole = true, unit = null) {
+    const many = whole && unit && unit.length > 1 ? unit : null;
+    const state = { kind: 'cards', answers: 'card', choices: true, key: true, own: false, text: '', picked: new Set([lesson.code]) };
+    const headOf = (l, g) => ({ title: whole ? `${l.emoji || ''} ${l.title}`.trim() : g[0].title, sub: whole ? `Lesson ${l.code}` : `Lesson ${l.code}  ·  ${l.title}`, mission: whole ? l.mission : null });
+    const base = headOf(lesson, games);
+    const sources = () => (many ? many.filter((u) => state.picked.has(u.lesson.code)) : [{ lesson, games }]);
+    const fileName = () => {
+      const src = sources();
+      const what = !whole ? `${lesson.code} ${games[0].title}` : src.length > 1 ? `Unit ${lesson.unit} (${src[0].lesson.code} to ${src[src.length - 1].lesson.code})` : `${src[0].lesson.code} ${src[0].lesson.title}`;
+      return `${what} - ${KINDS[state.kind].file}${state.answers === 'none' && state.kind !== 'sheet' ? ' (no answers)' : ''}${state.kind === 'sheet' && !state.choices ? ' (no choices)' : ''}`;
+    };
     const host = h('div', { class: 'ho-pages' });
     const preview = h('div', { class: 'ho-preview' }, host);
     const status = h('span', { class: 'ho-status', role: 'status' });
     const tabs = h('div', { class: 'ho-tabs', role: 'tablist' });
     const opts = h('div', { class: 'ho-options' });
+    const scope = h('div', { class: 'ho-scope', hidden: !many });
     const own = h('textarea', { class: 'ho-own', id: 'ho-own', rows: '5', placeholder: SAMPLE, 'aria-label': 'Your own content' });
     const ownBox = h('div', { class: 'ho-own-box', hidden: true },
       h('p', { class: 'ho-own-help' }, 'One line each. ', h('b', { text: 'Question | Answer' }), ' makes a card. Add wrong choices with more ', h('b', { text: '|' }), '. Add a tip after ', h('b', { text: '>>' }), '. A plain line is a tip.'),
@@ -191,19 +206,33 @@
         h('button', { class: 'soft-btn', id: 'ho-make', onclick: () => { state.text = own.value; draw(); } }, '✨ Make pages')));
     const fit = () => host.style.setProperty('--s', Math.min(1, Math.max(0.3, (preview.clientWidth - 32) / PAGE_W)).toFixed(3));
     function draw() {
-      const d = Object.assign(state.own ? fromText(state.text) : fromGames(lesson, games, whole), base, state.own ? { mission: null } : {});
       host.replaceChildren();
-      const ok = BUILD[state.kind](host, d, state);
+      let ok = false;
+      if (state.own) ok = BUILD[state.kind](host, Object.assign(fromText(state.text), base, { mission: null }), state);
+      else sources().forEach((src) => { ok = BUILD[state.kind](host, Object.assign(fromGames(src.lesson, src.games, whole), headOf(src.lesson, src.games)), state) || ok; });
       const pages = host.querySelectorAll('.ho-page');
       pages.forEach((p, i) => { p.querySelector('.ho-num').textContent = `${i + 1} / ${pages.length}`; });
-      if (!ok) host.append(h('p', { class: 'ho-empty', text: state.own ? 'Paste your content above, then tap “Make pages”.' : 'These games have nothing for this handout. Try another kind, or paste your own content.' }));
-      status.textContent = ok ? `${pages.length} ${pages.length === 1 ? 'page' : 'pages'}` : '';
+      if (!ok) host.append(h('p', { class: 'ho-empty', text: state.own ? 'Paste your content above, then tap “Make pages”.' : many && !state.picked.size ? 'Choose at least one lesson above.' : 'These games have nothing for this handout. Try another kind, or paste your own content.' }));
+      const n = state.own ? 0 : sources().length;
+      status.textContent = ok ? `${pages.length} ${pages.length === 1 ? 'page' : 'pages'}${n > 1 ? `  ·  ${n} lessons` : ''}` : '';
       tabs.replaceChildren(...Object.keys(KINDS).map((k) => h('button', { class: `ho-tab ${k === state.kind ? 'on' : ''}`, role: 'tab', 'aria-selected': String(k === state.kind), 'data-kind': k, onclick: () => { state.kind = k; SEJ.sfx.select(); draw(); } }, `${KINDS[k].icon} ${KINDS[k].label}`)));
       const tick = (id, label, key) => h('label', { class: 'ho-check' }, h('input', { type: 'checkbox', id, ...(state[key] ? { checked: '' } : {}), onchange: (e) => { state[key] = e.target.checked; draw(); } }), label);
+      const pick = (id, label, key, choices) => h('label', { class: 'ho-check' }, label, h('select', { class: 'ho-select', id, onchange: (e) => { state[key] = e.target.value; draw(); } }, choices.map(([v, t]) => h('option', { value: v, ...(state[key] === v ? { selected: '' } : {}) }, t))));
+      if (state.kind !== 'cards' && state.answers === 'back') state.answers = 'card';
       opts.replaceChildren(...[
-        tick('ho-own-on', 'Use my own content', 'own'),
-        state.kind === 'cards' && tick('ho-two', 'Answers on the back (two-sided print)', 'twoSided'),
-        state.kind === 'sheet' && tick('ho-key', 'Add the answer key', 'key')].filter(Boolean));
+        state.kind === 'cards' && pick('ho-answers', 'Answers:', 'answers', [['card', 'On the card'], ['back', 'On the back (two-sided print)'], ['none', 'No answers (student copy)']]),
+        state.kind === 'tips' && pick('ho-answers', 'Answers:', 'answers', [['card', 'With answers'], ['none', 'Without answers (class activity)']]),
+        state.kind !== 'tips' && tick('ho-choices', state.kind === 'sheet' ? 'With answer choices (a, b, c)' : 'Show the answer choices', 'choices'),
+        state.kind === 'sheet' && tick('ho-key', 'Add the answer key (for the teacher)', 'key'),
+        tick('ho-own-on', 'Use my own content', 'own')].filter(Boolean));
+      if (many) {
+        scope.hidden = state.own;
+        const all = many.every((u) => state.picked.has(u.lesson.code));
+        scope.replaceChildren(
+          h('span', { class: 'ho-scope-label', text: 'Lessons:' }),
+          ...many.map((u) => h('button', { class: `ho-chip ${state.picked.has(u.lesson.code) ? 'on' : ''}`, 'data-lesson': u.lesson.code, 'aria-pressed': String(state.picked.has(u.lesson.code)), title: u.lesson.title, onclick: () => { if (state.picked.has(u.lesson.code)) state.picked.delete(u.lesson.code); else state.picked.add(u.lesson.code); draw(); } }, u.lesson.code)),
+          h('button', { class: 'ho-chip ho-chip-all', id: 'ho-unit', onclick: () => { state.picked = new Set(all ? [lesson.code] : many.map((u) => u.lesson.code)); draw(); } }, all ? `Only ${lesson.code}` : `Whole Unit ${lesson.unit}`));
+      }
       ownBox.hidden = !state.own;
       preview.scrollTop = 0;
     }
@@ -215,13 +244,13 @@
         h('div', { class: 'ho-bar' },
           h('div', {}, h('strong', { text: '🖨️ Handouts' }), h('small', { text: `${base.sub}${whole ? `  ·  ${lesson.title}` : `  ·  ${games[0].title}`}` })),
           h('button', { class: 'soft-btn', id: 'ho-close', 'aria-label': 'Close', onclick: close }, '✕')),
-        tabs, opts, ownBox, preview,
+        tabs, scope, opts, ownBox, preview,
         h('div', { class: 'ho-actions' }, status,
           h('button', { class: 'soft-btn', id: 'ho-print', onclick: () => { document.body.classList.add('ho-print'); const done = () => { document.body.classList.remove('ho-print'); window.removeEventListener('afterprint', done); }; window.addEventListener('afterprint', done); window.print(); } }, '🖨️ Print'),
           h('button', { class: 'cta gummy g-green', id: 'ho-pdf', onclick: async () => {
             busy(true);
             try {
-              await savePdf(host, `${lesson.code} ${whole ? lesson.title : games[0].title} - ${KINDS[state.kind].file}`, (n, of) => { status.textContent = `Making the PDF…  page ${n} of ${of}`; });
+              await savePdf(host, fileName(), (n, of) => { status.textContent = `Making the PDF…  page ${n} of ${of}`; });
               status.textContent = '✅ PDF downloaded';
               SEJ.sfx.fanfare();
             } catch (e) { status.textContent = e.message || 'The PDF couldn’t be made.'; SEJ.sfx.wrong(); }

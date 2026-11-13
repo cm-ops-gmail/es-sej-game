@@ -207,23 +207,93 @@
     },
   };
 
-  /* A short cheerful loop. It dips while the voice is talking. */
-  const TUNE = [0, 2, 4, 2, 5, 4, 2, 4, 3, 5, 7, 5, 4, 2, 0, 2];
-  const BASS = [131, 131, 196, 196, 175, 175, 196, 196];
-  let beat = 0;
+  /* Background sound that fits the scene, kept very soft so it never competes with the teacher or the game:
+     water and bubbles under the sea, a breeze and far-off birds outdoors, slow twinkles in space, and a
+     gentle hum of soft notes elsewhere. It dips further while a voice is talking. */
+  const AMBIENCE = {
+    ocean: { wash: [320, 0.16, 9], bits: 'bubbles' }, beach: { wash: [650, 0.13, 7], bits: 'bubbles' },
+    hills: { wash: [1500, 0.035, 11], bits: 'birds' }, garden: { wash: [1500, 0.035, 11], bits: 'birds' }, jungle: { wash: [1100, 0.05, 8], bits: 'birds' },
+    space: { bits: 'twinkle', pad: true }, magic: { bits: 'twinkle', pad: true }, stage: { pad: true },
+    sky: { wash: [900, 0.03, 12], pad: true }, candy: { pad: true }, party: { pad: true }, fiesta: { pad: true }, map: { pad: true },
+  };
+  const PAD = [262, 330, 392, 440, 523, 587];
+  let theme = 'map', washNodes = null, beat = 0;
+  /* A soft note with a slow fade in and out. */
+  function soft(freq, dur, vol, start = 0, to = null) {
+    const c = audio();
+    if (!c) return;
+    const t = c.currentTime + start, o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + Math.min(0.5, dur * 0.4));
+    g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(musicGain);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+  /* Water or wind: deep, smooth noise that slowly swells and fades like a wave. */
+  function startWash([cutoff, vol, period]) {
+    const c = audio();
+    if (!c || washNodes) return;
+    const len = c.sampleRate * 4, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+    /* The end is blended into the start so the loop has no click. */
+    for (let i = 0; i < 2000; i++) { const k = i / 2000; d[len - 2000 + i] = d[len - 2000 + i] * (1 - k) + d[i] * k; }
+    const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), lfo = c.createOscillator(), depth = c.createGain();
+    src.buffer = buf; src.loop = true;
+    f.type = 'lowpass'; f.frequency.value = cutoff; f.Q.value = 0.3;
+    g.gain.value = vol * 0.6;
+    lfo.type = 'sine'; lfo.frequency.value = 1 / period;
+    depth.gain.value = vol * 0.4;
+    lfo.connect(depth).connect(g.gain);
+    src.connect(f).connect(g).connect(musicGain);
+    src.start(); lfo.start();
+    washNodes = [src, lfo, g];
+  }
+  function stopWash() {
+    if (!washNodes) return;
+    const [src, lfo, g] = washNodes;
+    washNodes = null;
+    try { g.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.2); src.stop(ctx.currentTime + 0.8); lfo.stop(ctx.currentTime + 0.8); } catch (e) { /* already stopped */ }
+  }
+  const BITS = {
+    /* A few bubbles rising. */
+    bubbles() { const n = 1 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) { const f = 280 + Math.random() * 380; soft(f, 0.16, 0.045, i * 0.19 + Math.random() * 0.05, f * 2.1); } },
+    /* A bird far away. */
+    birds() { const f = 1900 + Math.random() * 900, n = 2 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) soft(f * (1 + (i % 2) * 0.12), 0.11, 0.022, i * 0.15, f * 1.18); },
+    /* A star twinkling. */
+    twinkle() { const f = PAD[Math.floor(Math.random() * PAD.length)] * 4; soft(f, 1.3, 0.02); soft(f * 1.5, 1.1, 0.012, 0.18); },
+  };
   SEJ.music = {
     start() {
       if (musicTimer || SEJ.noMusic || state.music === false || state.sound === false || SEJ.testMode) return;
       if (!audio()) return;
+      const a = AMBIENCE[theme] || AMBIENCE.map;
+      if (a.wash) startWash(a.wash);
       musicTimer = setInterval(() => {
         if (document.hidden) return;
-        const n = TUNE[beat % TUNE.length];
-        if (beat % 8 !== 7) tone(SCALE[n] / 1, 0, 0.17, { vol: 0.045, dest: musicGain });
-        if (beat % 2 === 0) tone(BASS[(beat / 2) % BASS.length], 0, 0.28, { type: 'sine', vol: 0.09, dest: musicGain });
         beat++;
-      }, 250);
+        /* Soft, slow notes: one every few seconds, sometimes two together. */
+        if (a.pad && beat % 3 === 0) {
+          const n = PAD[(beat / 3 * 2 + (beat % 5)) % PAD.length | 0];
+          soft(n / 2, 3.2, 0.05);
+          if (beat % 6 === 0) soft(n * 0.75, 3.4, 0.03, 0.3);
+        }
+        if (a.bits && Math.random() < (a.bits === 'bubbles' ? 0.4 : 0.22)) BITS[a.bits]();
+      }, 1000);
     },
-    stop() { clearInterval(musicTimer); musicTimer = null; },
+    stop() { clearInterval(musicTimer); musicTimer = null; stopWash(); },
+    /* Called when the scene changes, so the sound follows it. */
+    setTheme(name) {
+      const next = AMBIENCE[name] ? name : 'map';
+      if (next === theme) return;
+      theme = next;
+      if (musicTimer) { this.stop(); this.start(); }
+    },
+    get theme() { return theme; },
     duck(down) { if (musicGain && ctx) musicGain.gain.setTargetAtTime(down ? 0.12 : 0.5, ctx.currentTime, 0.08); },
     sync() { if (state.music !== false && state.sound !== false) this.start(); else this.stop(); },
   };

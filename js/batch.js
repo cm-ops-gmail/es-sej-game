@@ -51,7 +51,7 @@
       if (!this.joined) return { skipped: true };
       const key = `${lesson}:${game}`;
       if (st().done.includes(key)) return { counted: false };
-      const send = () => post({ side: 'score', code: st().code, id: st().id, name: store.state.name, hero: store.state.hero, lesson, game, title, score: result.score, stars: result.stars });
+      const send = () => post({ side: 'score', code: st().code, id: st().id, name: store.state.name, hero: store.state.hero, lesson, game, title, score: result.score, stars: result.stars, time: result.time || 0 });
       let res = await send().catch(() => ({ status: 0 }));
       if (res.status === 0 || res.status >= 500) { await new Promise((r) => setTimeout(r, 1500)); res = await send().catch(() => ({ status: 0 })); }
       if (res.counted !== undefined) { st().done.push(key); store.save(); }
@@ -100,20 +100,23 @@
 
   /* ---------- leaderboard ---------- */
   const MEDAL = ['🥇', '🥈', '🥉'];
+  const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   SEJ.boardPage = function (root, viewCode) {
     const b = SEJ.batch;
     const code = viewCode && CODE.test(viewCode) ? viewCode : b.code;
     const mine = !viewCode || viewCode === b.code ? (st() && st().id) : '';
-    const back = viewCode ? '#/admin/batches' : '#/map';
+    let isAdmin = false;
+    try { isAdmin = !!sessionStorage.getItem('sej-admin-pin'); } catch (e) { /* private mode */ }
+    const back = viewCode && isAdmin ? '#/admin/batches' : '#/map';
     const title = h('p', { class: 'lb-batch', text: viewCode ? '' : b.name });
     const podium = h('div', { class: 'lb-podium' });
     const list = h('ol', { class: 'lb-list' });
     const note = h('p', { class: 'lb-note', role: 'status', text: 'Loading the leaderboard…' });
     root.replaceChildren(h('div', { class: 'lb-page' }, SEJ.scene('party'),
       h('div', { class: 'lb-inner' },
-        h('a', { class: 'back-link', href: back }, viewCode ? '← Batches' : '← Quest map'),
+        h('a', { class: 'back-link', href: back }, viewCode && isAdmin ? '← Batches' : '← Quest map'),
         h('h1', { class: 'logo-word lb-title' }, '🏆 Leaderboard'), title, podium, list, note,
-        h('p', { class: 'lb-rule', text: 'Your first try at each game counts. Play again any time to practise!' }))));
+        h('p', { class: 'lb-rule', text: 'Your first try at each game counts. Fewer mistakes and less time give more points. On a tie, the faster player is ahead.' }))));
     if (!code) { note.textContent = 'Open your batch link to see a leaderboard.'; return () => {}; }
     const face = (r, cls) => (SEJ.HEROES[r.hero] ? SEJ.heroImg(r.hero, cls) : h('span', { class: `lb-initial ${cls}`, text: (r.name || '?')[0].toUpperCase() }));
     let first = true, alive = true;
@@ -129,11 +132,11 @@
         const r = top[i];
         return h('div', { class: `lb-step p${i + 1} ${r.id === mine ? 'me' : ''} ${first ? 'enter-pop' : ''}`, style: { '--i': i } },
           h('span', { class: 'lb-medal', text: MEDAL[i] }), face(r, 'lb-hero'),
-          h('div', { class: 'lb-block' }, h('strong', { text: r.name }), h('b', { text: r.score }), h('small', { text: `⭐ ${r.stars} · ${r.games} ${r.games === 1 ? 'game' : 'games'}` })));
+          h('div', { class: 'lb-block' }, h('strong', { text: r.name }), h('b', { text: r.score }), h('small', { text: `⭐ ${r.stars} · ${r.games} ${r.games === 1 ? 'game' : 'games'}${r.time ? ` · ⏱ ${clock(r.time)}` : ''}` })));
       }));
       list.replaceChildren(...rows.slice(3).map((r) => h('li', { class: `lb-row ${r.id === mine ? 'me' : ''}` },
         h('span', { class: 'lb-rank', text: r.rank }), face(r, 'lb-face'), h('span', { class: 'lb-name', text: r.name }),
-        h('span', { class: 'lb-stars', text: `⭐ ${r.stars}` }), h('b', { class: 'lb-score', text: r.score }))));
+        h('span', { class: 'lb-stars', text: `⭐ ${r.stars}${r.time ? ` · ⏱ ${clock(r.time)}` : ''}` }), h('b', { class: 'lb-score', text: r.score }))));
       const me = rows.find((r) => r.id === mine);
       if (me && me.rank > 3) note.textContent = `You are number ${me.rank} of ${rows.length}. Keep going!`;
       if (first && rows.length) { fx.confetti(90); sfx.fanfare(); }

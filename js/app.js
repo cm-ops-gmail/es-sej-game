@@ -146,11 +146,27 @@
       h('div', { class: 'star-total', 'aria-label': `${store.totalStars()} stars collected` }, h('span', { class: 'spin-star', 'aria-hidden': 'true', text: '⭐' }), h('b', { text: store.totalStars() })),
       SEJ.ui.soundButton(),
       SEJ.batch.on
-        ? h('a', { class: 'bar-btn board-btn', href: '#/board', id: 'board-btn', 'aria-label': 'Leaderboard', title: 'Leaderboard' }, '🏆')
+        ? h('a', { class: 'bar-btn board-btn', href: '#/board', id: 'board-btn', 'aria-label': 'Leaderboard', title: 'Leaderboard' }, '🏆', h('span', { class: 'board-word', text: 'Leaderboard' }))
         : h('a', { class: 'bar-btn admin-btn', href: '#/admin', id: 'admin-btn' }, 'Admin'),
       s.name
         ? h('a', { class: 'player', href: '#/heroes', 'aria-label': `${s.name}. Change your name or hero` }, SEJ.heroFace(s.hero), h('span', { class: 'player-name', text: s.name }))
         : h('a', { class: 'player', href: '#/heroes', 'aria-label': 'Change your hero' }, SEJ.heroFace(s.hero)));
+  }
+
+  /* A batch student's place on the leaderboard, right on the map, with a button to see everyone. */
+  function boardCard() {
+    const line = h('span', { class: 'map-board-line', id: 'map-board-line', text: 'See who is on top!' });
+    const top = h('span', { class: 'map-board-top' });
+    SEJ.batch.board().then((data) => {
+      if (!data || !line.isConnected) return;
+      const rows = data.rows || [], me = rows.find((r) => r.id === (store.state.batch || {}).id);
+      line.textContent = me ? `You are number ${me.rank} of ${rows.length} · ${me.score} points` : rows.length ? `${rows.length} ${rows.length === 1 ? 'friend is' : 'friends are'} playing. Finish a game to join!` : 'Finish a game to be the first!';
+      top.replaceChildren(...rows.slice(0, 3).map((r, i) => h('span', {}, `${['🥇', '🥈', '🥉'][i]} ${r.name}`)));
+    });
+    return h('a', { class: 'map-board enter-pop', href: '#/board', id: 'map-board' },
+      h('span', { class: 'map-board-cup', 'aria-hidden': 'true', text: '🏆' }),
+      h('span', { class: 'map-board-text' }, h('b', { text: 'Leaderboard' }), line, top),
+      h('span', { class: 'map-board-go', 'aria-hidden': 'true', text: '▶' }));
   }
 
   function map() {
@@ -165,6 +181,7 @@
         store.state.name
           ? h('p', { class: 'tagline' }, SEJ.batch.joined && SEJ.batch.name ? `Hello, ${store.state.name}! Welcome to ${SEJ.batch.name}.` : `Hello, ${store.state.name}! Ready to be an English superhero?`)
           : h('div', { class: 'name-card enter-pop' }, h('p', { class: 'name-q' }, 'What’s your name? ', h('small', { lang: 'bn', text: 'তোমার নাম লেখো' })), nameForm('name-form-big', true)),
+        SEJ.batch.joined && boardCard(),
         h('div', { class: 'squad', 'aria-hidden': 'true' }, ['knight', 'bhasha', 'mathman', 'innovara'].map((id, i) => SEJ.heroImg(id, `squad-hero sq${i}`))))));
     UNITS.forEach((u) => {
       const inUnit = lessons.filter((l) => l.unit === u.n);
@@ -336,6 +353,7 @@
         h('p', { class: 'result-line', text: line }),
         h('div', { class: 'result-stats' },
           h('span', { class: 'stat' }, '⭐ ', scoreNum, ' points'),
+          res.time !== undefined && h('span', { class: 'stat' }, '⏱ ', h('b', { text: `${Math.floor(res.time / 60)}:${String(res.time % 60).padStart(2, '0')}` })),
           h('span', { class: 'stat' }, '🔥 ', h('b', { text: res.best }), ' streak'),
           h('span', { class: 'stat' }, '🎯 ', h('b', { text: `${res.perfect}/${res.total}` }), ' first try')),
         boardLine,
@@ -384,6 +402,7 @@
     window.scrollTo(0, 0);
     /* Class Battle runs without background music: the teacher is talking. */
     SEJ.noMusic = page === 'class' || page === 'remote' || page === 'join';
+    if (page !== 'play') SEJ.music.setTheme('map');
     if (SEJ.noMusic) SEJ.music.stop();
     if (page === 'class') { cleanupRoute = SEJ.classPage(root(), a); return; }
     if (page === 'remote') { cleanupRoute = SEJ.remotePage(root(), a); return; }
@@ -417,6 +436,12 @@
     const remote = q.get('remote');
     const join = q.get('join');
     const batch = q.get('batch');
+    const board = q.get('board');
+    if (board && /^[A-Za-z0-9]{6}$/.test(board)) {
+      /* A leaderboard link: anyone with it can watch that batch's leaderboard. */
+      history.replaceState(null, '', `${location.pathname}${q.get('test') ? '?test=1' : ''}#/board/${board.toUpperCase()}`);
+      return;
+    }
     if (batch && SEJ.batch.use(batch)) {
       /* A batch link: remember the batch and show a clean address. */
       history.replaceState(null, '', location.pathname + (q.get('test') ? '?test=1' : '') + (location.hash || '#/map'));

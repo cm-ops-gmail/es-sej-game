@@ -23,7 +23,7 @@ async function findBatch(code) {
   try { open = JSON.parse(r[2] || '[]'); } catch (e) { /* treated as all locked */ }
   return { code: r[0], name: r[1], open, createdAt: Number(r[3]) || 0, _n: r._n };
 }
-/* First tries only, added up per student. */
+/* First tries only, added up per student. More points ranks higher; on equal points, less total time does. */
 async function board(code) {
   const seen = new Set();
   const by = new Map();
@@ -32,18 +32,19 @@ async function board(code) {
     const key = `${r[1]}|${r[4]}|${r[5]}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    const s = by.get(r[1]) || { id: r[1], name: r[2], hero: r[3], score: 0, stars: 0, games: 0, last: 0 };
+    const s = by.get(r[1]) || { id: r[1], name: r[2], hero: r[3], score: 0, stars: 0, games: 0, time: 0, last: 0 };
     s.name = r[2] || s.name;
     s.hero = r[3] || s.hero;
     s.score += Number(r[7]) || 0;
     s.stars += Number(r[8]) || 0;
     s.games += 1;
+    s.time += Number(r[10]) || 0;
     s.last = Math.max(s.last, Number(r[9]) || 0);
     by.set(r[1], s);
   }
   /* Students who joined but haven't played yet appear with 0. */
-  for (const r of (await rows('SEJ_Students')).filter((x) => x[0] === code)) if (!by.has(r[1])) by.set(r[1], { id: r[1], name: r[2], hero: '', score: 0, stars: 0, games: 0, last: 0 });
-  return [...by.values()].sort((a, b) => b.score - a.score || a.last - b.last).map(({ last, ...s }, i) => ({ ...s, rank: i + 1 }));
+  for (const r of (await rows('SEJ_Students')).filter((x) => x[0] === code)) if (!by.has(r[1])) by.set(r[1], { id: r[1], name: r[2], hero: '', score: 0, stars: 0, games: 0, time: 0, last: 0 });
+  return [...by.values()].sort((a, b) => b.score - a.score || (b.games > 0) - (a.games > 0) || a.time - b.time || a.last - b.last).map(({ last, ...s }, i) => ({ ...s, rank: i + 1 }));
 }
 
 export default {
@@ -92,7 +93,7 @@ export default {
           const score = Math.max(0, Math.min(5000, Math.round(Number(body.score) || 0)));
           const stars = Math.max(0, Math.min(3, Math.round(Number(body.stars) || 0)));
           const hero = ['mathman', 'bhasha', 'knight', 'innovara'].includes(body.hero) ? body.hero : '';
-          await append('SEJ_Scores', [batch.code, id, name, hero, body.lesson, game, String(body.title || '').slice(0, 60), score, stars, Date.now()]);
+          await append('SEJ_Scores', [batch.code, id, name, hero, body.lesson, game, String(body.title || '').slice(0, 60), score, stars, Date.now(), Math.max(0, Math.min(36000, Math.round(Number(body.time) || 0)))]);
         }
         await cache().set(key, 1, { ttl: 86400 });
         return reply({ counted: !already });

@@ -67,10 +67,11 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   check('map has an Admin button and no settings button', (await p.$('#admin-btn')) && !(await p.$('a[href="#/teacher"]')));
   await p.click('#admin-btn');
   await p.waitForSelector('.pin-card');
-  for (const d of '1234') await p.click(`.pin-key[data-key="${d}"]`);
-  await p.waitForFunction(() => /Wrong PIN/.test(document.querySelector('.pin-msg').textContent));
+  await p.fill('#admin-pass', 'wrong-pass'); await p.keyboard.press('Enter');
+  await p.waitForFunction(() => /Wrong password/.test(document.querySelector('.pin-msg').textContent));
+  check('admin login is a password field, not a PIN pad', (await p.getAttribute('#admin-pass', 'type')) === 'password' && !(await p.$('.pin-key')));
   check('wrong admin PIN is refused', !(await p.$('#create-game')));
-  for (const d of '1010') await p.click(`.pin-key[data-key="${d}"]`);
+  await p.fill('#admin-pass', '1010'); await p.click('#admin-login');
   await p.waitForSelector('#lesson-table');
   check('admin opens on an overview of all 24 lessons', (await p.locator('#lesson-table tbody tr').count()) === 24);
   await p.fill('.cms-search', 'action');

@@ -16,7 +16,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   p.on('pageerror', (e) => errors.push(e.message));
   await p.goto(`${BASE}/index.html?test=1#/admin/1.3`);
   await p.waitForSelector('.pin-card');
-  for (const d of '1010') await p.click(`.pin-key[data-key="${d}"]`);
+  await p.fill('#admin-pass', '1010'); await p.click('#admin-login');
   await p.waitForSelector('#lesson-handouts');
   await p.click('#lesson-handouts');
   await p.waitForSelector('.ho-page');
@@ -42,12 +42,31 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   const f1 = await pdf('flashcards.pdf');
   check('flashcards download as a PDF', f1.head === '%PDF-' && f1.size > 30000, JSON.stringify(f1));
   check('the PDF has one page per preview page', f1.pages === n1, `${f1.pages} vs ${n1}`);
-  await p.check('#ho-two');
+  await p.selectOption('#ho-answers', 'back');
   check('two-sided cards add a back page for each front page', (await pages()) === n1 * 2 && (await p.locator('.ho-card.is-back').count()) > 0);
   check('two-sided fronts hide the answer', (await p.locator('.ho-card-answer').count()) === 0);
   const mirrored = await p.evaluate(() => { const g = document.querySelector('.ho-mirror'); const a = g.children[0].getBoundingClientRect(), c = g.children[1].getBoundingClientRect(); return a.left > c.left; });
   check('back pages are mirrored for two-sided printing', mirrored);
-  await p.uncheck('#ho-two');
+  await p.selectOption('#ho-answers', 'none');
+  check('cards can be made without answers, for students', (await pages()) === n1 && (await p.locator('.ho-card-answer').count()) === 0 && (await p.locator('.ho-card.is-back').count()) === 0);
+  check('cards without answers can still show the choices', (await p.locator('.ho-card-choices').count()) > 0);
+  await p.uncheck('#ho-choices');
+  check('and the choices can be hidden too', (await p.locator('.ho-card-choices').count()) === 0);
+  await p.check('#ho-choices');
+  await p.selectOption('#ho-answers', 'card');
+
+  /* several lessons of the unit in one handout */
+  check('the lesson’s unit is offered, with only this lesson chosen', (await p.locator('.ho-chip[data-lesson]').count()) === 7 && (await p.locator('.ho-chip.on').count()) === 1 && (await p.getAttribute('.ho-chip.on', 'data-lesson')) === '1.3');
+  await p.click('.ho-chip[data-lesson="1.4"]');
+  check('adding a lesson adds its pages', (await pages()) > n1 && /My Daily Diary/.test(await p.textContent('.ho-pages')) && /2 lessons/.test(await p.textContent('.ho-status')));
+  await p.click('#ho-unit');
+  const unitPages = await pages();
+  check('“Whole Unit” takes every lesson of the unit', (await p.locator('.ho-chip.on').count()) === 7 && unitPages >= 7 * 2 && /7 lessons/.test(await p.textContent('.ho-status')) && /Sharing My Opinion/.test(await p.textContent('.ho-pages')));
+  check('pages are numbered across the whole unit', (await p.locator('.ho-num').last().textContent()) === `${unitPages} / ${unitPages}`);
+  const fu = await pdf('unit-flashcards.pdf');
+  check('the whole unit downloads as one PDF', fu.head === '%PDF-' && fu.pages === unitPages, JSON.stringify(fu));
+  await p.click('#ho-unit');
+  check('and back to only this lesson', (await p.locator('.ho-chip.on').count()) === 1 && (await pages()) === n1);
 
   /* quick tips */
   await p.click('.ho-tab[data-kind="tips"]');
@@ -55,6 +74,10 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   check('quick tips show the goal, power words and speaking lines', (await p.locator('.ho-word').count()) >= 3 && (await p.locator('.ho-talk').count()) >= 1 && (await p.locator('.ho-fact').count()) >= 3);
   check('no tips page overflows', (await overflow()) === 0);
   check('pages are numbered', /^1 \/ \d+$/.test(await p.textContent('.ho-num')));
+  const withAnswers = await p.locator('.ho-fact').first().textContent();
+  await p.selectOption('#ho-answers', 'none');
+  check('tips can be made without answers', !(await p.locator('.ho-fact').allTextContents()).some((t) => /→/.test(t)) && /→/.test(withAnswers));
+  await p.selectOption('#ho-answers', 'card');
   await p.screenshot({ path: `${OUT}/handout-tips.png` });
   const f2 = await pdf('quick-tips.pdf');
   check('quick tips download as a PDF', f2.head === '%PDF-' && f2.pages === (await pages()), JSON.stringify(f2));
@@ -67,6 +90,11 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   check('the answer key has an answer for each question', (await p.locator('.ho-keys p').count()) === qs);
   check('the answer key starts on its own page', await p.evaluate(() => { const k = document.querySelector('.ho-keys').closest('.ho-page'); return !k.querySelector('.ho-q'); }));
   check('no practice page overflows', (await overflow()) === 0);
+  const withChoices = await p.locator('.ho-opts').count();
+  await p.uncheck('#ho-choices');
+  check('the practice sheet can be made without answer choices', withChoices > 0 && (await p.locator('.ho-opts').count()) === 0 && (await p.locator('.ho-line').count()) === qs && /Write the answer/.test(await p.textContent('.ho-pages')));
+  await p.screenshot({ path: `${OUT}/handout-sheet-no-choices.png` });
+  await p.check('#ho-choices');
   await p.uncheck('#ho-key');
   check('the answer key can be left out', (await p.locator('.ho-keys').count()) === 0);
   await p.check('#ho-key');

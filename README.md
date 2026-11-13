@@ -169,3 +169,11 @@ Tests: `node tests/handouts.js` (handouts), `node tests/demo-real.js` (a full de
 ## Admin panel look
 
 The admin panel is laid out like a CMS and follows the 10 Minute School design system (`@tenminuteschool/design-system`): its colour and radius tokens, a sidebar with search, breadcrumbs, an overview table of all lessons, bordered cards, outline buttons and one dark primary button. The system ships as React components, and this site has no build step, so the tokens and component styles are re-created in `css/admin.css` (scoped to the admin; game screens are unchanged).
+
+## Later additions
+
+- **Admin login** is a password field (the value of `ADMIN_PIN`, default `1010`), not a PIN pad. Class Battle's phone remote still uses the PIN pad.
+- **Leaderboard for students**: batch students see a Leaderboard button in the top bar and a card on the map with their place. Admin → Batches → **Copy leaderboard link** gives a `?board=CODE` link that opens that batch's leaderboard for anyone.
+- **Handouts**: choose the lessons to include (one lesson, some, or the whole unit) and make each kind with or without answers and with or without answer choices.
+- **No hints, and time counts**: games have a clock instead of a hint button. Each item gives 10 points on the first try (5 after one miss, 2 after more), up to 10 more for speed, and a streak bonus; a wrong tap costs 2. The leaderboard ranks by points, and on equal points the student with less total time is ahead (stored in the `seconds` column of `SEJ_Scores`).
+- **Background sound follows the scene**: soft water and bubbles under the sea, a breeze and far-off birds outdoors, slow twinkles in space, gentle soft notes elsewhere. It is generated in the browser (no audio files) and stays very quiet.

@@ -268,30 +268,37 @@
       root.replaceChildren(h('div', { class: 'admin-login' }, h('div', { class: 'pin-card' }, h('h1', { class: 'pin-title', text: 'Admin' }), h('p', { class: 'pin-msg', text: 'The admin panel works on the live website.' }), h('a', { class: 'pin-cancel', href: '#/map' }, '← Back to the map'))));
       return;
     }
-    let entry = '', busy = false;
-    const dots = h('div', { class: 'pin-dots', 'aria-hidden': 'true' }, [0, 1, 2, 3].map(() => h('i')));
-    const msg = h('p', { class: 'pin-msg', role: 'status', text: 'Enter the admin PIN' });
-    const show = () => Array.from(dots.children).forEach((d, i) => d.classList.toggle('on', i < entry.length));
-    const submit = async () => {
-      busy = true;
+    let busy = false;
+    const msg = h('p', { class: 'pin-msg', role: 'status', text: 'Enter the admin password to manage lessons and batches.' });
+    const pass = h('input', { class: 'b-input', id: 'admin-pass', type: 'password', autocomplete: 'current-password', placeholder: 'Password', 'aria-label': 'Admin password', maxlength: '64' });
+    const eye = h('button', { class: 'pass-eye', type: 'button', 'aria-label': 'Show password', 'aria-pressed': 'false', onclick: () => { const on = pass.type === 'password'; pass.type = on ? 'text' : 'password'; eye.textContent = on ? 'Hide' : 'Show'; eye.setAttribute('aria-pressed', String(on)); pass.focus(); } }, 'Show');
+    const btn = h('button', { class: 'cta', id: 'admin-login', type: 'submit' }, 'Log in');
+    const form = h('form', { class: 'pin-card pass-card', onsubmit: async (e) => {
+      e.preventDefault();
+      if (busy) return;
+      const entry = pass.value;
+      if (!entry) { msg.textContent = 'Type the password first.'; pass.focus(); return; }
+      busy = true; btn.disabled = true;
+      msg.className = 'pin-msg';
       msg.textContent = 'Checking…';
       let res = {};
-      try { const r = await fetch('api/content', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ side: 'login', pin: entry }) }); res = Object.assign({ status: r.status }, await r.json().catch(() => ({}))); } catch (e) { res = { offline: true }; }
-      busy = false;
+      try { const r = await fetch('api/content', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ side: 'login', pin: entry }) }); res = Object.assign({ status: r.status }, await r.json().catch(() => ({}))); } catch (err) { res = { offline: true }; }
+      busy = false; btn.disabled = false;
       if (res.ok) { setPin(entry); sfx.tap(); next(); return; }
-      entry = '';
-      show();
-      sfx.wrong();
-      SEJ.fx.play(dots, 'shake');
-      msg.textContent = res.offline ? 'No internet. Try again.' : res.wait ? `Too many tries. Wait ${res.wait} seconds.` : 'Wrong PIN. Try again.';
-    };
-    const press = (k) => { if (busy) return; sfx.tap(); if (k === 'back') entry = entry.slice(0, -1); else if (entry.length < 4) entry += k; show(); if (entry.length === 4) submit(); };
-    root.replaceChildren(h('div', { class: 'admin-login' }, h('div', { class: 'pin-card' },
-      h('div', { class: 'pin-lock', 'aria-hidden': 'true', text: '🛠️' }),
-      h('h1', { class: 'pin-title', text: 'Admin' }),
-      msg, dots,
-      h('div', { class: 'pin-keys' }, ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'].map((k) => (k ? h('button', { class: `pin-key ${k === 'back' ? 'pin-back' : ''}`, 'data-key': k, 'aria-label': k === 'back' ? 'Delete' : k, onclick: () => press(k) }, k === 'back' ? '⌫' : k) : h('span')))),
-      h('a', { class: 'pin-cancel', href: '#/map' }, '← Back to the map'))));
+      pass.value = '';
+      pass.focus();
+      SEJ.fx.play(pass, 'shake');
+      msg.className = 'pin-msg bad';
+      msg.textContent = res.offline ? 'No internet. Try again.' : res.wait ? `Too many tries. Wait ${res.wait} seconds.` : 'Wrong password. Try again.';
+    } },
+      h('div', { class: 'pin-lock', 'aria-hidden': 'true', text: '🔒' }),
+      h('h1', { class: 'pin-title', text: 'Admin login' }),
+      msg,
+      h('label', { class: 'b-label pass-field' }, 'Password', h('div', { class: 'pass-wrap' }, pass, eye)),
+      btn,
+      h('a', { class: 'pin-cancel', href: '#/map' }, '← Back to the map'));
+    root.replaceChildren(h('div', { class: 'admin-login' }, form));
+    pass.focus();
   }
 
   /* ---------- the panel ---------- */
@@ -370,7 +377,7 @@
           h('button', { class: 'cta create-btn', id: 'create-game', onclick: () => { sfx.tap(); location.hash = `#/admin/${code}/new`; } }, '+ Create game')),
         h('div', { class: 'b-links cms-tools' },
           h('button', { class: 'link-btn', id: 'lesson-slides', title: 'A PowerPoint with every game on the map: each question, then its answer', onclick: () => makeSlides(() => SEJ.slides.lesson(st.base, onMapGames())) }, '📑 Download slides'),
-          h('button', { class: 'link-btn', id: 'lesson-handouts', title: 'Flashcards, quick tips and a practice sheet for students, as a PDF', onclick: () => SEJ.handouts.open(st.base, onMapGames(), true) }, '🖨️ Handouts (PDF)'),
+          h('button', { class: 'link-btn', id: 'lesson-handouts', title: 'Flashcards, quick tips and a practice sheet for students, as a PDF', onclick: () => SEJ.handouts.open(st.base, onMapGames(), true, window.SEJ_LESSONS.filter((l) => l.unit === st.base.unit).map((l) => { const x = l.code === code ? st : lessonState(l.code); return { lesson: x.base, games: x.map.map((id) => gameOf(x, id)).filter(Boolean) }; })) }, '🖨️ Handouts (PDF)'),
           h('label', { class: 'link-btn', title: 'Turn a Word file into slides in the same template' }, '📄 Word file to slides', h('input', { type: 'file', accept: '.docx', class: 'visually-hidden', id: 'docx-file', onchange: (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) makeSlides(() => SEJ.slides.docx(f)); } })),
           h('a', { class: 'link-btn', href: `?class=${code}`, target: '_blank', rel: 'noopener' }, '🏆 Class Battle ↗'),
           links.deck && h('a', { class: 'link-btn', href: links.deck, target: '_blank', rel: 'noopener' }, 'Class slides ↗'),
@@ -516,6 +523,7 @@
       return h('article', { class: 'b-batch', 'data-batch': b.code },
         h('div', { class: 'b-batch-head' }, h('div', {}, h('strong', { text: b.name }), count),
           h('a', { class: 'soft-btn ok', href: `#/board/${b.code}` }, '🏆 Leaderboard'),
+          h('button', { class: 'soft-btn', title: 'A link that opens only this batch’s leaderboard. Share it with students or show it in class.', onclick: async () => { const url = linkOf(b.code).replace('?batch=', '?board='); try { await navigator.clipboard.writeText(url); toast('Leaderboard link copied'); } catch (e) { toast(url); } } }, '🔗 Copy leaderboard link'),
           twoTap('🗑️ Remove', 'Tap again to remove', async () => { await call({ side: 'remove', code: b.code }); toast('Batch removed'); batches(root); })),
         h('div', { class: 'b-batch-link' }, link,
           h('button', { class: 'soft-btn', onclick: async () => { try { await navigator.clipboard.writeText(link.value); toast('Link copied'); } catch (e) { link.select(); toast('Select the link and copy it'); } } }, '📋 Copy link')),

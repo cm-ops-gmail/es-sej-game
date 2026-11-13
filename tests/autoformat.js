@@ -63,7 +63,7 @@ const CASES = [
   p.on('pageerror', (e) => errors.push(e.message));
   await p.goto(`${BASE}/index.html?test=1#/admin/1.1`);
   await p.waitForSelector('.pin-card');
-  for (const d of '1010') await p.click(`.pin-key[data-key="${d}"]`);
+  await p.fill('#admin-pass', '1010'); await p.click('#admin-login');
   await p.waitForSelector('#create-game');
 
   const covered = new Set(CASES.map((c) => c[0]));

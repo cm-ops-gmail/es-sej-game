@@ -343,3 +343,29 @@ button.mz-item { border: 0; cursor: pointer; }
 .b-db .b-note { margin: 0; flex: 1 1 260px; }
 
 .b-auto-note { margin: 6px 0 0; padding: 8px 12px; border-radius: 12px; background: #fbf4dc; color: #6b5a3a; font-size: 14px; }
+
+/* ---------- the leaderboard, easy for students to find ---------- */
+.board-btn { width: auto; gap: 6px; padding: 0 12px; text-decoration: none; }
+.board-word { font-family: var(--display); font-size: 17px; color: var(--ink); }
+.map-board { display: inline-flex; align-items: center; gap: 12px; max-width: min(520px, 100%); margin-top: 12px; padding: 10px 16px; border: 3px solid #fff; border-radius: 22px; background: #fffdf7; color: var(--ink); text-align: left; text-decoration: none; box-shadow: 0 5px 0 #c0b5e1; transition: transform .15s; }
+.map-board:hover { transform: translateY(-2px); }
+.map-board-cup { font-size: 34px; line-height: 1; }
+.map-board-text { display: grid; gap: 1px; min-width: 0; }
+.map-board-text b { font-family: var(--display); font-weight: 400; font-size: 20px; }
+.map-board-line { font-size: 15px; font-weight: 600; color: var(--ink-soft); }
+.map-board-top { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 14px; }
+.map-board-go { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: #63c98f; color: #fff; font-size: 16px; }
+@media (max-width: 520px) { .board-word { display: none; } .board-btn { width: 44px; padding: 0; } }
+
+.ho-scope { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 15px; }
+.ho-scope-label { font-weight: 600; margin-right: 2px; }
+.ho-chip { min-height: 34px; padding: 4px 12px; border: 2px solid #ddd5ee; border-radius: 999px; background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+.ho-chip.on { border-color: #6f5aa8; background: #6f5aa8; color: #fff; }
+.ho-chip-all { border-style: dashed; background: #f6f2fb; }
+.ho-select { min-height: 34px; margin-left: 4px; padding: 4px 8px; border: 2px solid #ddd5ee; border-radius: 10px; background: #fff; font: inherit; font-size: 14px; }
+.ho-card-choices { width: 100%; margin-top: 4px; padding-top: 8px; border-top: 2px dotted #cfc5e4; font-size: 13px; color: #6a5a98; }
+
+/* The game clock sits where the hint button used to be. */
+.game-clock { display: inline-flex; align-items: center; gap: 5px; flex: none; height: 48px; padding: 0 12px; border: 3px solid #fff; border-radius: 16px; background: rgba(255, 255, 255, .92); color: var(--ink); font-size: 17px; box-shadow: 0 4px 0 rgba(43, 15, 107, .25); }
+.game-clock b { min-width: 38px; font-family: var(--display); font-weight: 400; font-size: 20px; font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) { .game-clock { height: 44px; padding: 0 9px; } .game-clock span { display: none; } }

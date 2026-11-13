@@ -27,7 +27,7 @@ const check = (name, ok, extra = '') => { if (ok) { passed++; console.log(`ok   
   const admin = await open(1200, 850);
   await admin.goto(`${BASE}/index.html?test=1#/admin/1.1`);
   await admin.waitForSelector('.pin-card');
-  for (const d of '1010') await admin.click(`.pin-key[data-key="${d}"]`);
+  await admin.fill('#admin-pass', '1010'); await admin.click('#admin-login');
   await admin.waitForSelector('#create-game');
   check('admin panel saves to the shared sheet', /everyone/.test(await admin.textContent('.b-save-state')));
   await admin.click('#create-game');

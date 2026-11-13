@@ -31,7 +31,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   const admin = await open(1100, 800);
   await admin.goto(`${BASE}/index.html?test=1#/admin/batches`);
   await admin.waitForSelector('.pin-card');
-  for (const d of '1010') await admin.click(`.pin-key[data-key="${d}"]`);
+  await admin.fill('#admin-pass', '1010'); await admin.click('#admin-login');
   await admin.waitForSelector('#batch-create');
   await admin.fill('#batch-new-name', 'SEJ Batch 12');
   await admin.click('#batch-create');
@@ -95,7 +95,11 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
     await s1.request.post(`${BASE}/api/batch`, { data: { side: 'join', code, id, name } });
     await s1.request.post(`${BASE}/api/batch`, { data: { side: 'score', code, id, name, hero, lesson: '1.1', game: 'd0', score, stars: 2 } });
   }
-  await s1.goto(`${BASE}/index.html?test=1#/board`);
+  await s1.goto(`${BASE}/index.html?test=1#/map`);
+  await s1.waitForFunction(() => /You are number \d of 5/.test((document.querySelector('#map-board-line') || {}).textContent || ''), null, { timeout: 8000 });
+  check('the map shows the student their place on the leaderboard', /Mim/.test(await s1.textContent('#map-board')));
+  await s1.screenshot({ path: `${OUT}/student-map-board.png` });
+  await s1.click('#map-board');
   await s1.waitForSelector('.lb-step');
   const names = await s1.locator('.lb-step.p1 strong, .lb-row .lb-name').allTextContents();
   check('leaderboard shows the podium and the rest', (await s1.locator('.lb-step').count()) === 3 && (await s1.locator('.lb-row').count()) === 2, names.join());
@@ -114,10 +118,35 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   await admin.waitForSelector('.lb-step');
   check('the teacher can open the batch leaderboard', (await admin.textContent('.lb-batch')) === 'SEJ Batch 12');
 
+  /* A leaderboard link works for anyone, without joining. */
+  const guest = await open(390, 780);
+  await guest.goto(`${BASE}/index.html?test=1&board=${code}`);
+  await guest.waitForSelector('.lb-step');
+  check('a leaderboard link opens the batch leaderboard for anyone', (await guest.textContent('.lb-batch')) === 'SEJ Batch 12' && /Quest map/.test(await guest.textContent('.back-link')) && !/batch=|board=/.test(guest.url()));
+
   /* ---------- a second batch has its own leaderboard ---------- */
   const made = await (await admin.request.post(`${BASE}/api/batch`, { data: { side: 'create', pin: '1010', name: 'Batch B' } })).json();
   const boardB = await (await admin.request.get(`${BASE}/api/batch?code=${made.batch.code}&side=board`)).json();
   check('a new batch starts with an empty leaderboard', boardB.rows.length === 0 && made.batch.code !== code);
+  /* Equal points: the student who took less time is ahead. */
+  for (const [name, id, time] of [['Slow', 'T1', 95], ['Fast', 'T2', 41]]) {
+    await admin.request.post(`${BASE}/api/batch`, { data: { side: 'join', code: made.batch.code, id, name } });
+    await admin.request.post(`${BASE}/api/batch`, { data: { side: 'score', code: made.batch.code, id, name, lesson: '1.1', game: 'd0', score: 120, stars: 3, time } });
+  }
+  const tie = await (await admin.request.get(`${BASE}/api/batch?code=${made.batch.code}&side=board&x=3`)).json();
+  check('on equal points the faster student ranks higher', tie.rows[0].name === 'Fast' && tie.rows[0].time === 41 && tie.rows[1].name === 'Slow', JSON.stringify(tie.rows));
+  /* In a game: no hint button, a clock instead, and the time is part of the result. */
+  await s1.goto(`${BASE}/index.html?test=1#/play/1.1/1`);
+  await s1.waitForSelector('.game-screen');
+  check('games have a clock and no hint button', !!(await s1.$('.game-clock')) && !(await s1.$('.hint-btn')));
+  const scored = await s1.evaluate(() => new Promise((done) => {
+    /* A slow first-try answer earns less than a quick one; a wrong tap costs points. */
+    const host = SEJ.current, el = document.querySelector('.game-screen');
+    const read = () => Number(document.querySelector('.score-num').textContent);
+    host.itemDone(el, '', null);
+    setTimeout(() => { const quick = read(); host.miss(el); setTimeout(() => done({ quick, afterMiss: read() }), 600); }, 600);
+  }));
+  check('a quick first try earns the speed bonus, and a wrong tap costs points', scored.quick >= 18 && scored.afterMiss === scored.quick - 2, JSON.stringify(scored));
 
   /* ---------- slides ---------- */
   await admin.goto(`${BASE}/index.html?test=1#/admin/1.3`);

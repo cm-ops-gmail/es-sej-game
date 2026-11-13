@@ -43,7 +43,12 @@
     const comboEl = h('div', { class: 'combo', 'aria-hidden': 'true' });
     const buddyImg = SEJ.heroImg(heroId);
     const buddy = h('div', { class: 'buddy', 'aria-hidden': 'true' }, buddyImg);
-    const hintBtn = h('button', { class: 'bar-btn hint-btn', 'aria-label': 'Show me a hint', title: 'Hint', onclick: () => api.useHint() }, '💡');
+    /* No hints: a clock instead. Quick, careful answers earn the most points. */
+    const clockNum = h('b', { text: '0:00' });
+    const clock = h('div', { class: 'game-clock', 'aria-label': 'Time', title: 'Faster answers earn more points' }, h('span', { 'aria-hidden': 'true', text: '⏱' }), clockNum);
+    const began = performance.now();
+    let itemBegan = began;
+    const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
     const screen = h('div', { class: 'game-screen', 'data-template': game.t },
       SEJ.scene(game.show ? 'stage' : meta.theme),
@@ -52,7 +57,7 @@
         h('button', { class: 'bar-btn', 'aria-label': 'Leave the game', title: 'Leave', onclick: opts.onExit }, '✕'),
         h('div', { class: 'progress', role: 'progressbar', 'aria-label': 'Game progress' }, fill, runner),
         scoreBox,
-        hintBtn,
+        clock,
         SEJ.ui.soundButton('bar-btn')),
       h('div', { class: 'game-title' },
         h('h1', { text: game.title }),
@@ -111,33 +116,30 @@
         fx.burstAt(el, 7);
         fx.play(el, 'is-hit');
       },
-      /* A wrong tap. It is gentle: nothing is lost, and the answer lights up after two misses. */
+      /* A wrong tap costs 2 points and breaks the streak. There are no hints: the child tries again. */
       miss(el) {
         itemMisses++;
+        if (score > 0) { score = Math.max(0, score - 2); countUp(); }
         sfx.wrong();
         buzz([80, 50, 80]);
         fx.play(el, 'is-wrong');
         combo = 0;
         comboEl.classList.remove('on');
         api.cheer(pick(NUDGES), 'down');
-        if (itemMisses >= 2) api.showHint();
       },
-      showHint() {
-        const t = api.target();
-        if (t) fx.play(t, 'glow');
-      },
-      useHint() {
-        sfx.tap();
-        itemMisses = Math.max(itemMisses, 1);
-        api.showHint();
-      },
+      showHint() { /* Hints were removed: every answer is the child's own. */ },
       /* Finishes one item: awards points, cheers, says the English line, then moves on. */
       itemDone(el, line, next, { wait = 900 } = {}) {
         const first = itemMisses === 0;
         if (first) { perfect++; combo++; best = Math.max(best, combo); } else combo = 0;
+        /* Points: 10 for a first try, 5 after one miss, 2 after more. Up to 10 more for speed (gone after 15 seconds),
+           and a streak bonus for first tries in a row. So fewer mistakes and less time both put a student higher. */
+        const misses = itemMisses, now = performance.now();
+        const quick = Math.max(0, Math.round(10 * (1 - (now - itemBegan) / 15000)));
+        itemBegan = now;
         itemMisses = 0;
         done++;
-        let pts = (first ? 10 : 5) + Math.min(combo, 5) * 2;
+        let pts = (first ? 10 : misses === 1 ? 5 : 2) + (first ? quick : Math.round(quick / 2)) + (first ? Math.min(combo, 5) * 2 : 0);
         if (doubleNext) { pts *= 2; doubleNext = false; }
         score += pts;
         countUp();
@@ -165,6 +167,7 @@
       itemFailed(next, wait = 1500) {
         done++;
         itemMisses = 0;
+        itemBegan = performance.now() + wait;
         api.syncProgress();
         api.after(wait, next);
       },
@@ -175,7 +178,7 @@
         const stars = ratio >= 0.85 ? 3 : ratio >= 0.5 ? 2 : 1;
         api.destroy();
         voice.stop();
-        opts.onFinish({ stars, score, best, perfect, total: done });
+        opts.onFinish({ stars, score, best, perfect, total: done, time: Math.round((performance.now() - began) / 1000) });
       },
       destroy() {
         alive = false;
@@ -184,6 +187,8 @@
         if (api.cleanup) api.cleanup();
       },
     };
+    const tickClock = setInterval(() => { if (!alive || !clockNum.isConnected) return clearInterval(tickClock); clockNum.textContent = mmss((performance.now() - began) / 1000); }, 500);
+    SEJ.music.setTheme(game.show ? 'stage' : meta.theme);
     return api;
   }
 
