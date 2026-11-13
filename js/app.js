@@ -160,7 +160,7 @@
     SEJ.batch.board().then((data) => {
       if (!data || !line.isConnected) return;
       const rows = data.rows || [], me = rows.find((r) => r.id === (store.state.batch || {}).id);
-      line.textContent = me ? `You are number ${me.rank} of ${rows.length} · ${me.score} points` : rows.length ? `${rows.length} ${rows.length === 1 ? 'friend is' : 'friends are'} playing. Finish a game to join!` : 'Finish a game to be the first!';
+      line.textContent = me ? `You are number ${me.rank} of ${rows.length} · ${me.score} points${me.time ? ` · ⏱ ${Math.floor(me.time / 60)}:${String(me.time % 60).padStart(2, '0')}` : ''}` : rows.length ? `${rows.length} ${rows.length === 1 ? 'friend is' : 'friends are'} playing. Finish a game to join!` : 'Finish a game to be the first!';
       top.replaceChildren(...rows.slice(0, 3).map((r, i) => h('span', {}, `${['🥇', '🥈', '🥉'][i]} ${r.name}`)));
     });
     return h('a', { class: 'map-board enter-pop', href: '#/board', id: 'map-board' },

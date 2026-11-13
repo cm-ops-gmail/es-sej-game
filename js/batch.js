@@ -112,11 +112,13 @@
     const podium = h('div', { class: 'lb-podium' });
     const list = h('ol', { class: 'lb-list' });
     const note = h('p', { class: 'lb-note', role: 'status', text: 'Loading the leaderboard…' });
+    const mineBox = h('div', { class: 'lb-mine', id: 'lb-mine', hidden: true });
+    const head = h('div', { class: 'lb-head', hidden: true }, h('span', { text: 'Rank' }), h('span', { class: 'lb-head-name', text: 'Player' }), h('span', { text: 'Time' }), h('span', { text: 'Points' }));
     root.replaceChildren(h('div', { class: 'lb-page' }, SEJ.scene('party'),
       h('div', { class: 'lb-inner' },
         h('a', { class: 'back-link', href: back }, viewCode && isAdmin ? '← Batches' : '← Quest map'),
-        h('h1', { class: 'logo-word lb-title' }, '🏆 Leaderboard'), title, podium, list, note,
-        h('p', { class: 'lb-rule', text: 'Your first try at each game counts. Fewer mistakes and less time give more points. On a tie, the faster player is ahead.' }))));
+        h('h1', { class: 'logo-word lb-title' }, '🏆 Leaderboard'), title, mineBox, podium, head, list, note,
+        h('p', { class: 'lb-rule', text: 'Ranking: most points first. If points are equal, the player with less time is ahead. Only your first try at each game counts.' }))));
     if (!code) { note.textContent = 'Open your batch link to see a leaderboard.'; return () => {}; }
     const face = (r, cls) => (SEJ.HEROES[r.hero] ? SEJ.heroImg(r.hero, cls) : h('span', { class: `lb-initial ${cls}`, text: (r.name || '?')[0].toUpperCase() }));
     let first = true, alive = true;
@@ -132,13 +134,16 @@
         const r = top[i];
         return h('div', { class: `lb-step p${i + 1} ${r.id === mine ? 'me' : ''} ${first ? 'enter-pop' : ''}`, style: { '--i': i } },
           h('span', { class: 'lb-medal', text: MEDAL[i] }), face(r, 'lb-hero'),
-          h('div', { class: 'lb-block' }, h('strong', { text: r.name }), h('b', { text: r.score }), h('small', { text: `⭐ ${r.stars} · ${r.games} ${r.games === 1 ? 'game' : 'games'}${r.time ? ` · ⏱ ${clock(r.time)}` : ''}` })));
+          h('div', { class: 'lb-block' }, h('strong', { text: r.name }), h('b', { text: r.score }), h('span', { class: 'lb-unit', text: 'points' }), h('span', { class: 'lb-time', text: `⏱ ${r.time ? clock(r.time) : '–'}` }), h('small', { text: `⭐ ${r.stars} · ${r.games} ${r.games === 1 ? 'game' : 'games'}` })));
       }));
       list.replaceChildren(...rows.slice(3).map((r) => h('li', { class: `lb-row ${r.id === mine ? 'me' : ''}` },
         h('span', { class: 'lb-rank', text: r.rank }), face(r, 'lb-face'), h('span', { class: 'lb-name', text: r.name }),
-        h('span', { class: 'lb-stars', text: `⭐ ${r.stars}${r.time ? ` · ⏱ ${clock(r.time)}` : ''}` }), h('b', { class: 'lb-score', text: r.score }))));
+        h('span', { class: 'lb-stars', text: `⭐ ${r.stars}` }), h('span', { class: 'lb-time', text: `⏱ ${r.time ? clock(r.time) : '–'}` }), h('b', { class: 'lb-score' }, r.score, h('small', { text: ' pts' })))));
       const me = rows.find((r) => r.id === mine);
-      if (me && me.rank > 3) note.textContent = `You are number ${me.rank} of ${rows.length}. Keep going!`;
+      /* The student's own place, points and time, always in view. */
+      mineBox.hidden = !me;
+      if (me) mineBox.replaceChildren(h('span', { class: 'lb-mine-rank', text: `#${me.rank}` }), h('span', { class: 'lb-mine-who' }, h('b', { text: 'You' }), h('small', { text: `of ${rows.length}` })), h('span', { class: 'lb-mine-stat' }, h('b', { text: me.score }), h('small', { text: 'points' })), h('span', { class: 'lb-mine-stat' }, h('b', { text: me.time ? clock(me.time) : '–' }), h('small', { text: 'time' })));
+      head.hidden = rows.length <= 3;
       if (first && rows.length) { fx.confetti(90); sfx.fanfare(); }
       first = false;
     };

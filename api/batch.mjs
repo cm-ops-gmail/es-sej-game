@@ -23,7 +23,8 @@ async function findBatch(code) {
   try { open = JSON.parse(r[2] || '[]'); } catch (e) { /* treated as all locked */ }
   return { code: r[0], name: r[1], open, createdAt: Number(r[3]) || 0, _n: r._n };
 }
-/* First tries only, added up per student. More points ranks higher; on equal points, less total time does. */
+/* First tries only, added up per student. More points ranks higher; on equal points, less total time does.
+   A score saved before times were recorded has no time, and goes after timed scores on a tie. */
 async function board(code) {
   const seen = new Set();
   const by = new Map();
@@ -44,7 +45,7 @@ async function board(code) {
   }
   /* Students who joined but haven't played yet appear with 0. */
   for (const r of (await rows('SEJ_Students')).filter((x) => x[0] === code)) if (!by.has(r[1])) by.set(r[1], { id: r[1], name: r[2], hero: '', score: 0, stars: 0, games: 0, time: 0, last: 0 });
-  return [...by.values()].sort((a, b) => b.score - a.score || (b.games > 0) - (a.games > 0) || a.time - b.time || a.last - b.last).map(({ last, ...s }, i) => ({ ...s, rank: i + 1 }));
+  return [...by.values()].sort((a, b) => b.score - a.score || (b.games > 0) - (a.games > 0) || (a.time || Infinity) - (b.time || Infinity) || a.last - b.last).map(({ last, ...s }, i) => ({ ...s, rank: i + 1 }));
 }
 
 export default {

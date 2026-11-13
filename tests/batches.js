@@ -105,6 +105,8 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   check('leaderboard shows the podium and the rest', (await s1.locator('.lb-step').count()) === 3 && (await s1.locator('.lb-row').count()) === 2, names.join());
   check('the top score is first', (await s1.textContent('.lb-step.p1 strong')) === 'Mim');
   check('the student’s own row is highlighted', (await s1.locator('.me').count()) === 1);
+  check('the student sees their own rank, points and time', /#\d/.test(await s1.textContent('#lb-mine')) && /points/.test(await s1.textContent('#lb-mine')) && /\d:\d\d/.test(await s1.textContent('#lb-mine')));
+  check('every player shows points and a time', (await s1.locator('.lb-step .lb-time').count()) === 3 && (await s1.locator('.lb-row .lb-time').count()) === 2 && /pts/.test(await s1.textContent('.lb-row')));
   await s1.waitForTimeout(500);
   await s1.screenshot({ path: `${OUT}/leaderboard.png`, fullPage: true });
 
