@@ -405,7 +405,7 @@
     if (oldFab) oldFab.remove();
     if (SEJ.batch.joined && store.state.onboarded && (!page || page === 'map' || page === 'lesson')) document.body.append(h('a', { class: 'board-fab', href: '#/board', id: 'board-fab' }, h('span', { 'aria-hidden': 'true', text: '🏆' }), 'Leaderboard'));
     /* Class Battle runs without background music: the teacher is talking. */
-    SEJ.noMusic = page === 'class' || page === 'remote' || page === 'join';
+    SEJ.noMusic = ['class', 'remote', 'join', 'admin', 'teacher', 'board'].includes(page);
     if (page !== 'play') SEJ.music.setTheme('map');
     if (SEJ.noMusic) SEJ.music.stop();
     if (page === 'class') { cleanupRoute = SEJ.classPage(root(), a); return; }
@@ -447,8 +447,9 @@
       return;
     }
     if (batch && SEJ.batch.use(batch)) {
-      /* A batch link: remember the batch and show a clean address. */
-      history.replaceState(null, '', location.pathname + (q.get('test') ? '?test=1' : '') + (location.hash || '#/map'));
+      /* A batch link: remember the batch. The code stays in the address, so only this link counts as the batch. */
+      SEJ.batch.urlCode = String(batch).toUpperCase();
+      if (!location.hash) history.replaceState(null, '', location.href + '#/map');
       return;
     }
     if (!game && !lesson && !battle && remote === null && join === null) return;

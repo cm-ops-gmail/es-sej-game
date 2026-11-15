@@ -10,7 +10,9 @@
   const st = () => store.state.batch || null;
 
   SEJ.batch = {
-    get on() { return !!(st() && st().code); },
+    /* A batch counts only while the address carries its code (?batch=CODE). The plain address is the open site. */
+    urlCode: '',
+    get on() { return !!(st() && st().code && this.urlCode === st().code); },
     get joined() { return this.on && !!st().id; },
     get name() { return (st() && st().name) || ''; },
     get code() { return (st() && st().code) || ''; },

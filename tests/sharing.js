@@ -51,7 +51,7 @@ const slowFirst = async (page, ms) => { let n = 0; await page.route('**/api/cont
   const student = await open(390, 780);
   await student.addInitScript((c) => localStorage.setItem('sej-hero-quest-v1', JSON.stringify({ name: 'Rafi', hero: 'knight', onboarded: true, sound: false, music: false, stars: {}, custom: {}, batch: { code: c, name: 'Sharing Batch', id: 'S1', open: ['1.1'], done: [] } })), code);
   await slowFirst(student, 4500);
-  await student.goto(`${BASE}/index.html?test=1#/lesson/1.1`);
+  await student.goto(`${BASE}/index.html?batch=${code}&test=1#/lesson/1.1`);
   await student.waitForSelector('.game-card', { timeout: 20000 });
   await student.waitForFunction(() => /Brand New Quiz/.test(document.querySelector('.game-list').textContent), null, { timeout: 25000 });
   check('a student whose page loaded slowly sees the new game without reloading', (await student.locator('.game-card').count()) === 4 && /Edited Title Game/.test(await student.textContent('.game-list')));
@@ -59,7 +59,7 @@ const slowFirst = async (page, ms) => { let n = 0; await page.route('**/api/cont
   /* A second student, a normal start. */
   const student2 = await open(390, 780);
   await student2.addInitScript((c) => localStorage.setItem('sej-hero-quest-v1', JSON.stringify({ name: 'Mim', hero: 'bhasha', onboarded: true, sound: false, music: false, stars: {}, custom: {}, batch: { code: c, name: 'Sharing Batch', id: 'S2', open: ['1.1'], done: [] } })), code);
-  await student2.goto(`${BASE}/index.html?test=1#/lesson/1.1`);
+  await student2.goto(`${BASE}/index.html?batch=${code}&test=1#/lesson/1.1`);
   await student2.waitForSelector('.game-card');
   check('every student of the batch sees the edited and the new game', (await student2.locator('.game-card').count()) === 4 && /Brand New Quiz/.test(await student2.textContent('.game-list')) && /Edited Title Game/.test(await student2.textContent('.game-list')));
   check('the plain site address still shows only the defaults', await (async () => { const p = await open(390, 780); await p.addInitScript(() => localStorage.setItem('sej-hero-quest-v1', JSON.stringify({ name: 'Visitor', hero: 'knight', onboarded: true, sound: false, music: false, stars: {}, custom: {} }))); await p.goto(`${BASE}/index.html?test=1#/lesson/1.1`); await p.waitForSelector('.game-card'); return (await p.locator('.game-card').count()) === 3 && !/Brand New Quiz/.test(await p.textContent('.game-list')); })());

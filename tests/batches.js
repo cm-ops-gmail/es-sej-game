@@ -61,12 +61,19 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   check('batch students see a leaderboard button, not Admin', !!(await s1.$('#board-btn')) && !(await s1.$('#admin-btn')));
   check('a Leaderboard button stays on screen for batch students', await s1.locator('#board-fab').isVisible() && /Leaderboard/.test(await s1.textContent('#board-fab')));
   await s1.screenshot({ path: `${OUT}/student-map-locked.png` });
-  await s1.goto(`${BASE}/index.html?test=1#/lesson/1.2`);
+  await s1.goto(`${BASE}/index.html?batch=${code}&test=1#/lesson/1.2`);
   await s1.waitForSelector('.map-page');
   check('a locked lesson can’t be opened by its link', !(await s1.$('.lesson-page')));
 
+  await s1.goto(`${BASE}/index.html?test=1#/map`);
+  await s1.waitForSelector('.map-page');
+  check('the plain address shows no leaderboard, even after using a batch link', !(await s1.$('#board-fab')) && !(await s1.$('#board-btn')));
+  await s1.goto(`${BASE}/index.html?batch=${code}&test=1#/map`);
+  await s1.waitForSelector('.map-page');
+  check('the batch link brings the leaderboard back', !!(await s1.$('#board-fab')));
+
   /* ---------- first try counts; a second try is practice ---------- */
-  await s1.goto(`${BASE}/index.html?test=1#/play/1.1/0`);
+  await s1.goto(`${BASE}/index.html?batch=${code}&test=1#/play/1.1/0`);
   await playToEnd(s1, true);
   await s1.waitForFunction(() => /on the leaderboard!/.test(document.querySelector('#result-board').textContent), null, { timeout: 8000 });
   const firstScore = Number(await s1.evaluate(() => SEJ.batch && JSON.parse(localStorage.getItem('sej-hero-quest-v1')).batch.done.length));
@@ -75,7 +82,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   const board1 = await (await s1.request.get(`${BASE}/api/batch?code=${code}&side=board`)).json();
   const score1 = board1.rows[0].score;
   check('leaderboard has the student with a score', board1.rows.length === 1 && board1.rows[0].name === 'Rafi' && score1 > 0, JSON.stringify(board1.rows));
-  await s1.goto(`${BASE}/index.html?test=1#/play/1.1/0`);
+  await s1.goto(`${BASE}/index.html?batch=${code}&test=1#/play/1.1/0`);
   await s1.reload();
   await playToEnd(s1, false);
   await s1.waitForFunction(() => /Practice try/.test(document.querySelector('#result-board').textContent), null, { timeout: 8000 });
@@ -96,7 +103,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
     await s1.request.post(`${BASE}/api/batch`, { data: { side: 'join', code, id, name } });
     await s1.request.post(`${BASE}/api/batch`, { data: { side: 'score', code, id, name, hero, lesson: '1.1', game: 'd0', score, stars: 2 } });
   }
-  await s1.goto(`${BASE}/index.html?test=1#/map`);
+  await s1.goto(`${BASE}/index.html?batch=${code}&test=1#/map`);
   await s1.waitForFunction(() => /You are number \d of 5/.test((document.querySelector('#map-board-line') || {}).textContent || ''), null, { timeout: 8000 });
   check('the map shows the student their place on the leaderboard', /Mim/.test(await s1.textContent('#map-board')));
   await s1.screenshot({ path: `${OUT}/student-map-board.png` });
@@ -114,7 +121,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   /* ---------- the teacher unlocks a lesson; the student sees it ---------- */
   await admin.locator('.lock-chip[data-lesson="1.2"]').click();
   await admin.waitForTimeout(400);
-  await s1.goto(`${BASE}/index.html?test=1#/map`);
+  await s1.goto(`${BASE}/index.html?batch=${code}&test=1#/map`);
   await s1.waitForFunction(() => document.querySelectorAll('.node.locked').length === 22, null, { timeout: 8000 });
   check('unlocking a lesson reaches the student', true);
   await admin.locator('.b-batch a', { hasText: 'Leaderboard' }).click();
@@ -140,7 +147,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   check('a game on the plain site doesn’t talk about a leaderboard', !(await plain.$('#result-board')));
   const after = await (await plain.request.get(`${BASE}/api/batch?code=${code}&side=board&x=9`)).json();
   check('and it adds nothing to the batch leaderboard', after.rows.length === 5 && !after.rows.some((r) => r.name === 'Visitor'));
-  await s1.goto(`${BASE}/index.html?test=1#/lesson/1.1`);
+  await s1.goto(`${BASE}/index.html?batch=${code}&test=1#/lesson/1.1`);
   await s1.reload();
   await s1.waitForSelector('.game-card');
   check('a batch student sees the admin’s created game', (await s1.locator('.game-card').count()) === 4 && /Batch Only Quiz/.test(await s1.textContent('.game-list')));
@@ -160,7 +167,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   await plain.reload();
   await plain.waitForSelector('.game-card');
   check('the plain site shows the admin’s open site games', (await plain.locator('.game-card').count()) === 2);
-  await s1.goto(`${BASE}/index.html?test=1#/lesson/1.2`);
+  await s1.goto(`${BASE}/index.html?batch=${code}&test=1#/lesson/1.2`);
   await s1.reload();
   await s1.waitForSelector('.game-card');
   check('batch students are not affected by open site changes', (await s1.locator('.game-card').count()) === 3);
@@ -189,7 +196,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   const tie = await (await admin.request.get(`${BASE}/api/batch?code=${made.batch.code}&side=board&x=3`)).json();
   check('on equal points the faster student ranks higher', tie.rows[0].name === 'Fast' && tie.rows[0].time === 41 && tie.rows[1].name === 'Slow', JSON.stringify(tie.rows));
   /* In a game: no hint button, a clock instead, and the time is part of the result. */
-  await s1.goto(`${BASE}/index.html?test=1#/play/1.1/1`);
+  await s1.goto(`${BASE}/index.html?batch=${code}&test=1#/play/1.1/1`);
   await s1.waitForSelector('.game-screen');
   check('games have a clock and no hint button', !!(await s1.$('.game-clock')) && !(await s1.$('.hint-btn')));
   const scored = await s1.evaluate(() => new Promise((done) => {
