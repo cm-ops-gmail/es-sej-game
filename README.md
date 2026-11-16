@@ -160,6 +160,16 @@ In the admin panel, **🖨️ Handouts (PDF)** on a lesson (or **🖨️ Handout
 
 Tick **Use my own content** to paste lines instead (`Question | Answer | wrong | wrong >> tip`). **Download PDF** saves a real PDF (Bangla and emoji included); **Print** sends the same pages to a printer. No AI is used.
 
+## Quiz video
+
+In the admin panel, **🎬 Quiz video** on a lesson (or **🎬 Video** on one game) turns the games into an animated video with the heroes: an intro, a title card for each game, each question with its choices and a countdown, then the answer with sparkles and a cheering hero, and a "Great job, heroes!" ending. Soft music and sound effects play along.
+
+- Choose the games, how many questions per game, the thinking time, the hero (or let them take turns), and whether to show the answers.
+- **▶ Play** watches it right there. **⏺ Record & download video** plays it once and saves a video file (MP4 in Chrome and Safari, WebM in Firefox), with sound. Keep the tab open while it records.
+- **⬇️ Download HTML file** saves one HTML file with everything inside (questions, heroes, fonts). Open it in any browser, even offline, to play the video full screen or record it.
+
+Everything is drawn in the browser on a canvas; nothing is sent to a server. Test: `node tests/video.js`.
+
 ## Database check
 
 Admin → Batches → **🔧 Check the database** creates any missing tab in the Google Sheet, repairs header rows (data is never overwritten), freezes and styles the headers, writes a `SEJ_Guide` tab and shows row counts. The same check runs by itself when the server starts. From a terminal: `node tests/sheet-setup.mjs`.

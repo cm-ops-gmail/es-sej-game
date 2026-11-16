@@ -71,7 +71,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   const made = await (await p.request.post(`${BASE}/api/batch`, { data: { side: 'create', pin: '1010', name: 'Test Batch' } })).json();
   await p.request.post(`${BASE}/api/batch`, { data: { side: 'join', code: made.batch.code, id: 'M1', name: 'Mim' } });
   await other.addInitScript((code) => localStorage.setItem('sej-hero-quest-v1', JSON.stringify({ name: 'Mim', hero: 'bhasha', onboarded: true, sound: false, music: false, stars: {}, custom: {}, batch: { code, name: 'Test Batch', id: 'M1', open: ['1.1'], done: [] } })), made.batch.code);
-  await other.goto(`${BASE}/index.html?test=1#/play/1.1/3`);
+  await other.goto(`${BASE}/index.html?batch=${made.batch.code}&test=1#/play/1.1/3`);
   await other.waitForSelector('.game-screen img.pic');
   check('a student on another device sees the picture too', await other.evaluate(() => new Promise((done) => { const img = document.querySelector('.game-screen img.pic'); if (img.complete) done(img.naturalWidth > 50); else { img.onload = () => done(true); img.onerror = () => done(false); } })));
 

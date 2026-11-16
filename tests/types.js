@@ -105,7 +105,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   const made = await (await p.request.post(`${BASE}/api/batch`, { data: { side: 'create', pin: '1010', name: 'Test Batch' } })).json();
   await p.request.post(`${BASE}/api/batch`, { data: { side: 'join', code: made.batch.code, id: 'M1', name: 'Mim' } });
   await other.addInitScript((code) => localStorage.setItem('sej-hero-quest-v1', JSON.stringify({ name: 'Mim', hero: 'bhasha', onboarded: true, sound: false, music: false, stars: {}, custom: {}, batch: { code, name: 'Test Batch', id: 'M1', open: ['1.1'], done: [] } })), made.batch.code);
-  await other.goto(`${BASE}/index.html?test=1#/lesson/1.1`);
+  await other.goto(`${BASE}/index.html?batch=${made.batch.code}&test=1#/lesson/1.1`);
   await other.waitForSelector('.game-card');
   check('another student sees the new game on the lesson page', (await other.locator('.game-card').count()) === 4 && /School Hangman/.test(await other.textContent('.game-list')));
   /* Remove a default game from the map, then reset the lesson. */
