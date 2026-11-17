@@ -393,8 +393,6 @@
           h('button', { class: 'link-btn', id: 'lesson-video', title: 'An animated quiz video with the heroes, from the games on the map. Play it here, record it as a video file, or save it as one HTML file.', onclick: () => SEJ.video.open(st.base, onMapGames(), true) }, '🎬 Quiz video'),
           h('label', { class: 'link-btn', title: 'Turn a Word file into slides in the same template' }, '📄 Word file to slides', h('input', { type: 'file', accept: '.docx', class: 'visually-hidden', id: 'docx-file', onchange: (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) makeSlides(() => SEJ.slides.docx(f)); } })),
           h('a', { class: 'link-btn', href: `?class=${code}`, target: '_blank', rel: 'noopener' }, '🏆 Class Battle ↗'),
-          links.deck && h('a', { class: 'link-btn', href: links.deck, target: '_blank', rel: 'noopener' }, 'Class slides ↗'),
-          links.plan && h('a', { class: 'link-btn', href: links.plan, target: '_blank', rel: 'noopener' }, 'Lesson plan ↗'),
           changeOf(st) && twoTap('↩ Reset this lesson to its default games', 'Tap again to reset everything in this lesson', async () => {
             try { await saveLessonChange(code, null); toast('Lesson reset'); } catch (e) { toast(e.message, true); }
             render(root);
