@@ -1,0 +1,70 @@
+/* Phone polish. Loaded last, and only does anything on narrow screens, so desktop, tablet and
+   the classroom screens are untouched. Borrowed from EasyStory's mobile view: safe-area padding,
+   a short header so the question gets the space, one tidy row of tools, big tap targets and
+   cards with softer shadows. No game logic or markup changes. */
+@media (max-width: 720px) {
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  * { -webkit-tap-highlight-color: transparent; }
+
+  /* ---- keep clear of the notch and the home bar ---- */
+  .top-bar { padding-top: max(7px, env(safe-area-inset-top)); padding-left: max(9px, env(safe-area-inset-left)); padding-right: max(9px, env(safe-area-inset-right)); }
+  .game-bar { padding-top: max(8px, env(safe-area-inset-top)); }
+  .map-hero, .onb-inner, .picker { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  .lesson-main { padding-bottom: max(46px, calc(30px + env(safe-area-inset-bottom))); }
+  .toast { bottom: calc(16px + env(safe-area-inset-bottom)); }
+
+  /* ---- game header: shorter title and a calmer how-to line ---- */
+  .game-title { padding: 4px 12px 0; }
+  .game-title h1 { font-size: clamp(25px, 7.4vw, 31px); -webkit-text-stroke-width: 3.5px; text-shadow: 0 3px 0 var(--ink), 0 6px 10px rgba(43, 15, 107, .3); }
+  .how { display: block; width: fit-content; max-width: 100%; margin: 6px auto 0; padding: 5px 13px 6px; border-radius: 16px; font-size: 13.5px; line-height: 1.25; text-wrap: balance; }
+  .how .bn { display: block; margin-top: 1px; font-size: 12.5px; font-weight: 500; line-height: 1.25; }
+
+  /* ---- play area: a little more air, answers easy to hit ---- */
+  .stage { gap: 14px; padding: 8px 12px max(18px, calc(10px + env(safe-area-inset-bottom))); }
+  .card { border-radius: 26px; box-shadow: 0 6px 0 rgba(43, 15, 107, .26), 0 12px 22px rgba(43, 15, 107, .26), inset 0 0 0 4px #fff, inset 0 0 0 6px rgba(123, 47, 247, .12); }
+  .answers { gap: 12px; }
+  .answer { min-height: 68px; border-radius: 22px; }
+  .choice { min-height: 72px; border-radius: 22px; }
+  .option { min-height: 64px; border-radius: 20px; }
+  .chip-pool { gap: 10px; }
+
+  /* ---- quiz tools (timer, 50:50, x2, +time): one even row instead of a wrapping heap ---- */
+  .power-row { flex-wrap: nowrap; gap: 8px; width: 100%; }
+  .power-row > * { flex: 1 1 0; min-width: 0; }
+  .power { min-height: 48px; padding: 3px 4px; border-radius: 14px; font-size: 15px; white-space: nowrap; }
+
+  /* ---- map and lesson: shorter hero so the first mission shows sooner ---- */
+  .map-hero { padding-top: max(18px, env(safe-area-inset-top)); }
+  .squad { height: clamp(128px, 36vw, 160px); margin-top: 4px; }
+  .tagline { margin-top: 8px; padding: 5px 16px; font-size: 16px; }
+  .mission-hero { width: 88px; height: 138px; }
+  .mission-bubble { padding: 11px 15px 13px; border-radius: 26px; box-shadow: 0 6px 0 rgba(43, 15, 107, .26), 0 12px 20px rgba(43, 15, 107, .2); }
+  .mission-bubble h1 { font-size: clamp(26px, 7.6vw, 31px); }
+  .mission-en { font-size: 16px; }
+  .mission-bubble .bn { font-size: 14px; }
+  .section-title { margin: 16px 0 8px; font-size: 27px; -webkit-text-stroke-width: 3.5px; }
+  .game-list { gap: 14px; }
+  .game-card { min-height: 100px; border-radius: 24px; }
+
+
+  /* ---- lesson mission cards: smaller, cleaner type ---- */
+  .game-card { gap: 10px; min-height: 84px; padding: 10px 12px; border-radius: 22px; }
+  .game-card .game-art { display: grid; place-items: center; width: 60px; height: 60px; font-size: 46px; flex: none; }
+  .game-card .game-art img, .game-card .game-art svg { width: 100%; height: 100%; object-fit: contain; }
+  .game-card-body small { font-size: 12px; font-weight: 600; letter-spacing: .02em; opacity: .9; }
+  .game-card-body strong { font-size: 19px; line-height: 1.12; letter-spacing: .1px; margin-top: 1px; }
+  .game-card .play-pill { width: 40px; height: 40px; font-size: 16px; flex: none; }
+  .game-card .stars, .game-card-body .star-row { transform: scale(.8); transform-origin: left center; }
+
+  /* ---- results: roomier buttons ---- */
+  .results { padding: 14px 12px max(18px, env(safe-area-inset-bottom)); }
+}
+
+/* Very small phones (older Androids, iPhone SE): trim a bit more. */
+@media (max-width: 360px) {
+  .game-title h1 { font-size: 24px; }
+  .how { font-size: 12.5px; padding: 4px 10px 5px; }
+  .how .bn { font-size: 12px; }
+  .power { font-size: 14px; }
+  .mission-hero { width: 72px; height: 116px; }
+}
