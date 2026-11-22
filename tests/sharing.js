@@ -80,7 +80,7 @@ const slowFirst = async (page, ms) => { let n = 0; await page.route('**/api/cont
   await stuck.goto(`${BASE}/index.html?test=1#/admin`);
   await stuck.fill('#admin-pass', '1010'); await stuck.click('#admin-login');
   await stuck.waitForSelector('#device-banner');
-  check('changes stranded on a device are flagged', /1 lesson change/.test(await stuck.textContent('#device-banner')));
+  check('changes stranded on a device are flagged', /1 change/.test(await stuck.textContent('#device-banner')));
   await stuck.click('#device-publish');
   await stuck.waitForFunction(() => !document.querySelector('#device-banner'), null, { timeout: 10000 });
   const pub = await (await admin.request.get(`${BASE}/api/content?x=${Date.now()}`)).json();

@@ -7,8 +7,9 @@ import { available, rows, append, update, reply, adminBody, setup } from '../lib
 
 const T = 'SEJ_Content';
 const CHUNK = 40000; /* a sheet cell holds up to 50,000 characters */
-/* "1.3" is the lesson as batches see it; "base:1.3" is the same lesson on the plain site address. */
-const CODE = /^(base:)?\d\.\d$/;
+/* "1.3" is the lesson as batches see it; "base:1.3" is the same lesson on the plain site address.
+   "settings" holds site-wide switches set in the admin panel, such as { classBattle: false }. */
+const CODE = /^((base:)?\d\.\d|settings)$/;
 
 async function readAll() {
   const content = {};

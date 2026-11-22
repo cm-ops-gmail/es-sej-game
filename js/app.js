@@ -270,10 +270,10 @@
       const stars = store.starsFor(code, s.key);
       return h('a', {
         class: `game-card gummy ${COLORS[i % COLORS.length]} enter ${stars ? 'played' : ''} ${i === first ? 'up-next' : ''}`, style: { '--i': i }, href: `#/play/${code}/${s.key}`,
-        'aria-label': `${s.game.title}, ${t.name}. ${stars} of 3 stars`, onclick: () => sfx.tap(),
+        'aria-label': `${s.game.title}, ${SEJ.kindName(s.game)}. ${stars} of 3 stars`, onclick: () => sfx.tap(),
       },
       SEJ.sticker(t.icon, 'game-art'),
-      h('span', { class: 'game-card-body' }, h('small', { text: t.name }), h('strong', { text: s.game.title }), starRow(stars)),
+      h('span', { class: 'game-card-body' }, h('small', { text: SEJ.kindName(s.game) }), h('strong', { text: s.game.title }), starRow(stars)),
       h('span', { class: 'play-pill', 'aria-hidden': 'true', text: stars ? '↻' : '▶' }));
     });
     const words = h('div', { class: 'word-strip' }, (l.words || []).map(([en, bn], i) => h('button', {
@@ -294,7 +294,7 @@
             h('p', { class: 'bn', lang: 'bn', text: l.mission.bn }),
             h('div', { class: 'mission-progress' }, '⭐ ', `${st.got} of ${st.max} stars`))),
         h('section', { 'aria-label': 'Games' }, h('h2', { class: 'section-title', text: 'Your Missions' }), h('div', { class: 'game-list' }, cards)),
-        h('section', { 'aria-label': 'Class Battle' }, h('h2', { class: 'section-title' }, 'In Class ', h('small', { text: 'with your teacher' })),
+        SEJ.classBattleOn() && h('section', { 'aria-label': 'Class Battle' }, h('h2', { class: 'section-title' }, 'In Class ', h('small', { text: 'with your teacher' })),
           h('a', { class: 'class-card gummy g-violet', id: 'class-battle-link', href: `#/class/${code}`, onclick: () => sfx.tap() },
             SEJ.sticker('🏆', 'class-art'),
             h('span', {}, h('strong', { text: 'Class Battle' }), h('small', { text: 'Teachers: play on the class TV and control it from your phone' })),
@@ -313,6 +313,7 @@
     SEJ.voice.prepare(JSON.stringify(slot.game).match(/"[^"]{2,120}"/g).map((x) => x.slice(1, -1)));
     if (activeHost) activeHost.destroy();
     activeHost = SEJ.playGame(root(), l, key, slot.game, {
+      intro: true,
       onExit: () => go(`#/lesson/${code}`),
       onFinish: (res) => results(l, slots, key, res),
     });
@@ -408,6 +409,8 @@
     SEJ.noMusic = ['class', 'remote', 'join', 'admin', 'teacher', 'board'].includes(page);
     if (page !== 'play') SEJ.music.setTheme('map');
     if (SEJ.noMusic) SEJ.music.stop();
+    /* When the admin has turned Class Battle off, its TV page is closed to everyone except a logged-in admin. */
+    if (page === 'class' && !SEJ.classBattleOn() && !SEJ.isAdmin()) { history.replaceState(null, '', a ? `#/lesson/${a}` : '#/map'); return route(); }
     if (page === 'class') { cleanupRoute = SEJ.classPage(root(), a); return; }
     if (page === 'remote') { cleanupRoute = SEJ.remotePage(root(), a); return; }
     if (page === 'join') { cleanupRoute = SEJ.studentPage(root(), a); return; }

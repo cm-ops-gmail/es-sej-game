@@ -139,6 +139,14 @@
     return state.name ? raw.map((l) => swapName(l, state.name)) : raw;
   };
   SEJ.lesson = (code) => SEJ.lessons().find((l) => l.code === code);
+  /* Site-wide switches from the admin panel (the "settings" row next to the lessons). A change saved on this
+     device only (no shared sheet) sits on top of the shared one. */
+  SEJ.setting = (name, fallback) => {
+    const all = Object.assign({}, (window.SEJ_CUSTOM || {}).settings, (state.custom || {}).settings);
+    return name in all ? all[name] : fallback;
+  };
+  /* Class Battle shows on the lesson pages unless the admin turned it off. */
+  SEJ.classBattleOn = () => SEJ.setting('classBattle', true) !== false;
 
   /* ---------- sound (everything is synthesised, so no audio files are needed) ----------
      Made to be gentle for children: soft music-box, kalimba and marimba voices on a pentatonic scale

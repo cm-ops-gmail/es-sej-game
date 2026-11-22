@@ -240,3 +240,15 @@
 /* ---------- changes stuck on this device ---------- */
 .cms-device { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border: 1px solid var(--warn-border); border-radius: var(--radius); background: var(--warn-bg); color: var(--warn); font-size: 14px; font-weight: 500; }
 .cms-device span { flex: 1 1 260px; }
+
+/* Site settings: on/off switches on the Overview page. */
+.cms-setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; }
+.cms-setting-text strong { font-size: 14px; font-weight: 600; }
+.cms-setting-text .b-note { margin: 2px 0 0; max-width: 620px; }
+.cms-switch { display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 4px; border: 0; background: none; cursor: pointer; font: 500 13px var(--sans); color: var(--foreground); }
+.cms-switch:disabled { opacity: .6; cursor: progress; }
+.cms-switch-track { position: relative; width: 40px; height: 22px; border-radius: 99px; background: #d4d4d4; transition: background .15s; }
+.cms-switch-knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .15s; }
+.cms-switch.on .cms-switch-track { background: var(--ok); }
+.cms-switch.on .cms-switch-knob { transform: translateX(18px); }
+.cms-switch-text { min-width: 24px; text-align: left; }

@@ -386,6 +386,8 @@ window.SEJ_LESSONS = [
    {
     "t": "unjumble",
     "title": "Adventure Sentences",
+    "layout": "wordwall",
+    "theme": "ocean",
     "items": [
      "🥾|Hiking is great for exploring nature.",
      "✈️|Traveling to new places is exciting.",
@@ -1226,6 +1228,8 @@ window.SEJ_LESSONS = [
    {
     "t": "unjumble",
     "title": "Disagree Politely",
+    "layout": "wordwall",
+    "theme": "summer",
     "items": [
      "🤝|I see your point, but I think differently.",
      "💡|I understand what you're saying, but can I explain my side?",
@@ -1538,6 +1542,8 @@ window.SEJ_LESSONS = [
    {
     "t": "sort",
     "title": "Classroom or Living Room?",
+    "layout": "wordwall",
+    "theme": "winter",
     "groups": [
      {
       "n": "Classroom Object",
@@ -1818,6 +1824,8 @@ window.SEJ_LESSONS = [
    {
     "t": "match",
     "title": "Magic Words",
+    "layout": "wordwall",
+    "theme": "detective",
     "pairs": [
      [
       "Thank you",
@@ -2017,6 +2025,8 @@ window.SEJ_LESSONS = [
    {
     "t": "unjumble",
     "title": "Step by Step",
+    "layout": "wordwall",
+    "theme": "space",
     "items": [
      "🦷|In the morning, I wake up and brush my teeth.",
      "🏫|At noon, I have lunch with my classmates.",
@@ -2132,6 +2142,8 @@ window.SEJ_LESSONS = [
    {
     "t": "match",
     "title": "Picture Match",
+    "layout": "wordwall",
+    "theme": "sunflower",
     "pairs": [
      [
       "📝",
@@ -2523,6 +2535,8 @@ window.SEJ_LESSONS = [
    {
     "t": "spell",
     "title": "Room Word Spelling",
+    "layout": "wordwall",
+    "theme": "classroom",
     "items": [
      [
       "spacious",
@@ -3074,6 +3088,8 @@ window.SEJ_LESSONS = [
    {
     "t": "match",
     "title": "Toy Words",
+    "layout": "wordwall",
+    "theme": "spring",
     "pairs": [
      [
       "Soft",
@@ -3745,6 +3761,8 @@ window.SEJ_LESSONS = [
     "t": "quiz",
     "show": true,
     "title": "Where Is It?",
+    "layout": "wordwall",
+    "theme": "tvshow",
     "items": [
      [
       "The dog is hiding ___ the couch.",
@@ -5109,6 +5127,8 @@ window.SEJ_LESSONS = [
    {
     "t": "anagram",
     "title": "Spell the Season",
+    "layout": "wordwall",
+    "theme": "classroom",
     "audio": true,
     "items": [
      [

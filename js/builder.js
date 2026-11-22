@@ -209,8 +209,11 @@
   const scope = () => SEJ.adminScope();
   const setScope = (v) => { try { sessionStorage.setItem('sej-admin-scope', v); } catch (e) { /* not kept */ } };
   const keyOf = (code) => (scope() === 'base' ? `base:${code}` : code);
-  async function saveLessonChange(lessonCode, change) {
-    const code = keyOf(lessonCode);
+  const saveLessonChange = (lessonCode, change) => saveChange(keyOf(lessonCode), change);
+  /* Site-wide switches, saved as the "settings" row next to the lessons. */
+  const currentSettings = () => Object.assign({}, (window.SEJ_CUSTOM || {}).settings, (store.state.custom || {}).settings);
+  const saveSetting = (name, value) => saveChange('settings', Object.assign(currentSettings(), { [name]: value }));
+  async function saveChange(code, change) {
     if (!SEJ.sharedInfo.shared && /^https?:$/.test(location.protocol)) await SEJ.connectShared();
     const shared = SEJ.sharedInfo && SEJ.sharedInfo.shared;
     /* A server that didn't answer is not the same as no database: never save on this device by accident,
@@ -392,7 +395,7 @@
           h('button', { class: 'link-btn', id: 'lesson-handouts', title: 'Flashcards, quick tips and a practice sheet for students, as a PDF', onclick: () => SEJ.handouts.open(st.base, onMapGames(), true, window.SEJ_LESSONS.filter((l) => l.unit === st.base.unit).map((l) => { const x = l.code === code ? st : lessonState(l.code); return { lesson: x.base, games: x.map.map((id) => gameOf(x, id)).filter(Boolean) }; })) }, '🖨️ Handouts (PDF)'),
           h('button', { class: 'link-btn', id: 'lesson-video', title: 'An animated quiz video with the heroes, from the games on the map. Play it here, record it as a video file, or save it as one HTML file.', onclick: () => SEJ.video.open(st.base, onMapGames(), true) }, '🎬 Quiz video'),
           h('label', { class: 'link-btn', title: 'Turn a Word file into slides in the same template' }, '📄 Word file to slides', h('input', { type: 'file', accept: '.docx', class: 'visually-hidden', id: 'docx-file', onchange: (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) makeSlides(() => SEJ.slides.docx(f)); } })),
-          h('a', { class: 'link-btn', href: `?class=${code}`, target: '_blank', rel: 'noopener' }, '🏆 Class Battle ↗'),
+          h('a', { class: 'link-btn', href: `?class=${code}`, target: '_blank', rel: 'noopener', title: SEJ.classBattleOn() ? '' : 'Class Battle is turned off for students (Overview › Site settings).' }, SEJ.classBattleOn() ? '🏆 Class Battle ↗' : '🏆 Class Battle ↗ (off for students)'),
           changeOf(st) && twoTap('↩ Reset this lesson to its default games', 'Tap again to reset everything in this lesson', async () => {
             try { await saveLessonChange(code, null); toast('Lesson reset'); } catch (e) { toast(e.message, true); }
             render(root);
@@ -433,7 +436,7 @@
       again();
     };
     return h('div', { class: 'cms-device', id: 'device-banner' },
-      h('span', { text: `⚠️ This device holds ${keys.length} lesson ${keys.length === 1 ? 'change' : 'changes'} that students can’t see.` }),
+      h('span', { text: `⚠️ This device holds ${keys.length} ${keys.length === 1 ? 'change' : 'changes'} that students can’t see.` }),
       h('button', { class: 'soft-btn', id: 'device-publish', onclick: () => act(true) }, 'Publish to students'),
       h('button', { class: 'soft-btn', id: 'device-discard', onclick: () => act(false) }, 'Discard'));
   }
@@ -518,6 +521,25 @@
       h('td', {}, h('span', { class: `cms-badge ${r.edited ? 'warn' : ''}`, text: r.edited ? 'Edited' : 'Default' })),
       h('td', {}, h('a', { class: 'soft-btn', href: `#/admin/${r.l.code}` }, 'Manage')))));
     const find = h('input', { class: 'b-input cms-search', type: 'search', placeholder: 'Search lessons…', 'aria-label': 'Search lessons', oninput: (e) => { const q = e.target.value.trim().toLowerCase(); body.querySelectorAll('tr').forEach((tr) => { tr.hidden = !!q && !tr.dataset.find.includes(q); }); } });
+    const battleOn = SEJ.classBattleOn();
+    const battleSwitch = h('button', {
+      class: `cms-switch ${battleOn ? 'on' : ''}`, id: 'set-class-battle', type: 'button', role: 'switch', 'aria-checked': String(battleOn), 'aria-label': 'Class Battle on the lesson pages',
+      onclick: async (e) => {
+        const next = !SEJ.classBattleOn();
+        e.currentTarget.disabled = true;
+        try {
+          const where = await saveSetting('classBattle', next);
+          toast((next ? 'Class Battle is on. It shows on every lesson page.' : 'Class Battle is off. It’s hidden from the lesson pages.') + (where === 'device' ? ' Saved on this device only.' : ''));
+        } catch (err) { toast(err.message, true); }
+        home(root);
+      },
+    }, h('span', { class: 'cms-switch-track', 'aria-hidden': 'true' }, h('span', { class: 'cms-switch-knob' })), h('span', { class: 'cms-switch-text', text: battleOn ? 'On' : 'Off' }));
+    const settingsCard = h('section', { class: 'cms-card', id: 'site-settings' },
+      h('div', { class: 'cms-card-head' }, h('div', {}, h('h3', { text: 'Site settings' }), h('p', { class: 'b-note', text: 'These apply to every batch and to the open site.' }))),
+      h('div', { class: 'cms-setting' },
+        h('div', { class: 'cms-setting-text' }, h('strong', { text: 'Class Battle' }),
+          h('p', { class: 'b-note', text: 'Shows the “In Class” Class Battle card on every lesson page. Turn it off if your classes don’t use in-class games. You can still open it from a lesson here in the admin panel.' })),
+        battleSwitch));
     shell(root, 'home', [['Overview']],
       h('main', { class: 'b-main' },
         h('section', { class: 'cms-page-head' }, h('div', {}, h('h2', { text: 'Overview' }), h('p', { text: 'Pick a lesson to choose its games, create new ones, or make slides and handouts.' })),
@@ -525,6 +547,7 @@
         h('div', { class: 'cms-stats' },
           stat(rows.length, 'Lessons'), stat(rows.reduce((n, r) => n + r.on, 0), 'Games on the map'),
           stat(rows.reduce((n, r) => n + r.made, 0), 'Games you created'), stat(rows.filter((r) => r.edited).length, 'Lessons edited')),
+        settingsCard,
         h('section', { class: 'cms-card' },
           h('div', { class: 'cms-card-head' }, h('div', {}, h('h3', { text: 'Lessons' }), h('p', { class: 'b-note', text: 'All 24 lessons of the SEJ Live Batch.' })), find),
           h('div', { class: 'cms-table-wrap' }, h('table', { class: 'cms-table', id: 'lesson-table' },
@@ -640,6 +663,9 @@
       if (game.t === 'quiz' && show.checked) x.show = true;
       if (game.t === 'anagram' && audioOpt.checked) x.audio = true;
       if (bn.value.trim() && id !== 'talk') x.bn = bn.value.trim();
+      /* Editing keeps the game's reference look (Wordwall layout and theme). */
+      if (!isNew && game.layout) x.layout = game.layout;
+      if (!isNew && game.theme) x.theme = game.theme;
       return x;
     };
     const check = () => {
