@@ -557,7 +557,11 @@
 
   /* ---------- 8. Pair or No Pair ---------- */
   function pair(host) {
-    sequence(host, shuffle(host.game.items), (item, next) => {
+    /* Shuffle so the same left card never comes twice in a row (a few tries is plenty). */
+    const repeats = (list) => list.some((x, i) => i && x[0] && x[0] === list[i - 1][0]);
+    let order = shuffle(host.game.items);
+    for (let n = 0; n < 60 && repeats(order); n++) order = shuffle(host.game.items);
+    sequence(host, order, (item, next) => {
       const [a, b, yes, ea, eb] = item;
       const cardA = h('div', { class: 'pair-card pc-a flip-in' }, art(ea, 'pair-art'), a && h('strong', { text: a }));
       const cardB = h('div', { class: 'pair-card pc-b flip-in', style: { animationDelay: '.1s' } }, art(eb, 'pair-art'), b && h('strong', { text: b }));

@@ -3672,7 +3672,7 @@ window.SEJ_LESSONS = [
       "Triangle",
       "",
       true,
-      "⛺",
+      "🍕",
       "svg:triangle"
      ],
      [
@@ -3686,14 +3686,14 @@ window.SEJ_LESSONS = [
       "Rectangle",
       "",
       true,
-      "🧱",
+      "📱",
       "svg:rectangle"
      ],
      [
       "Oval",
       "",
       true,
-      "🏈",
+      "🥚",
       "svg:oval"
      ],
      [
@@ -3707,7 +3707,7 @@ window.SEJ_LESSONS = [
       "Round",
       "",
       false,
-      "⚽",
+      "🏀",
       "svg:square"
      ],
      [
@@ -3718,10 +3718,17 @@ window.SEJ_LESSONS = [
       "svg:rectangle"
      ],
      [
+      "Square",
+      "",
+      false,
+      "🎁",
+      "svg:circle"
+     ],
+     [
       "Rectangle",
       "",
       false,
-      "🧱",
+      "🚪",
       "svg:triangle"
      ],
      [
@@ -3735,7 +3742,7 @@ window.SEJ_LESSONS = [
       "Trapezium",
       "",
       false,
-      "🪣",
+      "🪴",
       "svg:rectangle"
      ]
     ],
