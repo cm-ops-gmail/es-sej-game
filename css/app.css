@@ -732,3 +732,7 @@ body { background: #8a78c4; }
 .rays:not(.rays-soft) { background: repeating-conic-gradient(#b1a0d6 0 12deg, #bdaddf 0 24deg); opacity: 1; }
 .burst-bg { background: repeating-conic-gradient(#d6a3bb 0 12deg, #dbadc0 0 24deg); opacity: 1; }
 .burst-violet { background: repeating-conic-gradient(#9f8dd0 0 12deg, #a898d6 0 24deg); }
+
+/* A soft fade as each page opens, so moving around feels smooth instead of a hard cut. */
+#app > .map-page, #app > .lesson-page, #app > .game-screen, #app > .results, #app > .onb { animation: page-in .22s ease-out both; }
+@keyframes page-in { from { opacity: 0; } to { opacity: 1; } }

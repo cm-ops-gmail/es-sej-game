@@ -172,7 +172,7 @@
     limit.threshold.value = -16; limit.knee.value = 12; limit.ratio.value = 6; limit.attack.value = 0.004; limit.release.value = 0.25;
     master.connect(limit).connect(c.destination);
     musicGain = c.createGain();
-    musicGain.gain.value = 0.5;
+    musicGain.gain.value = 0.42;
     musicGain.connect(master);
     /* Effects pass through a warm filter, with a little echo mixed in. */
     sfxBus = c.createGain();
@@ -190,7 +190,7 @@
       ctx = new AC();
       buildGraph(ctx);
     }
-    if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+    if (ctx.state === 'suspended' && ctx.resume && !(window.OfflineAudioContext && ctx instanceof window.OfflineAudioContext)) ctx.resume().catch(() => {});
     return ctx;
   }
   /* One note with a quick soft attack and a long natural fade, like a struck bar or bell.
@@ -203,6 +203,7 @@
       const o = c.createOscillator(), g = c.createGain(), d = dur * fade;
       o.type = type;
       o.frequency.setValueAtTime(freq * ratio, t);
+      g.gain.value = 0;
       if (to) o.frequency.exponentialRampToValueAtTime(to * ratio, t + d);
       g.gain.setValueAtTime(0.0001, t);
       g.gain.linearRampToValueAtTime(vol * loud, t + attack);
@@ -230,57 +231,134 @@
     src.connect(f).connect(g).connect(sfxBus);
     src.start(t);
   }
+  /* A short burst of soft noise (for shakers, drum rolls and swishes). One buffer is made once and reused. */
+  let noiseBuf = null;
+  function noise(start, dur, { vol = 0.03, type = 'bandpass', freq = 2000, q = 0.8, dest = null } = {}) {
+    const c = audio();
+    if (!c) return;
+    if (!noiseBuf || noiseBuf.sampleRate !== c.sampleRate) {
+      noiseBuf = c.createBuffer(1, c.sampleRate, c.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const t = c.currentTime + Math.max(0, start), src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = noiseBuf;
+    f.type = type; f.frequency.value = freq; f.Q.value = q;
+    g.gain.value = 0;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + Math.min(0.006, dur / 3));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(dest || sfxBus);
+    src.start(t, Math.random() * 0.5);
+    src.stop(t + dur + 0.02);
+  }
+  /* A bright toy xylophone bar. */
+  const xylo = (f, t, vol = 0.1, dur = 0.5, dest = null) => note(f, t, { vol, dur, attack: 0.003, dest, parts: [[3.98, 0.22, 0.18], [9.9, 0.05, 0.06]] });
+  /* A cartoon slide whistle: one smooth glide, with a little wobble. */
+  function slide(from, to, start, dur, vol = 0.05) {
+    const c = audio();
+    if (!c) return;
+    const t = c.currentTime + start, o = c.createOscillator(), g = c.createGain(), lfo = c.createOscillator(), wob = c.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(from, t);
+    o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    lfo.frequency.value = 7; wob.gain.value = from * 0.012;
+    lfo.connect(wob).connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.03);
+    g.gain.setValueAtTime(vol, t + dur * 0.75);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.06);
+    o.connect(g).connect(sfxBus);
+    o.start(t); lfo.start(t);
+    o.stop(t + dur + 0.1); lfo.stop(t + dur + 0.1);
+  }
+  /* A springy cartoon "boing". */
+  function spring(start = 0, vol = 0.07) {
+    const c = audio();
+    if (!c) return;
+    const t = c.currentTime + start, o = c.createOscillator(), g = c.createGain(), lfo = c.createOscillator(), wob = c.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(170, t);
+    o.frequency.exponentialRampToValueAtTime(330, t + 0.09);
+    o.frequency.exponentialRampToValueAtTime(260, t + 0.4);
+    lfo.frequency.setValueAtTime(16, t); lfo.frequency.linearRampToValueAtTime(9, t + 0.4);
+    wob.gain.setValueAtTime(45, t); wob.gain.exponentialRampToValueAtTime(4, t + 0.4);
+    lfo.connect(wob).connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+    o.connect(g).connect(sfxBus);
+    o.start(t); lfo.start(t);
+    o.stop(t + 0.46); lfo.stop(t + 0.46);
+  }
+  /* A soft toy horn (for the "ta-da"). */
+  const horn = (f, t, vol = 0.06, dur = 0.3) => note(f, t, { vol, dur, attack: 0.02, type: 'triangle', parts: [[2, 0.35, 0.8], [3, 0.12, 0.6]] });
   /* C major pentatonic: C D E G A, over three octaves. */
   const PENTA = [261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
   const P = (i) => PENTA[Math.max(0, Math.min(PENTA.length - 1, i))];
-  const SCALE = PENTA.slice(5);
   const on = () => forceOn || state.sound !== false;
+  /* Playful, cartoon-style effects for children: xylophones, bubble pops, slide whistles and springs.
+     Every sound is short, bright and friendly. Nothing harsh, nothing that scolds. */
   SEJ.sfx = {
-    /* A tiny soft wooden tap. */
-    tap() { if (on()) marimba(P(8), 0, 0.06, 0.14); },
-    /* Picking up a card or word: a little music-box ping. */
-    select() { if (on()) musicBox(P(12), 0, 0.05, 0.35); },
-    /* Each letter or word placed climbs one step up the scale. */
-    tick(step = 0) { if (on()) kalimba(P(7 + Math.min(step, 7)), 0, 0.09, 0.45); },
-    /* A right answer: three soft music-box notes going up, a little higher with each answer in a row. */
+    /* A little wood-block "tok". */
+    tap() { if (on()) { note(1250, 0, { vol: 0.2, dur: 0.07, to: 900, attack: 0.002 }); xylo(P(10), 0, 0.08, 0.12); } },
+    /* Picking up a card or word: a bubbly "bloop". */
+    select() { if (on()) note(480, 0, { vol: 0.26, dur: 0.11, to: 980, attack: 0.004 }); },
+    /* Each letter or word placed climbs one step up the xylophone. */
+    tick(step = 0) { if (on()) xylo(P(6 + Math.min(step, 8)), 0, 0.2, 0.35); },
+    /* A right answer: a quick happy "ding-ding-DING!" that climbs higher with each answer in a row. */
     correct(combo = 0) {
       if (!on()) return;
       const b = 5 + Math.min(combo, 4);
-      [0, 2, 4].forEach((n, i) => musicBox(P(b + n), i * 0.075, 0.1, i === 2 ? 1.1 : 0.6));
+      [0, 2, 4].forEach((n, i) => xylo(P(b + n), i * 0.07, 0.1, i === 2 ? 0.8 : 0.3));
+      musicBox(P(b + 5), 0.2, 0.04, 0.9);
     },
-    /* Try again: two low, warm wooden notes, gentle and friendly, never a buzzer. */
-    wrong() { if (on()) { marimba(P(2), 0, 0.09, 0.32); marimba(P(0), 0.14, 0.08, 0.45); } },
-    /* A faint glimmer after a right answer. */
-    sparkle() { if (on()) { musicBox(P(13), 0.26, 0.025, 0.6); musicBox(P(14), 0.33, 0.02, 0.7); } },
-    /* Points landing: one quiet high chime. */
-    coin() { if (on()) kalimba(P(12), 0.42, 0.03, 0.5); },
-    /* Three in a row: a soft harp run up the scale. */
-    streak() { if (on()) [5, 6, 7, 8, 9, 10].forEach((n, i) => kalimba(P(n), i * 0.055, 0.06, 0.6)); },
-    /* Before the stars: a gentle shimmer that rises (not a drum roll). */
-    drumroll(seconds = 0.5) { if (on()) { const n = Math.max(3, Math.round(seconds / 0.09)); for (let i = 0; i < n; i++) musicBox(P(5 + (i % 6)), i * (seconds / n), 0.03 + (i / n) * 0.02, 0.4); } },
-    /* A soft bubble. */
-    pop() { if (on()) note(560, 0, { vol: 0.08, dur: 0.12, to: 880, attack: 0.006 }); },
-    /* A quiet swish of air. */
-    whoosh() { if (on()) air(0, 0.4, 0.03, 1400); },
-    /* Each star on the results screen rings a little higher. */
-    star(i = 0) { if (on()) { musicBox(P(10 + i * 2), 0, 0.11, 1.2); musicBox(P(5 + i * 2), 0.02, 0.05, 1.2); } },
-    /* Instead of a crowd: wind chimes, soft and twinkly. */
+    /* Try again: a friendly cartoon "uh-oh", two soft bouncy notes going down. Never a buzzer. */
+    wrong() {
+      if (!on()) return;
+      note(P(4), 0, { vol: 0.08, dur: 0.2, to: P(4) * 0.96, attack: 0.01, type: 'triangle' });
+      note(P(2), 0.19, { vol: 0.08, dur: 0.34, to: P(2) * 0.92, attack: 0.01, type: 'triangle' });
+    },
+    /* A twinkle after a right answer. */
+    sparkle() { if (on()) { musicBox(P(13), 0.24, 0.03, 0.6); musicBox(P(14), 0.31, 0.025, 0.7); } },
+    /* Points landing: a bright two-note "bling". */
+    coin() { if (on()) { xylo(1318.5, 0.4, 0.04, 0.12); xylo(1760, 0.47, 0.05, 0.5); } },
+    /* Three in a row: a slide whistle up and a run up the xylophone. */
+    streak() { if (on()) { slide(420, 1250, 0, 0.32, 0.04); [5, 6, 7, 8, 9, 10].forEach((n, i) => xylo(P(n), 0.18 + i * 0.05, 0.06, 0.4)); } },
+    /* Before the stars: a soft toy drum roll that grows. */
+    drumroll(seconds = 0.5) {
+      if (!on()) return;
+      const n = Math.max(4, Math.round(seconds / 0.045));
+      for (let i = 0; i < n; i++) noise(i * (seconds / n), 0.05, { vol: 0.04 + (i / n) * 0.08, freq: 1800, q: 0.7 });
+    },
+    /* A bubble popping. */
+    pop() { if (on()) note(340, 0, { vol: 0.26, dur: 0.07, to: 1250, attack: 0.002 }); },
+    /* A quick swish with a tiny slide whistle. */
+    whoosh() { if (on()) { air(0, 0.32, 0.06, 1800); slide(600, 1100, 0.02, 0.2, 0.05); } },
+    /* Each star on the results screen rings a little higher, with a sparkle on top. */
+    star(i = 0) { if (on()) { xylo(P(9 + i * 2), 0, 0.1, 0.7); musicBox(P(11 + i * 2), 0.06, 0.05, 1.1); } },
+    /* A happy shower of chimes and bubbly pops. */
     applause(seconds = 2.2) {
       if (!on()) return;
       const n = Math.round(seconds * 7);
-      for (let i = 0; i < n; i++) { const t = (i / n) * seconds + Math.random() * 0.08; musicBox(P(8 + Math.floor(Math.random() * 7)), t, 0.045 * (1 - (t / seconds) * 0.6), 0.9); }
+      for (let i = 0; i < n; i++) {
+        const t = (i / n) * seconds + Math.random() * 0.08, fade = 1 - (t / seconds) * 0.6;
+        if (i % 3 === 0) note(380 + Math.random() * 300, t, { vol: 0.04 * fade, dur: 0.07, to: 1300, attack: 0.002 });
+        else musicBox(P(8 + Math.floor(Math.random() * 7)), t, 0.04 * fade, 0.8);
+      }
     },
-    /* Bumping into a wall, or a pair that doesn't match: a soft "boop". */
-    boing() { if (on()) note(392, 0, { vol: 0.08, dur: 0.22, to: 330, attack: 0.01 }); },
-    /* "Wow!": a soft rising harp and a warm chord. */
-    wow() { if (on()) { [5, 7, 9, 10, 12].forEach((n, i) => kalimba(P(n), i * 0.06, 0.06, 0.7)); [5, 7, 8].forEach((n) => musicBox(P(n), 0.34, 0.06, 1.4)); } },
-    /* A happy warm chord, played like a harp. */
-    cheer() { if (on()) [5, 7, 8, 10].forEach((n, i) => musicBox(P(n), i * 0.05, 0.06, 1.2)); },
-    /* A short sweet tune: up the scale and a long happy note, with a soft low note under it. */
+    /* Bumping into a wall, or a pair that doesn't match: a springy cartoon "boing". */
+    boing() { if (on()) spring(0, 0.2); },
+    /* "Wow!": a slide whistle up, then a sparkly chord. */
+    wow() { if (on()) { slide(350, 1050, 0, 0.36, 0.045); [5, 7, 9, 10, 12].forEach((n, i) => xylo(P(n), 0.3 + i * 0.05, 0.06, 0.6)); [7, 9, 10].forEach((n) => musicBox(P(n), 0.56, 0.05, 1.3)); } },
+    /* "Yay!": a quick run up the xylophone and a bright chord. */
+    cheer() { if (on()) { [5, 6, 7, 8, 9].forEach((n, i) => xylo(P(n), i * 0.045, 0.06, 0.35)); [7, 9, 10].forEach((n) => musicBox(P(n), 0.25, 0.05, 1.2)); } },
+    /* The "ta-da!": a little toy-horn tune with the xylophone doubling it. */
     fanfare() {
       if (!on()) return;
-      [[5, 0], [7, 0.13], [8, 0.26], [10, 0.42, 1.4]].forEach(([n, t, d]) => musicBox(P(n), t, 0.1, d || 0.6));
-      note(P(0), 0.42, { vol: 0.07, dur: 1.4, parts: [[2, 0.2, 0.6]] });
+      [[3, 0, 0.14], [5, 0.14, 0.14], [7, 0.28, 0.14], [10, 0.44, 1]].forEach(([n, t, d]) => { horn(P(n), t, 0.055, d + 0.12); xylo(P(n), t, 0.07, d + 0.3); });
+      note(P(0) / 2, 0.44, { vol: 0.08, dur: 1, parts: [[2, 0.3, 0.6]] });
+      [12, 14].forEach((n, i) => musicBox(P(n), 0.6 + i * 0.08, 0.035, 0.9));
     },
   };
   /* Renders one effect to sound data without playing it (used by the test that checks the sounds). */
@@ -295,96 +373,164 @@
     return [buf.getChannelData(0), buf.getChannelData(1)];
   };
 
-  /* Background sound that fits the scene, kept very soft so it never competes with the teacher or the game:
-     water and bubbles under the sea, a breeze and far-off birds outdoors, slow twinkles in space, and a
-     gentle hum of soft notes elsewhere. It dips further while a voice is talking. */
-  const AMBIENCE = {
-    ocean: { wash: [320, 0.16, 9], bits: 'bubbles' }, beach: { wash: [650, 0.13, 7], bits: 'bubbles' },
-    hills: { wash: [1500, 0.035, 11], bits: 'birds' }, garden: { wash: [1500, 0.035, 11], bits: 'birds' }, jungle: { wash: [1100, 0.05, 8], bits: 'birds' },
-    space: { bits: 'twinkle', pad: true }, magic: { bits: 'twinkle', pad: true }, stage: { pad: true },
-    sky: { wash: [900, 0.03, 12], pad: true }, candy: { pad: true }, party: { pad: true }, fiesta: { pad: true }, map: { pad: true },
+  /* ---------- background music ----------
+     Real little songs, made live in the browser: a bouncy bass, ukulele-style chords, a toy xylophone
+     tune and soft toy drums. Each scene gets its own song (a bouncy one on the map, a calypso by the
+     sea, a music box in space, a party one on the stage). The tune plays, then rests for a round so it
+     never nags, and the music dips while a voice is talking. Kept soft under the game sounds. */
+  const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  /* Chords as MIDI notes (around middle C), with the bass note for each. */
+  const CH = {
+    C: [[60, 64, 67], 48], F: [[60, 65, 69], 41], G: [[59, 62, 67], 43], Am: [[60, 64, 69], 45], Dm: [[62, 65, 69], 50], Em: [[59, 64, 67], 52],
   };
-  const PAD = [262, 330, 392, 440, 523, 587];
-  let theme = 'map', washNodes = null, beat = 0;
-  /* A soft note with a slow fade in and out. */
-  function soft(freq, dur, vol, start = 0, to = null) {
-    const c = audio();
-    if (!c) return;
-    const t = c.currentTime + start, o = c.createOscillator(), g = c.createGain();
-    o.type = 'sine';
-    o.frequency.setValueAtTime(freq, t);
-    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(vol, t + Math.min(0.5, dur * 0.4));
-    g.gain.linearRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(musicGain);
-    o.start(t);
-    o.stop(t + dur + 0.05);
+  /* Tunes: one row per bar, each note is [start in eighths, MIDI note, length in eighths]. */
+  const TUNES = {
+    bouncy: [
+      [[0, 72, 1], [1, 76, 1], [2, 79, 2], [4, 76, 1], [5, 79, 1], [6, 81, 2]],
+      [[0, 79, 2], [2, 76, 1], [3, 74, 1], [4, 71, 2], [6, 74, 2]],
+      [[0, 72, 1], [1, 76, 1], [2, 81, 2], [4, 79, 1], [5, 76, 1], [6, 72, 2]],
+      [[0, 77, 2], [2, 76, 1], [3, 74, 1], [4, 72, 4]],
+      [[0, 79, 1], [1, 79, 1], [2, 81, 1], [3, 79, 1], [4, 76, 2], [6, 72, 2]],
+      [[0, 77, 1], [1, 77, 1], [2, 81, 1], [3, 77, 1], [4, 76, 2], [6, 72, 2]],
+      [[0, 74, 1], [1, 76, 1], [2, 79, 2], [4, 83, 1], [5, 81, 1], [6, 79, 2]],
+      [[0, 84, 3], [3, 79, 1], [4, 72, 4]],
+    ],
+    calypso: [
+      [[0, 72, 1], [1, 76, 1], [2, 79, 1], [3, 76, 1], [4, 72, 1], [5, 76, 1], [6, 79, 2]],
+      [[0, 81, 1], [1, 77, 1], [2, 81, 1], [3, 84, 2], [5, 81, 1], [6, 77, 2]],
+      [[0, 79, 1], [1, 74, 1], [2, 79, 1], [3, 83, 2], [5, 79, 1], [6, 74, 2]],
+      [[0, 76, 2], [2, 79, 2], [4, 72, 4]],
+      [[0, 72, 1], [1, 76, 1], [2, 79, 1], [3, 76, 1], [4, 72, 1], [5, 76, 1], [6, 79, 2]],
+      [[0, 81, 1], [1, 77, 1], [2, 81, 1], [3, 84, 2], [5, 81, 1], [6, 77, 2]],
+      [[0, 79, 1], [1, 74, 1], [2, 79, 1], [3, 83, 2], [5, 79, 1], [6, 74, 2]],
+      [[0, 84, 2], [2, 79, 1], [3, 76, 1], [4, 72, 4]],
+    ],
+    lullaby: [
+      [[0, 79, 2], [2, 84, 2], [4, 83, 2], [6, 79, 2]],
+      [[0, 81, 4], [4, 76, 4]],
+      [[0, 77, 2], [2, 81, 2], [4, 84, 2], [6, 81, 2]],
+      [[0, 79, 6], [6, 74, 2]],
+      [[0, 76, 2], [2, 79, 2], [4, 84, 4]],
+      [[0, 81, 2], [2, 79, 2], [4, 76, 4]],
+      [[0, 77, 2], [2, 76, 2], [4, 74, 4]],
+      [[0, 74, 4], [4, 79, 4]],
+    ],
+  };
+  /* The songs. swing pushes the off-beats late for a happy bounce; drums: 'pop', 'soft' or none. */
+  const SONGS = {
+    bouncy: { bpm: 112, swing: 0.3, key: 0, chords: ['C', 'G', 'Am', 'F', 'C', 'F', 'G', 'C'], tune: 'bouncy', lead: 'xylo', comp: 'uke', drums: 'pop' },
+    meadow: { bpm: 104, swing: 0.32, key: 5, chords: ['C', 'G', 'Am', 'F', 'C', 'F', 'G', 'C'], tune: 'bouncy', lead: 'marimba', comp: 'uke', drums: 'soft', bits: 'birds' },
+    calypso: { bpm: 108, swing: 0.18, key: 0, chords: ['C', 'F', 'G', 'C', 'C', 'F', 'G', 'C'], tune: 'calypso', lead: 'steel', comp: 'uke', drums: 'pop', bits: 'bubbles' },
+    stars: { bpm: 80, swing: 0, key: 0, chords: ['C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G'], tune: 'lullaby', lead: 'box', comp: 'arp', drums: '', bits: 'twinkle' },
+    party: { bpm: 122, swing: 0.25, key: 2, chords: ['C', 'G', 'Am', 'F', 'C', 'F', 'G', 'C'], tune: 'bouncy', lead: 'xylo', comp: 'uke', drums: 'pop' },
+  };
+  const SONG_FOR = {
+    map: 'bouncy', hills: 'meadow', garden: 'meadow', jungle: 'meadow', ocean: 'calypso', beach: 'calypso',
+    space: 'stars', magic: 'stars', sky: 'stars', stage: 'party', candy: 'party', party: 'party', fiesta: 'calypso',
+  };
+  let theme = 'map', play = null;
+  /* Each song has its own volume knob, so one song can fade out while the next fades in. */
+  function inst(kind, m, t, vol, dur, out) {
+    const f = mtof(m), at = t - ctx.currentTime;
+    if (kind === 'xylo') return xylo(f, at, vol, dur, out);
+    if (kind === 'marimba') return note(f, at, { vol, dur: Math.min(dur, 0.6), attack: 0.004, dest: out, parts: [[3.99, 0.12, 0.25]] });
+    if (kind === 'steel') return note(f, at, { vol, dur: Math.max(dur, 0.45), attack: 0.006, dest: out, parts: [[2.0, 0.35, 0.5], [3.01, 0.12, 0.3], [4.2, 0.05, 0.2]] });
+    if (kind === 'box') return note(f, at, { vol, dur: Math.max(dur, 1.1), dest: out, parts: [[2, 0.28, 0.55], [3, 0.07, 0.3], [4.2, 0.03, 0.18]] });
+    if (kind === 'uke') return note(f, at, { vol, dur, attack: 0.004, type: 'triangle', dest: out, parts: [[2, 0.25, 0.4]] });
+    if (kind === 'bass') return note(f, at, { vol, dur, attack: 0.006, dest: out, parts: [[2, 0.18, 0.5]], to: f * 0.995 });
   }
-  /* Water or wind: deep, smooth noise that slowly swells and fades like a wave. */
-  function startWash([cutoff, vol, period]) {
-    const c = audio();
-    if (!c || washNodes) return;
-    const len = c.sampleRate * 4, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
-    let last = 0;
-    for (let i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
-    /* The end is blended into the start so the loop has no click. */
-    for (let i = 0; i < 2000; i++) { const k = i / 2000; d[len - 2000 + i] = d[len - 2000 + i] * (1 - k) + d[i] * k; }
-    const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), lfo = c.createOscillator(), depth = c.createGain();
-    src.buffer = buf; src.loop = true;
-    f.type = 'lowpass'; f.frequency.value = cutoff; f.Q.value = 0.3;
-    g.gain.value = vol * 0.6;
-    lfo.type = 'sine'; lfo.frequency.value = 1 / period;
-    depth.gain.value = vol * 0.4;
-    lfo.connect(depth).connect(g.gain);
-    src.connect(f).connect(g).connect(musicGain);
-    src.start(); lfo.start();
-    washNodes = [src, lfo, g];
-  }
-  function stopWash() {
-    if (!washNodes) return;
-    const [src, lfo, g] = washNodes;
-    washNodes = null;
-    try { g.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.2); src.stop(ctx.currentTime + 0.8); lfo.stop(ctx.currentTime + 0.8); } catch (e) { /* already stopped */ }
-  }
+  function drumKick(t, vol, out) { note(130, t - ctx.currentTime, { vol, dur: 0.16, to: 48, attack: 0.003, dest: out }); }
   const BITS = {
     /* A few bubbles rising. */
-    bubbles() { const n = 1 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) { const f = 280 + Math.random() * 380; soft(f, 0.16, 0.045, i * 0.19 + Math.random() * 0.05, f * 2.1); } },
-    /* A bird far away. */
-    birds() { const f = 1900 + Math.random() * 900, n = 2 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) soft(f * (1 + (i % 2) * 0.12), 0.11, 0.022, i * 0.15, f * 1.18); },
+    bubbles(t, out) { for (let i = 0; i < 3; i++) { const f = 300 + Math.random() * 400; note(f, t - ctx.currentTime + i * 0.13, { vol: 0.025, dur: 0.12, to: f * 2.2, attack: 0.004, dest: out }); } },
+    /* A little bird. */
+    birds(t, out) { const f = 2000 + Math.random() * 700; for (let i = 0; i < 3; i++) note(f * (1 + (i % 2) * 0.14), t - ctx.currentTime + i * 0.12, { vol: 0.014, dur: 0.09, to: f * 1.25, attack: 0.01, dest: out }); },
     /* A star twinkling. */
-    twinkle() { const f = PAD[Math.floor(Math.random() * PAD.length)] * 4; soft(f, 1.3, 0.02); soft(f * 1.5, 1.1, 0.012, 0.18); },
+    twinkle(t, out) { const f = mtof([84, 88, 91, 96][Math.floor(Math.random() * 4)]); note(f, t - ctx.currentTime, { vol: 0.018, dur: 1.4, dest: out, parts: [[2, 0.2, 0.5]] }); },
   };
+  /* Plays one sixteenth-note step of the song at time t. */
+  function playStep(p, step, t) {
+    const s = p.song, k = s.key, out = p.out, bar = Math.floor(step / 16) % 8, pass = Math.floor(step / 128) % 2, i = step % 16;
+    const [chord, root] = CH[s.chords[bar]];
+    const sixteenth = 60 / s.bpm / 4, eighth = sixteenth * 2;
+    /* Bass: a bouncy "boom ... bop" on the beats. */
+    if (s.comp === 'arp') { if (i === 0) inst('bass', root + k, t, 0.07, 2.2, out); }
+    else if (i === 0 || i === 8) inst('bass', root + k + (i === 8 ? 7 : 0), t, 0.085, eighth * 1.6, out);
+    else if (i === 14 && bar % 2 === 1) inst('bass', root + k + 12, t, 0.05, eighth * 0.8, out);
+    /* Chords: a strummed "chk" on the off-beats, or a gentle music-box ripple for the slow song. */
+    if (s.comp === 'uke' && i % 4 === 2) chord.forEach((m, n) => inst('uke', m + k, t + n * 0.012, 0.026, eighth * 1.1, out));
+    if (s.comp === 'arp' && i % 2 === 0) inst('box', chord[(i / 2) % 3] + k + (i >= 8 ? 12 : 0), t, 0.022, 1.2, out);
+    /* Soft toy drums. */
+    if (s.drums) {
+      if (i === 0 || (s.drums === 'pop' && i === 10)) drumKick(t, s.drums === 'pop' ? 0.09 : 0.06, out);
+      if (i === 4 || i === 12) noise(t - ctx.currentTime, 0.08, { vol: s.drums === 'pop' ? 0.028 : 0.016, freq: 1700, q: 1.1, dest: out });
+      if (i % 2 === 0) noise(t - ctx.currentTime, 0.035, { vol: i % 4 === 2 ? 0.011 : 0.006, type: 'highpass', freq: 7000, q: 0.5, dest: out });
+    }
+    /* The tune: on the first time round; the second time round it rests and the band just plays. */
+    if (pass === 0 && i % 2 === 0) {
+      const tune = TUNES[s.tune][bar];
+      tune.forEach(([at, m, len]) => { if (at === i / 2) inst(s.lead, m + k, t, ({ box: 0.06, steel: 0.05, marimba: 0.075 })[s.lead] || 0.07, len * eighth, out); });
+    }
+    /* Little scene sounds now and then. */
+    if (s.bits && i === 6 && Math.random() < 0.3) BITS[s.bits](t, out);
+  }
+  function schedule() {
+    if (!play || !ctx) return;
+    const s = play.song, sixteenth = 60 / s.bpm / 4, ahead = ctx.currentTime + 0.3;
+    /* A hidden tab pauses the song (timers there are slow), and it carries on smoothly when it's back. */
+    if (document.hidden || ctx.state !== 'running') { play.next = Math.max(play.next, ctx.currentTime + 0.1); return; }
+    if (play.next < ctx.currentTime - 0.2) play.next = ctx.currentTime + 0.05;
+    while (play.next < ahead) {
+      const swing = play.step % 4 === 2 ? s.swing * sixteenth : 0;
+      playStep(play, play.step, play.next + swing);
+      play.next += sixteenth;
+      play.step++;
+    }
+  }
+  function fadeOut(p) {
+    if (!p) return;
+    try { p.out.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.25); setTimeout(() => p.out.disconnect(), 1800); } catch (e) { /* already gone */ }
+  }
   SEJ.music = {
     start() {
-      if (musicTimer || SEJ.noMusic || state.music === false || state.sound === false || SEJ.testMode) return;
-      if (!audio()) return;
-      const a = AMBIENCE[theme] || AMBIENCE.map;
-      if (a.wash) startWash(a.wash);
-      musicTimer = setInterval(() => {
-        if (document.hidden) return;
-        beat++;
-        /* Soft, slow notes: one every few seconds, sometimes two together. */
-        if (a.pad && beat % 3 === 0) {
-          const n = PAD[(beat / 3 * 2 + (beat % 5)) % PAD.length | 0];
-          soft(n / 2, 3.2, 0.05);
-          if (beat % 6 === 0) soft(n * 0.75, 3.4, 0.03, 0.3);
-        }
-        if (a.bits && Math.random() < (a.bits === 'bubbles' ? 0.4 : 0.22)) BITS[a.bits]();
-      }, 1000);
+      if (play || SEJ.noMusic || state.music === false || state.sound === false || SEJ.testMode) return;
+      const c = audio();
+      if (!c) return;
+      const name = SONG_FOR[theme] || 'bouncy', out = c.createGain();
+      out.gain.setValueAtTime(0.0001, c.currentTime);
+      out.gain.linearRampToValueAtTime(1, c.currentTime + 1.2);
+      out.connect(musicGain);
+      play = { name, song: SONGS[name], out, step: 0, next: c.currentTime + 0.12 };
+      schedule();
+      musicTimer = setInterval(schedule, 80);
     },
-    stop() { clearInterval(musicTimer); musicTimer = null; stopWash(); },
-    /* Called when the scene changes, so the sound follows it. */
+    stop() { clearInterval(musicTimer); musicTimer = null; fadeOut(play); play = null; },
+    /* Called when the scene changes. A new song only starts if the scene's song is different. */
     setTheme(name) {
-      const next = AMBIENCE[name] ? name : 'map';
-      if (next === theme) return;
-      theme = next;
-      if (musicTimer) { this.stop(); this.start(); }
+      theme = SONG_FOR[name] ? name : 'map';
+      if (play && play.name !== (SONG_FOR[theme] || 'bouncy')) { this.stop(); this.start(); }
     },
     get theme() { return theme; },
-    duck(down) { if (musicGain && ctx) musicGain.gain.setTargetAtTime(down ? 0.12 : 0.5, ctx.currentTime, 0.08); },
+    get song() { return play ? play.name : ''; },
+    duck(down) { if (musicGain && ctx) musicGain.gain.setTargetAtTime(down ? 0.1 : 0.42, ctx.currentTime, 0.1); },
     sync() { if (state.music !== false && state.sound !== false) this.start(); else this.stop(); },
   };
+  /* Renders a stretch of one song to sound data without playing it (used by the test that checks the music). */
+  SEJ.musicRender = async function (name, seconds = 12, change = {}) {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC || !SONGS[name]) return null;
+    const keep = { ctx, master, musicGain, sfxBus };
+    const off = new OAC(2, Math.ceil(44100 * seconds), 44100);
+    ctx = off; buildGraph(off);
+    try {
+      const out = off.createGain(), p = { name, song: Object.assign({}, SONGS[name], change), out, step: 0 }, sixteenth = 60 / p.song.bpm / 4;
+      out.connect(musicGain);
+      for (let t = 0.05; t < seconds - 1; t += sixteenth, p.step++) playStep(p, p.step, t + (p.step % 4 === 2 ? p.song.swing * sixteenth : 0));
+    } finally { ({ ctx, master, musicGain, sfxBus } = keep); }
+    const buf = await off.startRendering();
+    return [buf.getChannelData(0), buf.getChannelData(1)];
+  };
+  SEJ.musicSongs = () => Object.keys(SONGS);
 
   /* ---------- voice ----------
      Common lines play from recorded clips in assets/voice, so every device sounds the same.
