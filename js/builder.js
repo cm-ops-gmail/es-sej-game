@@ -663,9 +663,6 @@
       if (game.t === 'quiz' && show.checked) x.show = true;
       if (game.t === 'anagram' && audioOpt.checked) x.audio = true;
       if (bn.value.trim() && id !== 'talk') x.bn = bn.value.trim();
-      /* Editing keeps the game's reference look (Wordwall layout and theme). */
-      if (!isNew && game.layout) x.layout = game.layout;
-      if (!isNew && game.theme) x.theme = game.theme;
       return x;
     };
     const check = () => {

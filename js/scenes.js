@@ -91,44 +91,6 @@
         [[80, 950, '#dc72a5'], [210, 975, '#ead56b'], [1380, 960, '#fff'], [1520, 975, '#cf843f'], [330, 985, '#a27dde'], [1250, 985, '#d8649c']].map(([x, y, c]) => flower(x, y, 0.7, c)).join('')) +
         emoji([['⭐', 8, 14, 40, 'twinkle-e'], ['✨', 90, 12, 38, 'twinkle-e', 1], ['🦋', 14, 52, 42, 'flutter'], ['🦋', 86, 46, 38, 'flutter', 1.5], ['🕊️', 78, 30, 44, 'bob', 1]]);
     },
-    /* Wordwall themes, used by games that copy their reference game's look ("theme" on a game). */
-    /* Summer picnic (Wordwall "Summer") */
-    summer: () => svgWrap(sky('ws1', ['#5fb4e3', '#a9dcf2', '#eef6d8']) + sun(1380, 150, 70) + cloud(300, 150, 1.1) + cloud(980, 110, 0.8) +
-      hill('M0 470 C220 380 420 400 640 470 S1100 520 1300 430 S1500 400 1600 440 V1000 H0Z', '#b8d9e8', '#9ec8dc', 'wsm') +
-      hill('M0 600 C300 520 640 580 960 620 S1400 600 1600 560 V1000 H0Z', '#9fd37a', '#5fae52', 'ws2') + tree(140, 620, 1.2) + tree(1480, 600, 1.35, '#379258') + tree(1360, 640, 0.9) +
-      `<g transform="translate(140 820) skewX(-18)"><rect width="430" height="150" rx="10" fill="#e9596b"/><path d="M0 50 H430 M0 100 H430 M86 0 V150 M172 0 V150 M258 0 V150 M344 0 V150" stroke="#fff" stroke-width="16" opacity=".75"/></g>`) +
-      emoji([['🧺', 10, 80, 66], ['🍉', 22, 86, 48, 'bob', 1], ['🍇', 4, 88, 40, 'bob', 2], ['🦋', 88, 40, 42, 'flutter'], ['🐝', 80, 30, 32, 'flutter', 1]]),
-    /* Winter (Wordwall "Winter") */
-    winter: () => svgWrap(sky('ww1', ['#cfe6f7', '#e7f3fb', '#ffffff']) + cloud(260, 160, 1.1, 'drift', '#fff', 0.9) + cloud(1200, 120, 1, 'drift', '#fff', 0.9) +
-      hill('M0 620 C300 540 600 600 900 640 S1400 620 1600 560 V1000 H0Z', '#f4f9fd', '#dcebf6', 'ww2') +
-      `<g fill="#9fbfd6" opacity=".55"><path d="M150 640 l60 -150 l60 150Z"/><path d="M1380 620 l70 -170 l70 170Z"/><path d="M1300 650 l45 -110 l45 110Z"/></g>` +
-      hill('M0 820 C400 760 800 860 1200 800 S1500 780 1600 810 V1000 H0Z', '#ffffff', '#e6f0f8', 'ww3') +
-      Array.from({ length: 30 }, (_, i) => `<circle class="rise snow" style="--dur:${9 + (i % 7)}s;--delay:-${(i * 0.9) % 11}s" cx="${(i * 131) % 1600}" cy="-20" r="${3 + (i % 3) * 2}" fill="#fff"/>`).join('')) +
-      emoji([['❄️', 6, 18, 40, 'twinkle-e'], ['☃️', 90, 74, 70, 'bob'], ['❄️', 92, 30, 32, 'twinkle-e', 1.5]]),
-    /* Detective desk (Wordwall "Detective") */
-    detective: () => svgWrap(sky('wd1', ['#2c3b2e', '#3d4d3a', '#2a3424']) +
-      `<g opacity=".35"><rect x="120" y="120" width="360" height="260" rx="6" fill="#c9b48a" transform="rotate(-8 300 250)"/><rect x="1120" y="160" width="340" height="250" rx="6" fill="#bda57a" transform="rotate(7 1290 285)"/><rect x="560" y="640" width="420" height="300" rx="6" fill="#a88f63" transform="rotate(-4 770 790)"/></g>` +
-      `<g opacity=".28" fill="none" stroke="#e8dcc0" stroke-width="22"><circle cx="760" cy="430" r="230"/><path d="M930 600 L1130 820" stroke-linecap="round" stroke-width="48"/></g>`) +
-      emoji([['🔍', 6, 18, 54, 'bob'], ['🕵️', 90, 70, 66, 'bob', 1], ['🗝️', 92, 22, 40, 'bob', 2]]),
-    /* Sunflower field (Wordwall "Sunflower") */
-    sunflower: () => svgWrap(sky('wf1', ['#f6c453', '#f8d77a', '#f3b24e']) + sun(1350, 170, 80, '#fff2bf', '#f8de8c') +
-      hill('M0 820 C400 760 900 860 1600 790 V1000 H0Z', '#e59b3c', '#cf7f2a', 'wf2')) +
-      emoji([['🌻', 4, 70, 78, 'bob'], ['🌻', 12, 80, 60, 'bob', 1], ['🌻', 88, 72, 80, 'bob', 2], ['🌻', 94, 84, 56, 'bob', 1.5], ['🐝', 84, 30, 34, 'flutter']]),
-    /* Spring blossom meadow (Wordwall "Spring") */
-    spring: () => svgWrap(sky('wp1', ['#bfe3f2', '#e6f3f0', '#f9eef3']) + cloud(300, 140, 1) + cloud(1100, 100, 0.8) +
-      hill('M0 640 C320 560 700 620 1000 660 S1450 640 1600 600 V1000 H0Z', '#bfe3a6', '#86c77a', 'wp2') +
-      [[120, 520, 1.2], [1460, 500, 1.3], [1330, 560, 0.9]].map(([x, y, sc]) => `<g transform="translate(${x} ${y}) scale(${sc})"><rect x="-9" y="0" width="18" height="140" rx="8" fill="#8a5a3b"/><g fill="#f4b6cf"><circle cx="0" cy="-20" r="80"/><circle cx="-70" cy="20" r="56"/><circle cx="70" cy="20" r="56"/></g><g fill="#fbd3e2"><circle cx="-30" cy="-40" r="34"/><circle cx="34" cy="0" r="30"/></g></g>`).join('') +
-      [[60, 860, '#f08fb6'], [180, 900, '#ffd36b'], [1500, 870, '#fff'], [1400, 910, '#c79ce8'], [300, 930, '#f08fb6']].map(([x, y, c]) => flower(x, y, 0.75, c)).join('')) +
-      emoji([['🌸', 6, 24, 40, 'bob'], ['🦋', 88, 40, 42, 'flutter'], ['🌷', 92, 82, 48, 'bob', 1]]),
-    /* Classroom with a chalkboard (Wordwall "Classroom") */
-    classroom: () => svgWrap(sky('wc1', ['#f3dba8', '#f1d39a', '#e8c48a']) +
-      `<rect x="0" y="760" width="1600" height="240" fill="#d9a66b"/><path d="M0 760 H1600" stroke="#b9854f" stroke-width="10"/>` +
-      `<rect x="70" y="250" width="230" height="300" rx="10" fill="#bfe3f2" stroke="#fff" stroke-width="16"/><path d="M185 250 V550 M70 400 H300" stroke="#fff" stroke-width="12"/>` +
-      `<rect x="1330" y="300" width="200" height="140" rx="8" fill="#9fc8e8"/><path d="M1340 320 q40 60 80 0 q40 60 90 10" fill="none" stroke="#5aa66a" stroke-width="10"/>` +
-      `<rect x="1360" y="560" width="190" height="200" rx="10" fill="#c98b52"/><rect x="1380" y="580" width="150" height="70" rx="6" fill="#b37741"/>`) +
-      svgWrap(bunting(-10)) + emoji([['🌍', 90, 58, 50, 'bob'], ['📚', 6, 74, 46, 'bob', 1], ['✏️', 10, 18, 38, 'bob', 2]]),
-    /* TV gameshow (Wordwall "Gameshow quiz") */
-    tvshow: () => `<div class="burst-bg burst-blue"></div><div class="tv-bars"></div>`,
     /* Mystery Boxes, Hero Talk: birthday fiesta */
     fiesta: () => `<div class="burst-bg burst-violet"></div>` + svgWrap(bunting(-10)) + emoji([['🥳', 5, 34, 66], ['🎁', 91, 34, 68, 'bob', 1], ['🎵', 7, 66, 48, 'bob', 2], ['🎶', 90, 68, 50, 'bob', 1.5], ['✨', 14, 18, 38, 'twinkle-e'], ['✨', 84, 16, 42, 'twinkle-e', 1]]),
   };

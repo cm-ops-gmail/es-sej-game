@@ -1,0 +1,25 @@
+/* The instructions card before each game (like a Wordwall start screen), and the instruction line kept on screen. */
+
+/* ---------- instructions card (like Wordwall's start screen) ---------- */
+.intro-overlay { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 18px; background: rgba(20, 12, 48, .62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); transition: opacity .26s; }
+.intro-overlay.leaving { opacity: 0; pointer-events: none; }
+.intro-card { display: flex; flex-direction: column; align-items: center; gap: 12px; width: min(620px, 100%); max-height: 100%; overflow-y: auto; padding: 22px 24px 26px; background: #fff; border-radius: 30px; text-align: center; box-shadow: 0 9px 0 rgba(43, 15, 107, .3), 0 22px 40px rgba(20, 10, 60, .45); }
+.intro-kind { margin: 0; display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; background: #f1ecff; border-radius: 99px; font-weight: 700; font-size: 16px; color: var(--ink-soft); }
+.intro-icon { font-size: 22px; }
+.intro-title { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(30px, 5vw, 44px); line-height: 1.05; color: var(--ink); }
+.intro-how { display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 14px 16px; background: #fff8d9; border-radius: 20px; box-shadow: inset 0 0 0 3px #f0e2a6; }
+.intro-en { margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; font-size: clamp(18px, 2.6vw, 23px); line-height: 1.25; }
+.intro-en .speak-btn { width: 46px; height: 46px; font-size: 20px; }
+.intro-bn { margin: 0; font-size: clamp(17px, 2.4vw, 21px); line-height: 1.5; color: #4a3d6e; }
+.intro-start { min-width: 220px; height: 70px; margin-top: 4px; padding: 0 30px; font-family: var(--display); font-weight: 400; font-size: 32px; }
+@media (max-width: 720px) {
+  .intro-card { padding: 18px 16px 20px; gap: 10px; border-radius: 26px; }
+  .intro-start { height: 62px; font-size: 27px; min-width: 190px; }
+}
+
+/* The instruction line stays visible while playing, even on short laptop screens. */
+@media (max-height: 640px) {
+  .game-screen .how { display: block; width: fit-content; max-width: min(880px, 96vw); margin: 4px auto 0; padding: 2px 12px 3px; font-size: 13.5px; line-height: 1.22; }
+  .game-screen .how .bn { display: inline; font-size: 13px; }
+  .game-title h1 { font-size: clamp(24px, 4vw, 34px); }
+}

@@ -28,21 +28,12 @@
     talk: { name: 'Hero Talk', icon: '🎤', theme: 'fiesta', en: 'Listen, then say it in English!', bn: 'শোনো, তারপর ইংরেজিতে বলো!', ref: 'Speaking round' },
   };
 
-  /* The English instruction for games in the Wordwall look, where the way to play differs from our own look. */
-  const WW_EN = {
-    unjumble: 'Tap two words to swap them, until the sentence is in the right order!',
-    sort: 'Tap a card, then tap its group! You can also drag it.',
-    match: 'Tap a word, then tap its box! You can also drag it.',
-  };
-  /* A game in the Wordwall look goes by its Wordwall name (Unjumble, Group sort...), since it no longer has our theme. */
-  SEJ.kindName = (game) => { const m = SEJ.TEMPLATES[game.t]; return game.layout === 'wordwall' ? m.ref.split(' / ').pop() : m.name; };
-  SEJ.howEn = (game) => game.prompt || (game.layout === 'wordwall' && WW_EN[game.t]) || SEJ.TEMPLATES[game.t].en;
+  SEJ.howEn = (game) => game.prompt || SEJ.TEMPLATES[game.t].en;
 
   /* ---------- host ---------- */
   function createHost(root, lesson, slot, game, opts) {
     const meta = SEJ.TEMPLATES[game.t];
-    /* A game can carry its reference game's look: "layout": "wordwall" and a "theme" (scene) of its own. */
-    const theme = game.theme || (game.show ? 'stage' : meta.theme);
+    const theme = game.show ? 'stage' : meta.theme;
     const heroId = SEJ.store.state.hero || lesson.hero;
     const timers = new Set();
     let alive = true, total = 1, done = 0, score = 0, shown = 0, combo = 0, best = 0, perfect = 0, itemMisses = 0, doubleNext = false;
@@ -62,7 +53,7 @@
     let itemBegan = began;
     const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
-    const screen = h('div', { class: `game-screen ${game.layout === 'wordwall' ? 'ww-layout' : ''}`, 'data-template': game.t, 'data-theme': theme },
+    const screen = h('div', { class: 'game-screen', 'data-template': game.t },
       SEJ.scene(theme),
       buddy,
       h('header', { class: 'game-bar' },
@@ -231,67 +222,7 @@
   };
 
   /* ---------- 1. Sentence Train (Unjumble) ---------- */
-  /* Wordwall look: the jumbled words sit as big tiles on ruled lines. Tap two words (or drag one onto another)
-     to swap them, until the sentence reads in order. A swap that puts no word in its place counts as a miss. */
-  function unjumbleLines(host) {
-    sequence(host, sample('unjumble', host.game.items), (raw, next) => {
-      const parts = raw.includes('|') ? raw.split('|') : ['', raw];
-      const sentence = parts.slice(1).join('|').trim();
-      const stop = (sentence.match(/[.?!]+$/) || [''])[0];
-      const tokens = sentence.slice(0, sentence.length - stop.length).split(/\s+/);
-      let cur = shuffle(tokens.slice());
-      if (tokens.length > 1) for (let n = 0; n < 6 && cur.every((t, i) => t === tokens[i]); n++) cur = shuffle(tokens.slice());
-      if (tokens.length > 1 && cur.every((t, i) => t === tokens[i])) cur.push(cur.shift());
-      let selected = null, solved = false;
-      const ok = (i) => cur[i] === tokens[i];
-      const board = h('div', { class: 'ww-lines enter' });
-      const tiles = cur.map((_, i) => h('button', { class: 'ww-word', 'data-pos': i }));
-      const draw = () => tiles.forEach((t, i) => { t.textContent = cur[i]; t.classList.toggle('in-place', ok(i)); t.setAttribute('aria-label', `Word ${i + 1}: ${cur[i]}`); });
-      const unselect = () => { if (selected !== null) tiles[selected].classList.remove('selected'); selected = null; };
-      const swap = (a, b) => {
-        unselect();
-        if (solved || a === b || cur[a] === cur[b]) return;
-        const before = ok(a) + ok(b);
-        [cur[a], cur[b]] = [cur[b], cur[a]];
-        draw();
-        fx.play(tiles[a], 'jelly');
-        fx.play(tiles[b], 'jelly');
-        if (ok(a) + ok(b) <= before) host.miss(tiles[b]);
-        else host.hit(ok(a) ? tiles[a] : tiles[b], cur.filter((t, i) => t === tokens[i]).length);
-        if (cur.every((t, i) => t === tokens[i])) {
-          solved = true;
-          board.classList.add('solved');
-          sfx.whoosh();
-          host.itemDone(board, sentence, next, { wait: 1300 });
-        }
-      };
-      const tap = (i) => {
-        if (solved) return;
-        if (selected === null) { selected = i; tiles[i].classList.add('selected'); return; }
-        if (selected === i) return unselect();
-        swap(selected, i);
-      };
-      tiles.forEach((t, i) => SEJ.tapOrDrag(t, '.ww-word', (target) => {
-        if (!target) return tap(i);
-        if (target !== t) swap(i, +target.dataset.pos);
-      }));
-      draw();
-      host.target = () => {
-        if (solved) return null;
-        const p = cur.findIndex((t, i) => t !== tokens[i]);
-        if (p < 0) return null;
-        if (selected === null) return tiles[p];
-        if (selected !== p) return tiles[selected];
-        const q = cur.findIndex((t, i) => i > p && t === tokens[p] && t !== tokens[i]);
-        return tiles[q >= 0 ? q : cur.findIndex((t, i) => i > p && t === tokens[p])];
-      };
-      board.append(...tiles, h('span', { class: 'ww-stop', 'aria-hidden': 'true', text: stop }));
-      host.stage.append(board);
-    });
-  }
-
   function unjumble(host) {
-    if (host.game.layout === 'wordwall') return unjumbleLines(host);
     sequence(host, sample('unjumble', host.game.items), (raw, next) => {
       const parts = raw.includes('|') ? raw.split('|') : ['', raw];
       const emoji = parts[0].trim(), sentence = parts.slice(1).join('|').trim();
@@ -338,51 +269,7 @@
     const per = Math.floor(cap / groups.length);
     return groups.flatMap((_, g) => shuffle(cards.filter((c) => c[1] === g)).slice(0, per));
   }
-  /* Wordwall look (Group sort): every card is on the screen at once. Tap a card, then its group, or drag it there. */
-  function sortBoard(host) {
-    const groups = host.game.groups;
-    const cards = shuffle(balanced(host.game.cards, groups, CAP.sort));
-    host.setTotal(cards.length);
-    let selected = null, left = cards.length;
-    const unselect = () => { if (selected) selected.classList.remove('selected'); selected = null; };
-    const zones = groups.map((g, gi) => h('div', { class: 'ww-group enter', 'data-group': gi, role: 'button', tabindex: '0', 'aria-label': `Put in ${g.n}` },
-      h('div', { class: 'ww-group-head' }, art(g.e || '🧺', 'ww-group-art'), h('span', { class: 'ww-group-name', text: g.n })),
-      h('div', { class: 'ww-group-cells' })));
-    const place = (tile, gi) => {
-      if (tile.disabled) return;
-      unselect();
-      if (tile._card[1] !== gi) return host.miss(tile);
-      tile.disabled = true;
-      tile.classList.add('placed');
-      zones[gi].querySelector('.ww-group-cells').append(tile);
-      fx.play(zones[gi], 'jelly');
-      left--;
-      host.itemDone(tile, tile._card[0], left ? null : () => host.finish(), { wait: 900 });
-    };
-    const tiles = cards.map((c, i) => {
-      const t = h('button', { class: 'ww-item enter', style: { '--i': i } }, art(c[2], 'ww-item-art'), h('span', { class: 'ww-item-name', text: c[0] }));
-      t._card = c;
-      SEJ.tapOrDrag(t, '[data-group]', (z) => {
-        if (t.disabled) return;
-        if (z) return place(t, +z.dataset.group);
-        if (selected === t) return unselect();
-        unselect();
-        selected = t;
-        t.classList.add('selected');
-      });
-      return t;
-    });
-    zones.forEach((z, gi) => {
-      const use = () => { if (selected) place(selected, gi); };
-      z.addEventListener('click', use);
-      z.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); use(); } });
-    });
-    host.target = () => (selected ? zones[selected._card[1]] : tiles.find((t) => !t.disabled) || null);
-    host.stage.append(h('div', { class: `ww-sort ww-sort-${groups.length}` }, h('div', { class: 'ww-tray' }, tiles), h('div', { class: 'ww-groups' }, zones)));
-  }
-
   function sort(host) {
-    if (host.game.layout === 'wordwall') return sortBoard(host);
     const groups = host.game.groups;
     const cards = shuffle(balanced(host.game.cards, groups, CAP.sort));
     const counts = groups.map(() => 0);
@@ -434,7 +321,6 @@
       const groups = words.map((w) => w.split('').map(() => h('span', { class: 'slot' })));
       const slotsEl = h('div', { class: 'slots' }, groups.map((g) => h('span', { class: 'slot-word' }, g)));
       const pool = h('div', { class: 'tile-pool' });
-      const ww = host.game.layout === 'wordwall';
       let tiles = [];
       const dealWord = () => {
         const word = words[wordIdx];
@@ -447,7 +333,7 @@
         if (order.join('') === word && word.length > 1) order = order.reverse();
         pos = 0;
         tiles = order.map((l, idx) => {
-          const tile = h('button', { class: ww ? 'tile ww-tile enter' : `tile gummy ${GUMMY[idx % GUMMY.length]} enter`, text: l, 'aria-label': `Letter ${l}` });
+          const tile = h('button', { class: `tile gummy ${GUMMY[idx % GUMMY.length]} enter`, text: l, 'aria-label': `Letter ${l}` });
           tile.style.setProperty('--i', idx);
           tile.addEventListener('click', () => pressed(tile, l));
           return tile;
@@ -481,19 +367,6 @@
       host.target = () => (wordIdx < words.length && tiles.find((t) => !t.disabled && t.textContent === words[wordIdx][pos])) || null;
       const canHear = hearFirst || host.game.audio;
       dealWord();
-      /* Wordwall look: a chalkboard. Spell the word shows only a big speaker; Anagram shows the picture and the word. */
-      if (ww) {
-        const hear = () => { sfx.tap(); voice.say(target); };
-        host.stage.append(
-          h('div', { class: 'ww-board enter' },
-            hearFirst
-              ? h('button', { class: 'ww-hear', id: 'ww-hear', 'aria-label': 'Hear the word', title: 'Hear the word', onclick: (e) => { fx.play(e.currentTarget, 'jelly'); hear(); } }, '🔊')
-              : h('div', { class: 'ww-clue' }, art(emoji, 'ww-clue-art'), h('span', { class: 'ww-clue-word', text: phrase.charAt(0).toUpperCase() + phrase.slice(1) }), canHear && speakBtn(target, 'Hear the word')),
-            slotsEl),
-          pool);
-        if (canHear) host.after(350, () => voice.say(target));
-        return;
-      }
       host.stage.append(
         h('div', { class: 'card letter-card enter' },
           h('div', { class: 'clue-row' }, art(emoji), canHear && speakBtn(target, 'Hear the word')),
@@ -536,67 +409,7 @@
 
   /* ---------- 6. Match Makers (Match up) ---------- */
   const LINE_COLORS = ['#ff2e93', '#ffb300', '#00d4ff', '#7bdc00', '#ff7a00', '#b061ff'];
-  /* Wordwall look (Match up): keywords on the left; on the right, an empty box next to each definition or picture.
-     Tap a keyword, then its box, or drag it into the box. */
-  function matchSlots(host) {
-    const all = sample('match', shuffle(host.game.pairs));
-    /* The keyword is the side with words. When one side is only pictures, the pictures are the definitions. */
-    const picLeft = all.every((p) => clean(p[0]) === '');
-    const keyText = (p) => (picLeft ? p[1] : p[0]), defOf = (p) => (picLeft ? p[0] : p[1]);
-    const size = 6;
-    const rounds = [];
-    for (let i = 0; i < all.length; i += size) rounds.push(all.slice(i, i + size));
-    if (rounds.length > 1 && rounds[rounds.length - 1].length < 3) { const last = rounds.pop(); rounds[rounds.length - 1].push(...last); }
-    host.setTotal(all.length);
-    let r = 0;
-    const showRound = () => {
-      if (r >= rounds.length) return host.finish();
-      const pairs = rounds[r++];
-      let selected = null, left = pairs.length;
-      const unselect = () => { if (selected) selected.classList.remove('selected'); selected = null; };
-      const drop = (key, slot) => {
-        if (key.disabled || slot.classList.contains('filled')) return;
-        unselect();
-        if (key.dataset.key !== slot.dataset.key) return host.miss(key);
-        key.disabled = true;
-        key.classList.add('used');
-        slot.textContent = key.textContent;
-        slot.classList.add('filled');
-        slot.disabled = true;
-        fx.play(slot, 'jelly');
-        left--;
-        const p = pairs[+key.dataset.key];
-        host.itemDone(slot, `${clean(keyText(p))}. ${clean(defOf(p))}`, left ? null : () => { sfx.whoosh(); showRound(); }, { wait: 1000 });
-      };
-      const keys = shuffle(pairs.map((_, i) => i)).map((k, i) => {
-        const b = h('button', { class: 'ww-key enter', 'data-key': k, style: { '--i': i }, text: keyText(pairs[k]) });
-        SEJ.tapOrDrag(b, '.ww-slot:not(.filled)', (slot) => {
-          if (b.disabled) return;
-          if (slot) return drop(b, slot);
-          if (selected === b) return unselect();
-          unselect();
-          selected = b;
-          b.classList.add('selected');
-        });
-        return b;
-      });
-      const slots = [];
-      const rows = shuffle(pairs.map((_, i) => i)).map((k, i) => {
-        const slot = h('button', { class: 'ww-slot', 'data-key': k, 'aria-label': 'Empty box' });
-        slot.addEventListener('click', () => { if (selected) drop(selected, slot); });
-        slots.push(slot);
-        const d = defOf(pairs[k]);
-        return h('div', { class: `ww-row enter ${picLeft ? 'pic-row' : ''}`, style: { '--i': i } }, slot,
-          h('div', { class: 'ww-def' }, picLeft ? art(d, 'ww-def-art') : d));
-      });
-      host.target = () => (selected ? slots.find((s) => s.dataset.key === selected.dataset.key) : keys.find((k) => !k.disabled) || null);
-      host.stage.replaceChildren(h('div', { class: `ww-match ${picLeft ? 'ww-match-pics' : ''}` }, h('div', { class: 'ww-keys' }, keys), h('div', { class: 'ww-rows' }, rows)));
-    };
-    showRound();
-  }
-
   function match(host) {
-    if (host.game.layout === 'wordwall') return matchSlots(host);
     const all = sample('match', shuffle(host.game.pairs));
     const size = 5;
     const rounds = [];
@@ -802,14 +615,8 @@
         host.itemDone(t, a, next, { wait: 1100 });
       });
       host.target = () => tiles.find((t) => t._answer === answer);
-      const ww = host.game.layout === 'wordwall';
-      const qEl = ww
-        ? h('div', { class: 'ww-question enter' }, h('p', { class: 'ww-q-text', text: q }), speakBtn(q, 'Hear the question'))
-        : h('div', { class: `card quiz-q enter ${show ? 'marquee' : ''}` }, art(emoji), h('p', { class: 'clue-big', text: q }), speakBtn(q, 'Hear the question'));
-      /* Wordwall's gameshow puts a little speaker above each answer box. */
-      const grid = ww
-        ? h('div', { class: `answers ww-answers answers-${tiles.length}` }, tiles.map((t) => h('div', { class: 'ww-ans' }, speakBtn(t._answer, `Hear ${t._answer}`), t)))
-        : h('div', { class: `answers answers-${tiles.length}` }, tiles);
+      const qEl = h('div', { class: `card quiz-q enter ${show ? 'marquee' : ''}` }, art(emoji), h('p', { class: 'clue-big', text: q }), speakBtn(q, 'Hear the question'));
+      const grid = h('div', { class: `answers answers-${tiles.length}` }, tiles);
       host.stage.append(qEl);
       if (show) {
         const clockEl = h('span', { class: 'clock', text: seconds });
@@ -839,8 +646,6 @@
         });
       }
       host.stage.append(grid);
-      /* Wordwall's gameshow keeps its power-ups under the answers. */
-      if (ww && show) host.stage.append(toolbar);
     });
   }
 
@@ -1086,7 +891,7 @@
     };
     const card = h('div', { class: 'intro-overlay', id: 'game-intro', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'intro-title' },
       h('div', { class: 'intro-card enter-pop' },
-        h('p', { class: 'intro-kind' }, SEJ.sticker(meta.icon, 'intro-icon'), ' ', SEJ.kindName(game)),
+        h('p', { class: 'intro-kind' }, SEJ.sticker(meta.icon, 'intro-icon'), ' ', meta.name),
         h('h2', { class: 'intro-title', id: 'intro-title', text: game.title }),
         h('div', { class: 'intro-how' },
           h('p', { class: 'intro-en' }, h('span', { text: en }), ' ', speakBtn(en, 'Hear the instruction')),

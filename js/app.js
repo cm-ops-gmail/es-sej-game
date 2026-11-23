@@ -270,10 +270,10 @@
       const stars = store.starsFor(code, s.key);
       return h('a', {
         class: `game-card gummy ${COLORS[i % COLORS.length]} enter ${stars ? 'played' : ''} ${i === first ? 'up-next' : ''}`, style: { '--i': i }, href: `#/play/${code}/${s.key}`,
-        'aria-label': `${s.game.title}, ${SEJ.kindName(s.game)}. ${stars} of 3 stars`, onclick: () => sfx.tap(),
+        'aria-label': `${s.game.title}, ${t.name}. ${stars} of 3 stars`, onclick: () => sfx.tap(),
       },
       SEJ.sticker(t.icon, 'game-art'),
-      h('span', { class: 'game-card-body' }, h('small', { text: SEJ.kindName(s.game) }), h('strong', { text: s.game.title }), starRow(stars)),
+      h('span', { class: 'game-card-body' }, h('small', { text: t.name }), h('strong', { text: s.game.title }), starRow(stars)),
       h('span', { class: 'play-pill', 'aria-hidden': 'true', text: stars ? '↻' : '▶' }));
     });
     const words = h('div', { class: 'word-strip' }, (l.words || []).map(([en, bn], i) => h('button', {
