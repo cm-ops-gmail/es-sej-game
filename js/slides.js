@@ -1,5 +1,5 @@
 /* Slides for teachers: a PowerPoint deck in the Spoken English Junior template look, made in the browser
-   from a lesson's games or from an uploaded Word file. No AI: it lays out the content it is given. */
+   from a lesson's games or from an uploaded Word or PowerPoint file. No AI: it lays out the content it is given. */
 (function () {
   'use strict';
   const FONT = 'Anek Bangla';
@@ -186,6 +186,72 @@
     }
     return blocks;
   }
+  /* ---------- a PowerPoint file as the same blocks: each slide's title is a heading, its text the lines ----------
+     Slides are read in the deck's own order, and the boxes on each slide top to bottom, left to right. Slide
+     numbers, dates and footers are skipped. Indented or bulleted lines under a question become its options. */
+  async function readPptx(file) {
+    if (!window.JSZip) throw new Error('This browser can’t open PowerPoint files here.');
+    const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+    const pres = zip.file('ppt/presentation.xml');
+    if (!pres) throw new Error('That doesn’t look like a PowerPoint (.pptx) file.');
+    const xml = async (path) => new DOMParser().parseFromString(await zip.file(path).async('string'), 'application/xml');
+    const A = 'http://schemas.openxmlformats.org/drawingml/2006/main', P = 'http://schemas.openxmlformats.org/presentationml/2006/main';
+    const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    const all = (el, ns, name) => Array.from(el.getElementsByTagNameNS(ns, name));
+    /* The slides in order: presentation.xml lists their ids, the .rels file says which file each id is. */
+    const rels = zip.file('ppt/_rels/presentation.xml.rels') ? await xml('ppt/_rels/presentation.xml.rels') : null;
+    const target = {};
+    if (rels) Array.from(rels.getElementsByTagName('Relationship')).forEach((r) => { target[r.getAttribute('Id')] = r.getAttribute('Target'); });
+    let paths = all(await xml('ppt/presentation.xml'), P, 'sldId').map((s) => target[s.getAttributeNS(R, 'id')]).filter(Boolean)
+      .map((t) => (t.startsWith('/') ? t.slice(1) : `ppt/${t.replace(/^\.\//, '')}`)).filter((p) => zip.file(p));
+    if (!paths.length) paths = Object.keys(zip.files).filter((p) => /^ppt\/slides\/slide\d+\.xml$/.test(p)).sort((a, b) => parseInt(a.match(/\d+/)[0], 10) - parseInt(b.match(/\d+/)[0], 10));
+    const paraText = (p) => Array.from(p.getElementsByTagNameNS(A, '*')).map((n) => (n.localName === 't' ? n.textContent : n.localName === 'br' ? ' ' : '')).join('').replace(/\s+/g, ' ').trim();
+    const where = (el) => { const off = el.getElementsByTagNameNS(A, 'off')[0]; return off ? [Number(off.getAttribute('y')) || 0, Number(off.getAttribute('x')) || 0] : [0, 0]; };
+    const blocks = [];
+    for (const [n, path] of paths.entries()) {
+      const slide = await xml(path);
+      const pieces = [];
+      for (const sp of all(slide, P, 'sp')) {
+        const ph = sp.getElementsByTagNameNS(P, 'ph')[0], type = ph ? ph.getAttribute('type') || 'body' : '';
+        if (['sldNum', 'dt', 'ftr'].includes(type)) continue;
+        const paras = all(sp, A, 'p').map((p) => {
+          const pPr = p.getElementsByTagNameNS(A, 'pPr')[0];
+          const lvl = pPr ? Number(pPr.getAttribute('lvl')) || 0 : 0;
+          const bullet = !!(pPr && (pPr.getElementsByTagNameNS(A, 'buChar')[0] || pPr.getElementsByTagNameNS(A, 'buAutoNum')[0]));
+          return { text: paraText(p), list: lvl > 0 || bullet };
+        }).filter((x) => x.text);
+        if (!paras.length) continue;
+        const isTitle = type === 'title' || type === 'ctrTitle';
+        pieces.push({ at: isTitle ? [-1, 0] : where(sp), title: isTitle, center: type === 'ctrTitle', paras });
+      }
+      for (const frame of all(slide, P, 'graphicFrame')) {
+        const tbl = frame.getElementsByTagNameNS(A, 'tbl')[0];
+        if (!tbl) continue;
+        const rows = all(tbl, A, 'tr').map((tr) => all(tr, A, 'tc').map((tc) => all(tc, A, 'p').map(paraText).filter(Boolean).join(' ')));
+        if (rows.length) pieces.push({ at: where(frame), table: rows });
+      }
+      pieces.sort((a, b) => a.at[0] - b.at[0] || a.at[1] - b.at[1]);
+      const out = [];
+      for (const piece of pieces) {
+        if (piece.table) { out.push({ kind: 'table', rows: piece.table }); continue; }
+        if (piece.title) { out.push({ kind: 'heading', level: piece.center || n === 0 ? 1 : 2, text: piece.paras.map((x) => x.text).join(' ') }); continue; }
+        piece.paras.forEach((x) => out.push({ kind: 'text', level: 0, text: x.text, list: x.list }));
+      }
+      /* Designed slides often put big numbers in boxes of their own. Step numbers (1, 2, 3…) are dropped;
+         any other lone number joins the words after it, so "24" and "lessons" become "24 lessons". */
+      const isNum = (x) => x && x.kind === 'text' && /^\d{1,4}[+%]?$/.test(x.text);
+      const nums = out.filter(isNum).map((x) => parseInt(x.text, 10));
+      const steps = nums.length >= 2 && nums.every((v, k) => v === k + 1);
+      for (let k = 0; k < out.length; k++) {
+        if (!isNum(out[k])) continue;
+        if (steps) { out.splice(k--, 1); continue; }
+        const next = out[k + 1];
+        if (next && next.kind === 'text' && !isNum(next)) { next.text = `${out[k].text} ${next.text}`; out.splice(k--, 1); }
+      }
+      blocks.push(...out);
+    }
+    return blocks;
+  }
   function addBlocks(deck, blocks, fallbackTitle) {
     let head = fallbackTitle, lines = [], lastQ = false;
     const flush = () => { while (lines.length) deck.points(head, '', lines.splice(0, 6)); };
@@ -238,11 +304,14 @@
       deck.closing();
       return deck.save(`${lesson.code} ${game.title}`);
     },
+    /* A Word (.docx) or PowerPoint (.pptx) file, laid out again in the SEJ template. */
     async docx(file) {
       await loadLib();
-      const blocks = await readDocx(file);
+      const isPptx = /\.pptx$/i.test(file.name);
+      if (!isPptx && !/\.docx$/i.test(file.name)) throw new Error('Please choose a Word (.docx) or PowerPoint (.pptx) file.');
+      const blocks = await (isPptx ? readPptx(file) : readDocx(file));
       if (!blocks.length) throw new Error('No text was found in that file.');
-      const name = file.name.replace(/\.docx$/i, '');
+      const name = file.name.replace(/\.(docx|pptx)$/i, '');
       const deck = newDeck(name);
       deck.cover();
       addBlocks(deck, blocks, name);
@@ -252,5 +321,6 @@
     /* For tests: the slide count without saving a file. */
     async count(make) { await loadLib(); const deck = newDeck('t'); make(deck, { addGame, addBlocks }); return deck.pptx.slides ? deck.pptx.slides.length : deck.pptx._slides.length; },
     readDocx,
+    readPptx,
   };
 })();
