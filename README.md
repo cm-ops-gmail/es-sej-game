@@ -44,7 +44,7 @@ Select **Admin** on the map, or go to `#/admin`, and enter the admin PIN (1010, 
 
 - **✨ Auto-format** (no AI) arranges pasted content into the chosen game's format: numbered lists, tables copied from Word or Excel, `question - answer` lines and multiple-choice blocks with `a) b) c)` and `Answer: b` all work. It runs by itself when you paste and when you save. It never writes new content; if a question has no wrong answers it borrows the other questions' answers and says so. End any line with `>> explanation` to show a reason on the answer slide and in the quick tips.
 - **📑 Download slides** makes a PowerPoint in the SEJ template from the lesson's games (question, then answer ✅).
-  **📄 File to slides** does the same for a Word (`.docx`) or PowerPoint (`.pptx`) file. In a Word file, headings become
+  **📄 Root file to slide** does the same for a Word (`.docx`) or PowerPoint (`.pptx`) file. In a Word file, headings become
   titles; in a PowerPoint, each slide's title does. Lines ending in `?` become questions (with the indented or
   `A)` `B)` lines under them as options), `Answer:` and `Explanation:` lines become answer slides, and tables stay
   tables. Step numbers on designed slides are dropped and a lone number joins its label. No AI is used for slides.

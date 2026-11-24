@@ -1,4 +1,4 @@
-/* "File to slides" in the admin: a Word (.docx) or PowerPoint (.pptx) file becomes slides in the SEJ template.
+/* "Root file to slide" in the admin: a Word (.docx) or PowerPoint (.pptx) file becomes slides in the SEJ template.
    Usage: node tests/fileslides.js <url> <output-dir> [real.pptx] [real.docx]   (run tests/dev-server.js first) */
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -25,7 +25,7 @@ const check = (name, ok, extra = '') => { if (ok) passed++; else { failed++; con
   /* The button is named for any file and takes both kinds. */
   const label = await admin.evaluate(() => document.querySelector('#docx-file').closest('label').textContent.trim());
   const accept = await admin.getAttribute('#docx-file', 'accept');
-  check('the button says File to slides', /File to slides/.test(label), label);
+  check('the button says Root file to slide', /Root file to slide/.test(label), label);
   check('it accepts Word files', /\.docx/.test(accept), accept);
   check('it accepts PowerPoint files', /\.pptx/.test(accept), accept);
 
