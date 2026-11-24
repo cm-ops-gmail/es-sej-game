@@ -13,8 +13,8 @@
   --body: 'Fredoka', 'Baloo Da 2', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, 'Segoe UI', sans-serif;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html { height: 100%; }
-body { margin: 0; min-height: 100%; background: #8d63d2; color: var(--ink); font-family: var(--body); font-size: 18px; font-weight: 500; line-height: 1.3; overscroll-behavior-y: none; }
+html { height: 100%; background: #dcecf8; }
+body { margin: 0; min-height: 100%; background: #dcecf8; color: var(--ink); font-family: var(--body); font-size: 18px; font-weight: 500; line-height: 1.3; overscroll-behavior-y: none; }
 #app { min-height: 100dvh; }
 h1, h2, h3, p { margin: 0; }
 a { color: inherit; }
@@ -121,7 +121,7 @@ button:disabled { cursor: default; }
 .face img { width: 100%; height: 100%; object-fit: cover; }
 
 /* ---------- quest map ---------- */
-.map-page { min-height: 100dvh; background: #8d63d2; }
+.map-page { min-height: 100dvh; background: #dcecf8; }
 .map-hero { position: relative; overflow: hidden; padding: 28px 16px 0; text-align: center; }
 .map-hero-inner { position: relative; z-index: 2; }
 .tagline { display: inline-block; margin-top: 12px; padding: 5px 21px; background: #fff; border-radius: 22px; font-size: clamp(17px, 3vw, 23px); font-weight: 600; box-shadow: 0 5px 0 #c0b5e1; }
@@ -249,7 +249,7 @@ button:disabled { cursor: default; }
 .wc0 { --wc: #c34684; } .wc1 { --wc: #3879c1; } .wc2 { --wc: #288055; } .wc3 { --wc: #ba672e; } .wc4 { --wc: #7c53be; } .wc5 { --wc: #207373; }
 
 /* ---------- hero picker ---------- */
-.picker { position: relative; min-height: 100dvh; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 18px 16px 28px; background: #8d63d2; text-align: center; }
+.picker { position: relative; min-height: 100dvh; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 18px 16px 28px; background: #dcecf8; text-align: center; }
 .picker > * { position: relative; z-index: 2; }
 .picker > .rays { position: absolute; z-index: 0; }
 .hero-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 15px; width: min(1000px, 100%); margin-top: 3px; }
@@ -725,7 +725,7 @@ html, body { overflow-x: hidden; }
 .logo-word { -webkit-text-stroke-width: 5px; text-shadow: 0 4px 0 var(--ink), 0 8px 14px rgba(74, 58, 120, .28); }
 .game-screen .scene, .map-hero .scene, .onb .scene, .lb-page .scene { opacity: .88; }
 .game-screen { background: #efeaf8; }
-body { background: #8a78c4; }
+body { background: #dcecf8; }
 .pow-shape { opacity: .92; }
 /* Sunbursts are one calm colour in two close shades: a gentle glow, not a rainbow wheel. */
 .results { background: #b7a6da; }
